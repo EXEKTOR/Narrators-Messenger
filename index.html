@@ -3,33 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NARRATORS // TG STYLE</title>
+    <title>NARRATORS // V6 RED</title>
     <style>
         :root {
+            /* ТВОЯ ПАЛИТРА */
             --bg-body: #ffffff;
-            --bg-sidebar: #f0f2f5; /* Цвет левой панели как в ТГ */
-            --bg-chat: #ffffff;    /* Фон чата */
-            --primary: #3390ec;    /* Синий ТГ */
-            --msg-me: #eeffde;     /* Зеленоватый ТГ */
-            --msg-other: #ffffff;
-            --text-main: #000000;
-            --text-dim: #707579;
-            --border: #dfe1e5;
+            --bg-sidebar: #f7f7f7; /* Чуть сероватый для списка */
+            --bg-chat: #ffffff;
+            --primary: #ff0033;    /* КРАСНЫЙ ГЛАВНЫЙ */
+            --text-main: #222222;
+            --text-dim: #666666;
+            --border: #dddddd;
+            
+            /* Сообщения */
+            --msg-me: #ff0033;
+            --msg-me-text: #ffffff;
+            --msg-other: #f0f0f0;
+            --msg-other-text: #000000;
         }
 
         * { box-sizing: border-box; }
         
         body {
             margin: 0; padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             height: 100vh;
             width: 100vw;
-            overflow: hidden; /* Скрываем скролл страницы */
+            overflow: hidden;
             background-color: var(--bg-body);
+            color: var(--text-main);
             display: flex;
         }
 
-        /* --- ЭКРАНЫ (Вход / Регистрация / Приложение) --- */
+        /* --- ПОЛНОЭКРАННЫЕ ПАНЕЛИ (Вход/Рега) --- */
         .full-screen-panel {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #fff;
@@ -38,27 +44,30 @@
             z-index: 2000;
         }
 
-        /* Кнопки и инпуты */
+        h1 { color: var(--primary); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        h2 { color: var(--text-main); margin-bottom: 20px; }
+
         input {
-            padding: 12px; border: 1px solid var(--border); border-radius: 8px;
-            font-size: 1rem; width: 300px; margin-bottom: 10px; outline: none;
+            padding: 12px; border: 1px solid var(--border); border-radius: 4px;
+            font-size: 1rem; width: 300px; margin-bottom: 15px; outline: none;
+            background: #f9f9f9;
         }
-        input:focus { border-color: var(--primary); }
+        input:focus { border-color: var(--primary); background: #fff; }
         
         button.btn-primary {
             padding: 12px 30px; border: none; background: var(--primary); color: #fff;
-            font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 1rem;
-            transition: 0.2s;
+            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 1rem;
+            text-transform: uppercase; transition: 0.2s;
         }
-        button.btn-primary:hover { opacity: 0.9; }
+        button.btn-primary:hover { transform: scale(1.02); }
 
-        /* --- ОСНОВНОЙ ИНТЕРФЕЙС (Telegram Layout) --- */
+        /* --- ПРИЛОЖЕНИЕ (2 колонки) --- */
         #app-layout {
-            display: none; /* Скрыто до входа */
+            display: none; /* Скрыто пока не загрузится */
             width: 100%; height: 100%;
         }
 
-        /* ЛЕВАЯ ПАНЕЛЬ (Список чатов) */
+        /* ЛЕВАЯ КОЛОНКА */
         #sidebar {
             width: 350px;
             height: 100%;
@@ -67,157 +76,165 @@
             display: flex; flex-direction: column;
         }
 
-        .sidebar-header {
-            padding: 10px 15px;
-            display: flex; gap: 10px;
-        }
+        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border); }
+        .search-box { width: 100%; margin: 0; border-radius: 20px; }
 
-        .search-box {
-            width: 100%; padding: 8px 15px; border-radius: 20px;
-            border: 1px solid var(--border); background: #fff; outline: none;
-        }
+        .chat-list { flex: 1; overflow-y: auto; }
 
-        .chat-list {
-            flex: 1; overflow-y: auto;
-        }
-
-        /* Элемент списка чатов */
         .chat-item {
-            padding: 10px 15px; display: flex; align-items: center; gap: 10px;
-            cursor: pointer; transition: 0.2s;
+            padding: 15px; display: flex; align-items: center; gap: 15px;
+            cursor: pointer; border-bottom: 1px solid transparent;
+            transition: 0.2s;
         }
-        .chat-item:hover { background: rgba(0,0,0,0.05); }
-        .chat-item.active { background: #3390ec20; }
+        .chat-item:hover { background: #fff; border-bottom-color: var(--border); }
+        .chat-item.active { background: #fff; border-right: 4px solid var(--primary); }
         
         .avatar {
-            width: 45px; height: 45px; border-radius: 50%; background: #ccc;
-            display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold;
-            font-size: 1.2rem;
+            width: 50px; height: 50px; border-radius: 50%; 
+            background: var(--text-dim); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.2rem;
         }
+        .avatar.red { background: var(--primary); }
 
-        /* ПРАВАЯ ПАНЕЛЬ (Сам чат) */
+        /* ПРАВАЯ КОЛОНКА (ЧАТ) */
         #main-chat {
-            flex: 1; /* Занимает всё оставшееся место */
-            height: 100%;
+            flex: 1; height: 100%;
             display: flex; flex-direction: column;
             background: var(--bg-chat);
-            /* Фон телеграм паттерн (опционально) */
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%2392a1a9' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            position: relative;
         }
 
         .chat-header {
-            padding: 10px 20px; background: #fff; border-bottom: 1px solid var(--border);
+            padding: 10px 20px; border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center;
+            height: 60px;
         }
 
         #messages {
             flex: 1; overflow-y: auto; padding: 20px;
-            display: flex; flex-direction: column; gap: 5px;
+            display: flex; flex-direction: column; gap: 10px;
         }
 
         .message {
-            max-width: 60%; padding: 8px 12px; border-radius: 8px;
-            font-size: 0.95rem; line-height: 1.4;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        .message.me {
-            background: var(--msg-me); align-self: flex-end; /* Справа */
-        }
-        .message.other {
-            background: var(--msg-other); align-self: flex-start; /* Слева */
+            max-width: 60%; padding: 10px 15px; border-radius: 10px;
+            font-size: 0.95rem; line-height: 1.4; position: relative;
         }
         
-        .msg-meta {
-            display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;
+        /* СВОИ (Красные) */
+        .message.me {
+            background: var(--msg-me); 
+            color: var(--msg-me-text);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
         }
-        .msg-name { font-weight: bold; color: var(--primary); font-size: 0.8rem; cursor: pointer; }
-        .msg-time { font-size: 0.7rem; color: #999; }
+        
+        /* ЧУЖИЕ (Серые/Белые) */
+        .message.other {
+            background: var(--msg-other);
+            color: var(--msg-other-text);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg-name {
+            font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; display: block;
+            color: inherit; opacity: 0.8; cursor: pointer;
+        }
 
         .input-area {
-            padding: 10px 20px; background: #fff; display: flex; gap: 10px;
-            align-items: center;
+            padding: 15px; border-top: 1px solid var(--border);
+            display: flex; gap: 10px; align-items: center;
         }
         
-        /* Мобильная адаптация */
+        #btn-send {
+            background: none; border: none; color: var(--primary); 
+            font-size: 1.5rem; cursor: pointer; padding: 0 10px;
+        }
+
+        /* АДАПТИВНОСТЬ */
         @media (max-width: 700px) {
-            #sidebar { width: 100%; display: flex; } /* На мобилках сначала видно список */
-            #main-chat { display: none; width: 100%; } /* Чат скрыт */
+            #sidebar { width: 100%; display: flex; }
+            #main-chat { display: none; width: 100%; }
             
             body.chat-open #sidebar { display: none; }
             body.chat-open #main-chat { display: flex; }
+            
+            #btn-back { display: block !important; margin-right: 10px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 1. ПАНЕЛЬ ВХОДА -->
+    <!-- 1. ВХОД -->
     <div id="login-panel" class="full-screen-panel">
-        <h1 style="color: var(--primary); font-size: 2rem;">NARRATORS</h1>
-        <p style="color: #666; margin-bottom: 20px;">Secure Messenger</p>
+        <h1>NARRATORS</h1>
+        <p style="color: #888; margin-bottom: 30px;">AUTHORIZATION REQUIRED</p>
         <button id="btn-login" class="btn-primary">ВОЙТИ ЧЕРЕЗ GOOGLE</button>
     </div>
 
-    <!-- 2. ПАНЕЛЬ РЕГИСТРАЦИИ (Если нет юзернейма) -->
+    <!-- 2. РЕГИСТРАЦИЯ ПРОФИЛЯ -->
     <div id="reg-panel" class="full-screen-panel" style="display: none;">
-        <h2>Настройка профиля</h2>
-        <p style="color: #666; margin-bottom: 20px;">Как вас будут видеть другие?</p>
+        <h1>IDENTITY</h1>
+        <p style="color: #666; margin-bottom: 20px;">Создайте свой идентификатор</p>
         
-        <input type="text" id="reg-nick" placeholder="Имя (Nick)" maxlength="20">
-        <input type="text" id="reg-tag" placeholder="@username (для поиска)" maxlength="15">
-        <button id="btn-save-profile" class="btn-primary">СОХРАНИТЬ И ВОЙТИ</button>
+        <input type="text" id="reg-nick" placeholder="Отображаемое имя (Nick)" maxlength="20">
+        <input type="text" id="reg-tag" placeholder="@username (Уникальный тег)" maxlength="15">
+        <button id="btn-save-profile" class="btn-primary">ПОДТВЕРДИТЬ</button>
     </div>
 
-    <!-- 3. ОСНОВНОЕ ПРИЛОЖЕНИЕ -->
+    <!-- 3. ИНТЕРФЕЙС -->
     <div id="app-layout">
         
-        <!-- СЛЕВА: СПИСОК -->
+        <!-- SIDEBAR -->
         <div id="sidebar">
             <div class="sidebar-header">
-                <input type="text" class="search-box" placeholder="Поиск людей (@tag)..." id="search-input">
+                <input type="text" class="search-box" placeholder="Поиск @user..." id="search-input">
             </div>
+            
             <div class="chat-list" id="chat-list">
-                <!-- Временная заглушка общего чата -->
-                <div class="chat-item active" onclick="openGlobalChat()">
-                    <div class="avatar" style="background: linear-gradient(45deg, #ff0033, #3390ec);">N</div>
+                <!-- Общий чат -->
+                <div class="chat-item active" onclick="openChat()">
+                    <div class="avatar red">G</div>
                     <div class="chat-info">
-                        <div style="font-weight: bold;">Global Chat</div>
-                        <div style="font-size: 0.8rem; color: #777;">Общий чат сервера</div>
+                        <div style="font-weight: bold;">Global Channel</div>
+                        <div style="font-size: 0.8rem; color: #888;">Общий поток данных</div>
                     </div>
                 </div>
-                <!-- Сюда будут падать результаты поиска -->
             </div>
-            <div style="padding: 10px; border-top: 1px solid #ddd; text-align: center;">
-                 <span id="my-username-display" style="font-size: 0.8rem; color: #777;">@loading...</span>
+            
+            <div style="padding: 15px; border-top: 1px solid var(--border); text-align: center;">
+                 <span id="my-tag-display" style="font-weight:bold; color: var(--primary);">Loading...</span>
             </div>
         </div>
 
-        <!-- СПРАВА: ЧАТ -->
+        <!-- MAIN CHAT -->
         <div id="main-chat">
             <div class="chat-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button id="btn-back" style="display:none; background:none; border:none; font-size:1.5rem;">⬅</button> <!-- Кнопка назад для мобилок -->
-                    <div class="avatar" style="width:35px; height:35px; font-size:1rem; background: var(--primary);">G</div>
-                    <div style="font-weight:bold;">Global Chat</div>
+                <div style="display:flex; align-items:center;">
+                    <button id="btn-back" style="display:none; border:none; background:none; font-size:1.5rem; color:var(--text-main);">⬅</button>
+                    <div style="font-weight:bold; font-size: 1.1rem; color: var(--primary);">// GLOBAL CHANNEL</div>
                 </div>
-                <button id="btn-logout" style="border:none; background:none; cursor:pointer;">🚪</button>
+                <button id="btn-logout" style="border:none; background:none; cursor:pointer; font-size:1.2rem;" title="Выйти">🚪</button>
             </div>
 
             <div id="messages"></div>
 
             <div class="input-area">
-                <button id="btn-attach" style="border:none; background:none; font-size:1.2rem; cursor:pointer;">📷</button>
-                <input type="text" id="msg-input" placeholder="Написать сообщение..." style="flex:1; margin:0;">
-                <button id="btn-send" style="border:none; background:none; color:var(--primary); font-size:1.5rem; cursor:pointer;">➤</button>
+                <button id="btn-attach" style="border:none; background:none; font-size:1.3rem; cursor:pointer; opacity: 0.6;">📷</button>
+                <input type="text" id="msg-input" placeholder="Введите сообщение..." style="flex:1; margin:0; border-radius: 20px;">
+                <button id="btn-send">➤</button>
             </div>
         </div>
     </div>
 
+    <!-- SCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // ТВОЙ КОНФИГ
+        // КОНФИГ
         const firebaseConfig = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
             authDomain: "narrators-messenger.firebaseapp.com",
@@ -234,177 +251,158 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // ЭЛЕМЕНТЫ
         const els = {
-            loginPanel: document.getElementById('login-panel'),
-            regPanel: document.getElementById('reg-panel'),
-            appLayout: document.getElementById('app-layout'),
-            
+            login: document.getElementById('login-panel'),
+            reg: document.getElementById('reg-panel'),
+            app: document.getElementById('app-layout'),
             btnLogin: document.getElementById('btn-login'),
-            btnSaveProfile: document.getElementById('btn-save-profile'),
-            btnLogout: document.getElementById('btn-logout'),
-            
-            regNick: document.getElementById('reg-nick'),
-            regTag: document.getElementById('reg-tag'),
-            
-            myTagDisplay: document.getElementById('my-username-display'),
-            
-            input: document.getElementById('msg-input'),
+            btnReg: document.getElementById('btn-save-profile'),
+            btnOut: document.getElementById('btn-logout'),
+            inputNick: document.getElementById('reg-nick'),
+            inputTag: document.getElementById('reg-tag'),
+            myTag: document.getElementById('my-tag-display'),
+            msgList: document.getElementById('messages'),
+            msgInput: document.getElementById('msg-input'),
             btnSend: document.getElementById('btn-send'),
             btnAttach: document.getElementById('btn-attach'),
-            messages: document.getElementById('messages'),
-            
             btnBack: document.getElementById('btn-back')
         };
 
-        let currentUser = null;
+        let user = null;
         let userData = null;
 
-        // 1. ЛОГИКА ВХОДА
+        // --- AUTH ---
         els.btnLogin.addEventListener('click', () => signInWithPopup(auth, provider));
-        els.btnLogout.addEventListener('click', () => signOut(auth));
+        els.btnOut.addEventListener('click', () => signOut(auth));
 
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
             if (user) {
-                els.loginPanel.style.display = 'none';
+                // Скрываем вход, показываем загрузку (или просто белый фон на сек)
+                els.login.style.display = 'none';
                 
-                // Проверяем, есть ли профиль в базе
-                const userRef = doc(db, "users", user.uid);
-                const userSnap = await getDoc(userRef);
+                try {
+                    // Ищем профиль в базе
+                    const docRef = doc(db, "users", user.uid);
+                    const docSnap = await getDoc(docRef);
 
-                if (userSnap.exists()) {
-                    // Профиль есть -> запускаем апп
-                    userData = userSnap.data();
-                    startApp();
-                } else {
-                    // Профиля нет -> показываем регистрацию
-                    els.regPanel.style.display = 'flex';
-                    // Предзаполняем ник из гугла
-                    els.regNick.value = user.displayName;
+                    if (docSnap.exists()) {
+                        // Профиль есть -> открываем чат
+                        userData = docSnap.data();
+                        initApp();
+                    } else {
+                        // Профиля нет -> открываем регистрацию
+                        els.reg.style.display = 'flex';
+                        els.inputNick.value = user.displayName;
+                    }
+                } catch (e) {
+                    console.error("Ошибка получения профиля:", e);
+                    // Если ошибка (например, нет прав) - всё равно покажем чат, но без ника
+                    userData = { displayName: user.displayName, usernameDisplay: 'anon' };
+                    initApp(); 
                 }
             } else {
-                // Вышел
-                els.loginPanel.style.display = 'flex';
-                els.regPanel.style.display = 'none';
-                els.appLayout.style.display = 'none';
+                // Вышли
+                els.login.style.display = 'flex';
+                els.reg.style.display = 'none';
+                els.app.style.display = 'none';
             }
         });
 
-        // 2. ЛОГИКА РЕГИСТРАЦИИ
-        els.btnSaveProfile.addEventListener('click', async () => {
-            const nick = els.regNick.value.trim();
-            let tag = els.regTag.value.trim();
-            
-            if (nick.length < 2 || tag.length < 2) {
-                alert("Слишком короткое имя или тег!");
-                return;
-            }
-            // Убираем @ если пользователь сам написал
-            tag = tag.replace('@', '');
+        // --- REGISTRATION ---
+        els.btnReg.addEventListener('click', async () => {
+            const nick = els.inputNick.value.trim();
+            let tag = els.inputTag.value.trim().replace('@', '');
+            if(nick.length < 1 || tag.length < 1) return alert('Заполните поля!');
 
             try {
-                // Сохраняем в базу users
-                await setDoc(doc(db, "users", currentUser.uid), {
+                const newData = {
                     displayName: nick,
-                    username: tag.toLowerCase(), // для поиска
                     usernameDisplay: tag,
-                    photoURL: currentUser.photoURL,
-                    uid: currentUser.uid,
-                    createdAt: serverTimestamp()
-                });
-                
-                userData = { displayName: nick, usernameDisplay: tag };
-                els.regPanel.style.display = 'none';
-                startApp();
-                
+                    username: tag.toLowerCase(),
+                    uid: user.uid,
+                    photoURL: user.photoURL
+                };
+                await setDoc(doc(db, "users", user.uid), newData);
+                userData = newData;
+                els.reg.style.display = 'none';
+                initApp();
             } catch (e) {
                 console.error(e);
-                alert("Ошибка сохранения профиля");
+                alert("Ошибка сохранения. Проверь консоль.");
             }
         });
 
-        // 3. ЗАПУСК ПРИЛОЖЕНИЯ
-        function startApp() {
-            els.appLayout.style.display = 'flex';
-            els.myTagDisplay.innerText = '@' + userData.usernameDisplay;
-            loadMessages(); // Пока грузим общий чат
+        // --- APP LOGIC ---
+        function initApp() {
+            els.app.style.display = 'flex';
+            els.myTag.innerText = '@' + (userData.usernameDisplay || 'user');
+            loadChat();
         }
 
-        // 4. ОТПРАВКА СООБЩЕНИЙ
-        async function sendMessage(text) {
-            if (!text || !currentUser) return;
+        async function sendMsg(txt) {
+            if(!txt || !user) return;
             try {
                 await addDoc(collection(db, "messages"), {
-                    text: text,
-                    uid: currentUser.uid,
-                    displayName: userData.displayName || currentUser.displayName, // Используем Ник из базы
-                    username: userData.usernameDisplay || 'anon', // Тег
+                    text: txt,
+                    uid: user.uid,
+                    displayName: userData.displayName,
+                    username: userData.usernameDisplay,
                     createdAt: serverTimestamp()
                 });
             } catch (e) { console.error(e); }
         }
 
         els.btnSend.addEventListener('click', () => {
-            const txt = els.input.value.trim();
-            if(txt) { sendMessage(txt); els.input.value = ''; }
+            const val = els.msgInput.value.trim();
+            if(val) { sendMsg(val); els.msgInput.value = ''; }
         });
-        
-        els.input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const txt = els.input.value.trim();
-                if(txt) { sendMessage(txt); els.input.value = ''; }
+        els.msgInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                const val = els.msgInput.value.trim();
+                if(val) { sendMsg(val); els.msgInput.value = ''; }
             }
         });
-
-        // Картинки (просто ссылкой)
         els.btnAttach.addEventListener('click', () => {
-            const url = prompt("Вставьте ссылку на картинку:");
-            if (url) sendMessage(url);
+            const url = prompt("URL картинки:");
+            if(url) sendMsg(url);
         });
 
-        // 5. ЗАГРУЗКА ЧАТА (РЕНДЕР)
-        function loadMessages() {
+        function loadChat() {
             const q = query(collection(db, "messages"), orderBy("createdAt", "asc"), limit(50));
-            onSnapshot(q, (snapshot) => {
-                els.messages.innerHTML = '';
-                snapshot.forEach((doc) => {
-                    const msg = doc.data();
-                    const isMe = msg.uid === currentUser.uid;
-                    
+            onSnapshot(q, (snap) => {
+                els.msgList.innerHTML = '';
+                snap.forEach(d => {
+                    const m = d.data();
+                    const isMe = m.uid === user.uid;
                     const div = document.createElement('div');
                     div.className = `message ${isMe ? 'me' : 'other'}`;
                     
-                    // Обработка картинок
-                    let content = msg.text;
-                    if (content.match(/\.(jpeg|jpg|gif|png|webp)/i) || content.startsWith('http')) {
+                    let content = m.text;
+                    if(content.match(/\.(jpg|jpeg|png|gif)/i) || content.startsWith('http')) {
                          if(content.startsWith('http')) content = `<img src="${content}" style="max-width:100%; border-radius:5px; margin-top:5px;">`;
                     }
-
+                    
                     div.innerHTML = `
-                        <div class="msg-meta">
-                            <span class="msg-name" onclick="alert('Это пользователь @${msg.username}')">${msg.displayName}</span>
-                        </div>
-                        <div class="msg-text">${content}</div>
+                        <span class="msg-name" onclick="alert('@${m.username}')">${m.displayName || 'Anon'}</span>
+                        ${content}
                     `;
-                    els.messages.appendChild(div);
+                    els.msgList.appendChild(div);
                 });
-                els.messages.scrollTop = els.messages.scrollHeight;
+                els.msgList.scrollTop = els.msgList.scrollHeight;
             });
         }
 
-        // МОБИЛЬНАЯ НАВИГАЦИЯ
-        // (Для упрощения: пока просто открывает чат сразу. Кнопка "Назад" - закрывает чат и показывает список)
-        window.openGlobalChat = function() {
-            if (window.innerWidth <= 700) {
+        // Mobile Nav
+        window.openChat = () => {
+            if(window.innerWidth <= 700) {
                 document.body.classList.add('chat-open');
                 els.btnBack.style.display = 'block';
             }
         };
-
         els.btnBack.addEventListener('click', () => {
-             document.body.classList.remove('chat-open');
-             els.btnBack.style.display = 'none';
+            document.body.classList.remove('chat-open');
+            els.btnBack.style.display = 'none';
         });
 
     </script>
