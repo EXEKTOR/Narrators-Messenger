@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Narrators Messenger v0.1.1 Hotfix</title>
+    <title>Narrators v0.1.2 Guest Entry</title>
     <style>
         :root {
             /* --- THEME DEFAULTS --- */
@@ -47,7 +47,13 @@
             padding: 14px 28px; background: var(--primary); color: #fff; 
             border-radius: 10px; font-weight: 600; font-size: 1rem; 
             box-shadow: 0 4px 15px rgba(51, 144, 236, 0.3);
-            text-transform: uppercase; letter-spacing: 0.5px;
+            text-transform: uppercase; letter-spacing: 0.5px; width: 100%;
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5; color: #333; padding: 12px 20px;
+            border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+            width: 100%; margin-top: 10px;
         }
 
         input, textarea { font-family: inherit; }
@@ -56,18 +62,33 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
 
-        /* AUTH SCREEN */
+        /* AUTH SCREEN (UPDATED) */
         .panel { 
             position: fixed; top:0; left:0; width:100%; height:100%; 
             background: #fff; display: flex; flex-direction: column; 
             justify-content: center; align-items: center; z-index: 5000; 
+            padding: 20px;
         }
+        
+        .auth-container {
+            width: 100%; max-width: 320px;
+            display: flex; flex-direction: column; gap: 10px;
+            text-align: center;
+        }
+
         .auth-input { 
             padding: 14px; border: 1px solid var(--border); 
-            border-radius: 10px; width: 300px; margin-bottom: 15px; 
-            font-size: 1rem; outline: none; background: #f5f5f5;
+            border-radius: 10px; width: 100%; font-size: 1rem; 
+            outline: none; background: #f9f9f9;
         }
         .auth-input:focus { border-color: var(--primary); background: #fff; }
+
+        .divider {
+            display: flex; align-items: center; color: #888; font-size: 0.8rem; margin: 15px 0;
+        }
+        .divider::before, .divider::after {
+            content: ""; flex: 1; height: 1px; background: #eee; margin: 0 10px;
+        }
 
         /* APP LAYOUT */
         #app { display: none; width: 100%; height: 100%; display: flex; opacity: 0; transition: opacity 0.5s ease; }
@@ -190,20 +211,32 @@
 </head>
 <body>
 
-    <!-- AUTH -->
+    <!-- AUTH PANEL (UPDATED) -->
     <div id="auth-panel" class="panel">
         <h1 style="color:var(--primary); font-size:2.5rem; margin-bottom:10px;">Narrators</h1>
-        <p style="color:#777; margin-bottom:30px;">v0.1.1 Hotfix</p>
-        <button id="btn-login" class="btn-primary">ВОЙТИ ЧЕРЕЗ GOOGLE</button>
+        <p style="color:#777; margin-bottom:30px;">Demo Release v0.1</p>
+        
+        <div class="auth-container">
+            <!-- GUEST / NICKNAME FORM -->
+            <input id="guest-nick" class="auth-input" placeholder="Никнейм">
+            <input id="guest-tag" class="auth-input" placeholder="@username">
+            <button id="btn-guest" class="btn-primary">ВОЙТИ</button>
+
+            <!-- DIVIDER -->
+            <div class="divider">или</div>
+
+            <!-- GOOGLE -->
+            <button id="btn-google" class="btn-secondary">Войти через Google</button>
+        </div>
     </div>
 
-    <!-- REGISTRATION -->
+    <!-- GOOGLE REGISTRATION (HIDDEN) -->
     <div id="reg-panel" class="panel" style="display:none;">
-        <h2 style="margin-bottom:20px;">Новый профиль</h2>
+        <h2 style="margin-bottom:20px;">Настройка профиля</h2>
         <input id="in-nick" class="auth-input" placeholder="Имя">
         <input id="in-tag" class="auth-input" placeholder="@username">
         <input id="in-ava" class="auth-input" placeholder="URL Аватарки">
-        <button id="btn-reg" class="btn-primary">СОЗДАТЬ</button>
+        <button id="btn-reg" class="btn-primary">ГОТОВО</button>
     </div>
 
     <!-- APP -->
@@ -314,7 +347,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, set, push, onValue, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const config = {
@@ -332,9 +365,8 @@
             app = initializeApp(config);
             auth = getAuth(app);
             db = getDatabase(app);
-            console.log("Firebase Init OK");
         } catch (e) {
-            alert("Ошибка Firebase: " + e.message);
+            alert("Firebase Error: " + e.message);
         }
 
         let user = null;
@@ -353,17 +385,37 @@
             replyBar: document.getElementById('reply-bar')
         };
 
-        // --- AUTH ---
-        const btnLogin = document.getElementById('btn-login');
-        if(btnLogin) {
-            btnLogin.onclick = () => {
-                console.log("Login clicked");
-                signInWithPopup(auth, new GoogleAuthProvider()).catch(e => alert("Ошибка входа: " + e.message));
-            };
-        }
+        // --- AUTH LOGIC ---
+        
+        // 1. GUEST ENTRY
+        document.getElementById('btn-guest').onclick = () => {
+            const nick = document.getElementById('guest-nick').value.trim();
+            const tag = document.getElementById('guest-tag').value.trim().replace('@','');
+            
+            if(!nick || !tag) return alert('Введите Ник и Тег!');
+            
+            // Входим анонимно
+            signInAnonymously(auth).then((result) => {
+                // Сразу сохраняем профиль (чтобы не вылезала рега)
+                const newData = {
+                    displayName: nick,
+                    username: tag.toLowerCase(),
+                    usernameDisplay: tag,
+                    photoURL: '',
+                    uid: result.user.uid
+                };
+                return set(ref(db, `users/${result.user.uid}`), newData);
+            }).catch(e => alert("Ошибка входа: " + e.message));
+        };
+
+        // 2. GOOGLE ENTRY
+        document.getElementById('btn-google').onclick = () => {
+            signInWithPopup(auth, new GoogleAuthProvider()).catch(e => alert("Ошибка Google: " + e.message));
+        };
         
         window.doLogout = () => { if(confirm('Выйти?')) signOut(auth); };
 
+        // 3. AUTH STATE LISTENER
         onAuthStateChanged(auth, u => {
             user = u;
             if (user) {
@@ -373,13 +425,10 @@
                         profile = snap.val();
                         startApp();
                     } else {
+                        // Если зашел через Гугл впервые - показываем регу
                         ui.reg.style.display = 'flex';
                         document.getElementById('in-nick').value = user.displayName || '';
                     }
-                }).catch(e => {
-                    console.error("DB Error", e);
-                    // Fallback if DB fail (e.g. rules)
-                    ui.reg.style.display = 'flex';
                 });
             } else {
                 ui.auth.style.display = 'flex';
@@ -389,6 +438,7 @@
             }
         });
 
+        // 4. GOOGLE REGISTRATION SAVE
         document.getElementById('btn-reg').onclick = () => {
             const nick = document.getElementById('in-nick').value.trim();
             const tag = document.getElementById('in-tag').value.trim().replace('@','');
@@ -414,14 +464,14 @@
             ui.app.style.display = 'flex';
             setTimeout(()=>ui.app.classList.add('visible'), 50);
             
-            document.getElementById('my-ava').src = profile.photoURL || '';
+            document.getElementById('my-ava').src = profile.photoURL || 'https://via.placeholder.com/50';
             document.getElementById('my-name').innerText = profile.displayName;
             document.getElementById('my-tag').innerText = '@' + profile.usernameDisplay;
             
             if(profile.usernameDisplay === 'admin') isAdmin = true;
 
             loadMessages();
-            try { loadLocalTheme(); } catch(e) { console.error("Theme load err", e); }
+            try { loadLocalTheme(); } catch(e) {}
         }
 
         // --- THEME ---
