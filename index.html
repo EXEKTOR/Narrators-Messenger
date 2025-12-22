@@ -3,201 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NARRATORS // ADMIN V9</title>
+    <title>NARRATORS // V10 ULTIMATE</title>
     <style>
         :root {
-            /* Переменные темы (меняются через настройки) */
-            --bg-body: #ffffff;
-            --bg-sidebar: #f5f5f5;
-            --bg-chat: #ffffff;
-            --primary: #ff0033;
-            --text-main: #222222;
-            --border: #e0e0e0;
-            --msg-me: #ff0033;
-            --msg-me-text: #ffffff;
-            --msg-other: #f2f2f2;
+            /* --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ --- */
+            --bg-body: #ffffff;      /* Общий фон */
+            --bg-sidebar: #ffffff;   /* Фон меню */
+            --primary: #3390ec;      /* Акцент (Кнопки, иконки) - по умолчанию синий ТГ */
+            --text-main: #000000;
+            --text-sec: #707579;
+            --border: #dfe1e5;
+
+            /* Сообщения */
+            --msg-me-bg: #eeffde;    /* Фон моего сообщения */
+            --msg-me-text: #000000;
+            --msg-other-bg: #ffffff; /* Фон чужого */
             --msg-other-text: #000000;
         }
 
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; overflow: hidden; color: var(--text-main); background: var(--bg-body); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; overflow: hidden; background: var(--bg-body); color: var(--text-main); }
+        
+        /* Скроллбар */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
 
-        /* --- ЭКРАНЫ --- */
-        .panel { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-chat); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:2000; }
-        
-        button { cursor: pointer; border: none; outline: none; transition: 0.2s; }
-        .btn-primary { padding:12px 24px; background:var(--primary); color:#fff; border-radius:6px; font-weight:bold; text-transform:uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .btn-primary:active { transform: scale(0.95); }
-        
-        input { padding:12px; border:1px solid var(--border); width:300px; margin-bottom:15px; border-radius:6px; outline:none; background: #fff; color: #000; }
-        input:focus { border-color: var(--primary); }
+        /* --- ЭКРАНЫ ВХОДА --- */
+        .panel { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:5000; }
+        .btn-main { padding:14px 28px; background:var(--primary); color:#fff; border:none; border-radius:8px; font-weight:600; font-size:1rem; cursor:pointer; transition:0.2s; text-transform: uppercase; }
+        .btn-main:active { transform: scale(0.98); opacity: 0.9; }
+        input.auth-input { padding:12px; border:1px solid var(--border); width:280px; margin-bottom:15px; border-radius:8px; outline:none; font-size:1rem; transition:0.2s; }
+        input.auth-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(51, 144, 236, 0.1); }
 
-        /* --- ОСНОВНОЙ ЛЕЙАУТ --- */
-        #app { display:none; width:100%; height:100%; }
-        
-        /* Боковая панель (Фиксированная ширина!) */
-        #sidebar { 
-            flex: 0 0 320px; /* Жестко 320px, не сжиматься */
-            background:var(--bg-sidebar); 
-            border-right:1px solid var(--border); 
-            display:flex; flex-direction:column; 
+        /* --- ОСНОВНОЙ ИНТЕРФЕЙС --- */
+        #app { display:none; width:100%; height:100%; position: relative; }
+
+        /* БОКОВОЕ МЕНЮ (DRAWER) */
+        #drawer-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.5); z-index: 3000; 
+            opacity: 0; pointer-events: none; transition: 0.3s;
         }
-        
-        .sidebar-header { padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-        .chat-list { flex:1; overflow-y:auto; }
-        .chat-item { padding:15px 20px; display:flex; gap:15px; cursor:pointer; align-items:center; transition:0.2s; border-bottom: 1px solid transparent; }
-        .chat-item:hover { background:rgba(0,0,0,0.05); }
-        .chat-item.active { background:#fff; border-left: 4px solid var(--primary); }
-        
-        .avatar { width:50px; height:50px; background:#ccc; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold; color:#fff; font-size: 1.2rem; flex-shrink: 0; }
-        .avatar.red { background: linear-gradient(135deg, var(--primary), #cc0000); }
+        #drawer-overlay.open { opacity: 1; pointer-events: all; }
 
-        /* ЧАТ */
-        #chat { flex:1; display:flex; flex-direction:column; background:var(--bg-chat); min-width: 0; /* Важно для flex */ position: relative; }
-        
-        .chat-header { 
-            height:65px; border-bottom:1px solid var(--border); 
-            display:flex; justify-content:space-between; align-items:center; 
-            padding:0 20px; background: var(--bg-chat);
+        #drawer {
+            position: fixed; top:0; left:0; width: 280px; height: 100%;
+            background: var(--bg-sidebar); z-index: 3001;
+            transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
+        #drawer.open { transform: translateX(0); }
 
-        /* Кнопки управления */
-        .header-btn { background:none; font-size:1.4rem; padding:5px; color: var(--text-main); margin-left: 10px; }
-        .header-btn:hover { opacity: 0.7; }
-
-        /* Сообщения */
-        #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:8px; }
-        
-        .msg-row { display: flex; flex-direction: column; max-width: 75%; position: relative; }
-        .msg-row.me { align-self: flex-end; align-items: flex-end; }
-        .msg-row.other { align-self: flex-start; align-items: flex-start; }
-
-        .msg-bubble { 
-            padding:10px 16px; border-radius:12px; font-size:0.95rem; word-wrap:break-word; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative;
+        .drawer-header {
+            padding: 20px; background: var(--primary); color: #fff;
+            display: flex; flex-direction: column; gap: 10px;
         }
-        
-        .msg-row.me .msg-bubble { background:var(--msg-me); color:var(--msg-me-text); border-bottom-right-radius: 2px; }
-        .msg-row.other .msg-bubble { background:var(--msg-other); color:var(--msg-other-text); border-bottom-left-radius: 2px; }
+        .drawer-avatar { width: 60px; height: 60px; border-radius: 50%; background: #fff; object-fit: cover; }
+        .drawer-info div:first-child { font-weight: bold; font-size: 1.1rem; }
+        .drawer-info div:last-child { font-size: 0.9rem; opacity: 0.8; }
 
-        .msg-name { 
-            font-size:0.75rem; font-weight:bold; margin-bottom:4px; opacity:0.8; 
-            cursor:pointer; display: flex; align-items: center; gap: 5px;
+        .drawer-menu { flex: 1; padding: 10px 0; overflow-y: auto; }
+        .drawer-item {
+            padding: 15px 20px; cursor: pointer; display: flex; align-items: center; gap: 15px; font-weight: 500;
         }
-        
-        /* Иконка Админа */
-        .admin-badge { color: gold; font-size: 1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .drawer-item:hover { background: rgba(0,0,0,0.05); }
+        .drawer-item i { width: 24px; text-align: center; color: var(--text-sec); }
 
-        /* Кнопка удаления (только для админа) */
-        .btn-delete {
-            position: absolute; top: -10px; right: -10px;
-            background: red; color: white; width: 20px; height: 20px;
-            border-radius: 50%; font-size: 12px; display: flex; justify-content: center; align-items: center;
-            cursor: pointer; display: none; /* Скрыто по умолчанию */
-            z-index: 10;
+        /* ЧАТ ЛЕЙАУТ */
+        #chat-container { flex: 1; display: flex; flex-direction: column; background: var(--bg-body); position: relative; }
+
+        /* Хедер */
+        .chat-header {
+            height: 56px; display: flex; align-items: center; padding: 0 15px;
+            background: #fff; border-bottom: 1px solid var(--border); gap: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        /* Показываем кнопку удаления только если добавлен класс admin-mode */
-        body.is-admin .btn-delete { display: flex; }
-
-        /* Ввод */
-        .input-box { padding:15px; border-top:1px solid var(--border); display:flex; gap:10px; align-items: center; background: var(--bg-chat); }
-        #msg-in { flex:1; margin:0; border-radius: 20px; padding: 10px 20px; }
+        .burger-btn { font-size: 1.5rem; cursor: pointer; color: var(--text-sec); padding: 5px; background: none; border: none; }
+        .chat-title { font-weight: bold; font-size: 1.1rem; flex: 1; }
         
-        /* Модалка настроек */
+        /* Список сообщений */
+        #messages { flex: 1; overflow-y: auto; padding: 10px 0; display: flex; flex-direction: column; gap: 6px; }
+
+        .msg-row { 
+            display: flex; padding: 0 10px; max-width: 100%; 
+            position: relative; align-items: flex-end; gap: 8px;
+        }
+        .msg-row.me { justify-content: flex-end; }
+        
+        .msg-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 2px; }
+        .msg-row.me .msg-avatar { display: none; } /* Свою аватарку в чате не показываем (как в ТГ) */
+
+        .msg-bubble {
+            max-width: 480px; padding: 8px 12px; border-radius: 12px;
+            position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            font-size: 1rem; line-height: 1.4; word-wrap: break-word;
+        }
+        .msg-row.other .msg-bubble { background: var(--msg-other-bg); color: var(--msg-other-text); border-bottom-left-radius: 2px; }
+        .msg-row.me .msg-bubble { background: var(--msg-me-bg); color: var(--msg-me-text); border-bottom-right-radius: 2px; }
+
+        /* Имя, Реплай, Мета */
+        .msg-name { font-size: 0.8rem; font-weight: 600; color: var(--primary); margin-bottom: 2px; cursor: pointer; }
+        .admin-crown { color: #FFD700; margin-left: 4px; }
+        
+        .reply-quote {
+            border-left: 2px solid var(--primary); background: rgba(0,0,0,0.05);
+            padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin-bottom: 6px;
+            cursor: pointer; display: flex; flex-direction: column;
+        }
+        .reply-name { color: var(--primary); font-weight: 600; font-size: 0.75rem; }
+        .reply-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
+
+        .msg-meta { 
+            float: right; margin-left: 10px; margin-top: 6px; 
+            font-size: 0.7rem; color: rgba(0,0,0,0.4); display: flex; align-items: center; gap: 4px;
+        }
+        .msg-row.me .msg-meta { color: rgba(0,0,0,0.4); } /* Цвет времени на своих */
+
+        /* Панель ввода */
+        #input-container { background: #fff; border-top: 1px solid var(--border); padding: 8px 12px; display: flex; flex-direction: column; }
+        
+        /* Панель "Ответ / Редактирование" */
+        #action-bar { 
+            display: none; padding: 8px; border-bottom: 1px solid var(--border); 
+            background: #f9f9f9; align-items: center; justify-content: space-between; 
+            border-left: 3px solid var(--primary); margin-bottom: 5px;
+        }
+        .action-info { display: flex; flex-direction: column; font-size: 0.9rem; }
+        .action-title { color: var(--primary); font-weight: bold; font-size: 0.8rem; }
+        .btn-close-action { background: none; border: none; font-size: 1.2rem; color: #777; cursor: pointer; }
+
+        .input-row { display: flex; align-items: flex-end; gap: 10px; }
+        #msg-input { 
+            flex: 1; border: none; outline: none; padding: 10px; font-size: 1rem; 
+            max-height: 100px; overflow-y: auto; resize: none; background: transparent;
+        }
+        .icon-btn { font-size: 1.5rem; color: var(--text-sec); cursor: pointer; background: none; border: none; padding: 5px; transition: 0.2s; }
+        .icon-btn:hover { color: var(--primary); }
+        .icon-btn.send { color: var(--primary); }
+
+        /* --- КОНТЕКСТНОЕ МЕНЮ (ПКМ) --- */
+        #context-menu {
+            display: none; position: fixed; background: #fff; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-radius: 8px; 
+            z-index: 10000; padding: 6px 0; min-width: 160px;
+        }
+        .ctx-item { 
+            padding: 10px 16px; font-size: 0.95rem; cursor: pointer; display: flex; gap: 10px; align-items: center; 
+        }
+        .ctx-item:hover { background: #f0f0f0; }
+        .ctx-item.delete { color: #ff3b30; }
+
+        /* --- НАСТРОЙКИ (МОДАЛКА) --- */
         #settings-modal {
-            display: none; position: absolute; top: 70px; right: 20px;
-            background: #fff; border: 1px solid var(--border); padding: 20px;
-            border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); width: 250px; z-index: 3000;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 4000; justify-content: center; align-items: center;
         }
-        .set-row { margin-bottom: 10px; }
-        .set-row label { display: block; font-size: 0.8rem; color: #777; margin-bottom: 5px; }
-        .set-row input { width: 100%; height: 35px; padding: 0; border: none; }
+        .modal-content {
+            background: #fff; width: 400px; max-width: 90%; border-radius: 12px;
+            padding: 20px; display: flex; flex-direction: column; gap: 15px;
+            animation: popIn 0.2s ease;
+        }
+        @keyframes popIn { from{transform: scale(0.9); opacity:0;} to{transform: scale(1); opacity:1;} }
+        
+        .preview-box {
+            background: #e0e0e0; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;
+            background-image: url("https://web.telegram.org/img/bg_0.png"); /* Тестовый фон */
+        }
+        .prev-msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 0.9rem; }
+        
+        /* Классы для превью, которые меняются JS-ом */
+        .prev-me { align-self: flex-end; }
+        .prev-other { align-self: flex-start; }
 
-        /* Мобилка */
-        @media (max-width: 700px) {
-            #sidebar { width:100%; flex: 1; }
-            #chat { display:none; width:100%; }
-            body.chat-open #sidebar { display:none; }
-            body.chat-open #chat { display:flex; }
-            #btn-back { display:block !important; }
-        }
+        .color-picker-row { display: flex; justify-content: space-between; align-items: center; }
+        input[type="color"] { border: none; width: 40px; height: 40px; cursor: pointer; background: none; }
+
     </style>
 </head>
 <body>
 
-    <!-- ВХОД -->
+    <!-- 1. ВХОД -->
     <div id="login-screen" class="panel">
-        <h1 style="color:var(--primary); font-size: 2.5rem;">NARRATORS</h1>
-        <p style="color:#888; margin-bottom: 30px;">AUTHORIZATION</p>
-        <button id="btn-login" class="btn-primary">ВОЙТИ ЧЕРЕЗ GOOGLE</button>
+        <h1 style="color:var(--primary); font-size:2rem; margin-bottom:10px;">NARRATORS</h1>
+        <p style="color:#777; margin-bottom:30px;">Messenger V10</p>
+        <button id="btn-login" class="btn-main">ВОЙТИ ЧЕРЕЗ GOOGLE</button>
     </div>
 
-    <!-- РЕГИСТРАЦИЯ (Введи @admin чтобы стать админом) -->
+    <!-- 2. РЕГИСТРАЦИЯ -->
     <div id="reg-screen" class="panel" style="display:none;">
-        <h2>Идентификация</h2>
-        <p>Для прав создателя введи тег <b>@admin</b></p>
-        <input id="reg-nick" placeholder="Имя (например: EXEKTOR)">
-        <input id="reg-tag" placeholder="@username">
-        <button id="btn-save" class="btn-primary">НАЧАТЬ</button>
+        <h2>Профиль</h2>
+        <p style="color:#777; margin-bottom:20px;">Как вас называть?</p>
+        <input id="reg-nick" class="auth-input" placeholder="Имя (Display Name)">
+        <input id="reg-tag" class="auth-input" placeholder="@username (для поиска)">
+        <button id="btn-reg-save" class="btn-main">СОХРАНИТЬ</button>
     </div>
 
-    <!-- ПРИЛОЖЕНИЕ -->
+    <!-- 3. ПРИЛОЖЕНИЕ -->
     <div id="app">
-        <!-- СЛЕВА -->
-        <div id="sidebar">
-            <div class="sidebar-header">
-                <div style="font-weight:900; color:var(--primary); font-size: 1.2rem;">NARRATORS V9</div>
-                <div style="font-size: 0.8rem; color: #888;">Realtime</div>
-            </div>
-            <div class="chat-list">
-                <div class="chat-item active" onclick="openChat()">
-                    <div class="avatar red">G</div>
-                    <div>
-                        <div style="font-weight:bold">Global Chat</div>
-                        <div style="font-size:0.8rem; color:#777">Общий сервер</div>
-                    </div>
+        
+        <!-- БОКОВОЕ МЕНЮ -->
+        <div id="drawer-overlay"></div>
+        <div id="drawer">
+            <div class="drawer-header">
+                <img src="" id="drawer-img" class="drawer-avatar">
+                <div class="drawer-info">
+                    <div id="drawer-name">User</div>
+                    <div id="drawer-tag">@username</div>
                 </div>
             </div>
-            <div style="padding:15px; text-align:center; font-size:0.8rem; color:#aaa;" id="my-profile">Loading...</div>
+            <div class="drawer-menu">
+                <div class="drawer-item" onclick="openSettings()"><i>⚙️</i> Настройки</div>
+                <div class="drawer-item" onclick="alert('Скоро!')"><i>🔍</i> Поиск людей</div>
+                <div class="drawer-item" onclick="doLogout()" style="color:#ff3b30;"><i>🚪</i> Выйти</div>
+            </div>
         </div>
 
-        <!-- СПРАВА -->
-        <div id="chat">
-            <div class="chat-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button id="btn-back" class="header-btn" style="display:none;">⬅</button>
-                    <span style="font-weight:bold">GLOBAL HUB</span>
-                </div>
-                <div>
-                    <button id="btn-settings" class="header-btn" title="Настройки">⚙️</button>
-                    <button id="btn-logout" class="header-btn" title="Выход">🚪</button>
-                </div>
-            </div>
-
-            <!-- МОДАЛКА НАСТРОЕК -->
-            <div id="settings-modal">
-                <h3>Внешний вид</h3>
-                <div class="set-row">
-                    <label>Основной цвет</label>
-                    <input type="color" id="set-primary" value="#ff0033">
-                </div>
-                <div class="set-row">
-                    <label>Фон (Свой)</label>
-                    <input type="color" id="set-me" value="#ff0033">
-                </div>
-                <div class="set-row">
-                    <label>Фон (Чужой)</label>
-                    <input type="color" id="set-other" value="#f2f2f2">
-                </div>
-                <button onclick="resetTheme()" style="width:100%; padding:5px; background:#444; color:#fff; border-radius:4px;">Сброс</button>
-            </div>
+        <!-- КОНТЕЙНЕР ЧАТА -->
+        <div id="chat-container">
+            <header class="chat-header">
+                <button class="burger-btn" onclick="toggleDrawer()">☰</button>
+                <div class="chat-title">Global Chat</div>
+            </header>
 
             <div id="messages"></div>
 
-            <div class="input-box">
-                <button id="btn-img" class="header-btn">📷</button>
-                <input id="msg-in" placeholder="Написать сообщение..." autocomplete="off">
-                <button id="btn-send" class="header-btn" style="color:var(--primary)">➤</button>
+            <div id="input-container">
+                <!-- Панель ответа/редактирования -->
+                <div id="action-bar">
+                    <div class="action-info">
+                        <span id="action-title" class="action-title">Ответ</span>
+                        <span id="action-text" class="action-text">...</span>
+                    </div>
+                    <button class="btn-close-action" onclick="cancelAction()">✕</button>
+                </div>
+
+                <div class="input-row">
+                    <button class="icon-btn" onclick="sendImgPrompt()">📷</button>
+                    <textarea id="msg-input" rows="1" placeholder="Сообщение..."></textarea>
+                    <button class="icon-btn send" id="btn-send">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. КОНТЕКСТНОЕ МЕНЮ -->
+    <div id="context-menu">
+        <div class="ctx-item" id="ctx-reply">↩ Ответить</div>
+        <div class="ctx-item" id="ctx-copy">📋 Копировать</div>
+        <div class="ctx-item" id="ctx-edit">✏ Редактировать</div>
+        <div class="ctx-item delete" id="ctx-delete">🗑 Удалить</div>
+    </div>
+
+    <!-- 5. МОДАЛКА НАСТРОЕК -->
+    <div id="settings-modal">
+        <div class="modal-content">
+            <h3>Внешний вид</h3>
+            
+            <!-- Превью -->
+            <div class="preview-box" id="prev-bg">
+                <div class="prev-msg prev-other" id="prev-bubble-other">Привет! Как дела?</div>
+                <div class="prev-msg prev-me" id="prev-bubble-me">Все супер! Настраиваю тему.</div>
+            </div>
+
+            <!-- Контроллеры -->
+            <div class="color-picker-row">
+                <label>Основной цвет (Кнопки)</label>
+                <input type="color" id="set-primary" value="#3390ec">
+            </div>
+            <div class="color-picker-row">
+                <label>Фон моих сообщений</label>
+                <input type="color" id="set-me-bg" value="#eeffde">
+            </div>
+            <div class="color-picker-row">
+                <label>Текст моих сообщений</label>
+                <input type="color" id="set-me-text" value="#000000">
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button onclick="saveTheme()" class="btn-main" style="flex:1;">СОХРАНИТЬ</button>
+                <button onclick="closeSettings()" class="btn-main" style="background:#ddd; color:#000;">ОТМЕНА</button>
             </div>
         </div>
     </div>
@@ -205,8 +289,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, set, push, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // КОНФИГ
         const config = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
             authDomain: "narrators-messenger.firebaseapp.com",
@@ -214,198 +299,373 @@
             projectId: "narrators-messenger",
             storageBucket: "narrators-messenger.firebasestorage.app",
             messagingSenderId: "421115209686",
-            appId: "1:421115209686:web:94d5560793540f14f02677",
-            measurementId: "G-XN1B0KZ5ML"
+            appId: "1:421115209686:web:94d5560793540f14f02677"
         };
 
         const app = initializeApp(config);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        
+
         let user = null;
         let profile = null;
-        let isAdmin = false; // Флаг админа
+        let isAdmin = false;
 
+        // Состояния для Reply / Edit
+        let currentAction = null; // 'reply' | 'edit'
+        let targetMsg = null; // Объект сообщения, с которым работаем
+
+        // UI Refs
         const ui = {
             login: document.getElementById('login-screen'),
             reg: document.getElementById('reg-screen'),
             app: document.getElementById('app'),
-            list: document.getElementById('messages'),
-            in: document.getElementById('msg-in'),
-            myProfile: document.getElementById('my-profile'),
+            drawer: document.getElementById('drawer'),
+            drawerOverlay: document.getElementById('drawer-overlay'),
+            input: document.getElementById('msg-input'),
+            messages: document.getElementById('messages'),
+            actionBar: document.getElementById('action-bar'),
+            actionTitle: document.getElementById('action-title'),
+            actionText: document.getElementById('action-text'),
+            ctxMenu: document.getElementById('context-menu'),
             settings: document.getElementById('settings-modal')
         };
 
         // --- AUTH ---
         document.getElementById('btn-login').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-        document.getElementById('btn-logout').onclick = () => signOut(auth);
+        window.doLogout = () => signOut(auth);
 
-        onAuthStateChanged(auth, async (u) => {
+        onAuthStateChanged(auth, (u) => {
             user = u;
             if (user) {
                 ui.login.style.display = 'none';
+                // Загружаем профиль
                 get(child(ref(db), `users/${user.uid}`)).then((snap) => {
                     if (snap.exists()) {
                         profile = snap.val();
-                        loginSuccess();
+                        // Обновляем аватарку в базе, если она сменилась в гугле
+                        if(profile.photoURL !== user.photoURL) {
+                            update(ref(db, `users/${user.uid}`), { photoURL: user.photoURL });
+                            profile.photoURL = user.photoURL;
+                        }
+                        initApp();
                     } else {
                         ui.reg.style.display = 'flex';
-                        document.getElementById('reg-nick').value = "EXEKTOR"; // Подсказка для тебя
+                        document.getElementById('reg-nick').value = user.displayName;
                     }
                 });
             } else {
                 ui.login.style.display = 'flex';
                 ui.reg.style.display = 'none';
                 ui.app.style.display = 'none';
-                document.body.classList.remove('is-admin');
             }
         });
 
-        // --- РЕГИСТРАЦИЯ ---
-        document.getElementById('btn-save').onclick = () => {
+        // --- REGISTRATION ---
+        document.getElementById('btn-reg-save').onclick = () => {
             const nick = document.getElementById('reg-nick').value.trim();
             const tag = document.getElementById('reg-tag').value.trim().replace('@','');
-            
-            if(!nick || !tag) return alert('Заполни поля!');
+            if(!nick || !tag) return alert("Заполните все поля!");
 
             const newData = {
                 displayName: nick,
                 username: tag.toLowerCase(),
                 usernameDisplay: tag,
+                photoURL: user.photoURL,
                 uid: user.uid
             };
-
-            set(ref(db, 'users/' + user.uid), newData).then(() => {
+            
+            set(ref(db, `users/${user.uid}`), newData).then(() => {
                 profile = newData;
                 ui.reg.style.display = 'none';
-                loginSuccess();
+                initApp();
             });
         };
 
-        function loginSuccess() {
-            ui.app.style.display = 'flex';
-            ui.myProfile.innerText = `${profile.displayName} (@${profile.usernameDisplay})`;
+        function initApp() {
+            ui.app.style.display = 'block';
             
-            // ПРОВЕРКА НА АДМИНА
-            if (profile.usernameDisplay === 'admin') {
-                isAdmin = true;
-                document.body.classList.add('is-admin'); // Включаем кнопку удаления в CSS
-                alert("Добро пожаловать, Создатель. Режим Администратора активирован.");
-            }
+            // Заполнение Drawer
+            document.getElementById('drawer-img').src = profile.photoURL || '';
+            document.getElementById('drawer-name').innerText = profile.displayName;
+            document.getElementById('drawer-tag').innerText = '@' + profile.usernameDisplay;
+
+            // Админка
+            if(profile.usernameDisplay.toLowerCase() === 'admin') isAdmin = true;
 
             loadMessages();
+            loadTheme();
         }
 
-        // --- ЧАТ (REALTIME) ---
-        function send(txt) {
-            if(!txt || !user) return;
-            const newRef = push(ref(db, 'messages'));
-            set(newRef, {
-                text: txt,
-                uid: user.uid,
-                displayName: profile.displayName,
-                username: profile.usernameDisplay,
-                createdAt: Date.now()
-            });
+        // --- DRAWER LOGIC ---
+        window.toggleDrawer = () => {
+            ui.drawer.classList.toggle('open');
+            ui.drawerOverlay.classList.toggle('open');
+        };
+        ui.drawerOverlay.onclick = window.toggleDrawer;
+
+        // --- MESSAGING ---
+        
+        // Отправка
+        document.getElementById('btn-send').onclick = sendMessage;
+        ui.input.onkeypress = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
+
+        function sendMessage() {
+            const txt = ui.input.value.trim();
+            if(!txt) return;
+
+            if (currentAction === 'edit' && targetMsg) {
+                // РЕДАКТИРОВАНИЕ
+                update(ref(db, `messages/${targetMsg.key}`), {
+                    text: txt,
+                    isEdited: true
+                });
+                cancelAction();
+            } else {
+                // НОВОЕ СООБЩЕНИЕ
+                const payload = {
+                    text: txt,
+                    uid: user.uid,
+                    displayName: profile.displayName,
+                    username: profile.usernameDisplay,
+                    photoURL: profile.photoURL,
+                    createdAt: Date.now()
+                };
+
+                // Если это ответ
+                if (currentAction === 'reply' && targetMsg) {
+                    payload.replyTo = {
+                        id: targetMsg.key,
+                        name: targetMsg.displayName,
+                        text: targetMsg.text
+                    };
+                }
+
+                push(ref(db, 'messages'), payload);
+                cancelAction();
+            }
+            ui.input.value = '';
         }
 
-        document.getElementById('btn-send').onclick = () => {
-            if(ui.in.value.trim()) { send(ui.in.value.trim()); ui.in.value=''; }
-        };
-        ui.in.onkeypress = (e) => {
-             if(e.key==='Enter' && ui.in.value.trim()) { send(ui.in.value.trim()); ui.in.value=''; }
-        };
-        document.getElementById('btn-img').onclick = () => {
-            const url = prompt("Ссылка на картинку:");
-            if(url) send(url);
-        };
-
-        // ФУНКЦИЯ УДАЛЕНИЯ (ТОЛЬКО ДЛЯ АДМИНА)
-        window.deleteMsg = (key) => {
-            if(confirm("Удалить это сообщение навсегда?")) {
-                remove(ref(db, 'messages/' + key));
+        window.sendImgPrompt = () => {
+            const url = prompt("Вставьте прямую ссылку на картинку:");
+            if(url) {
+                ui.input.value = url;
+                sendMessage();
             }
         };
 
+        // --- RENDER ---
         function loadMessages() {
             onValue(ref(db, 'messages'), (snapshot) => {
-                ui.list.innerHTML = '';
+                ui.messages.innerHTML = '';
                 const data = snapshot.val();
                 if(!data) return;
 
-                // Превращаем в массив с ключами (чтобы удалять)
-                const msgs = Object.entries(data).map(([key, val]) => ({ key, ...val }));
-                msgs.sort((a, b) => a.createdAt - b.createdAt);
+                const msgs = Object.entries(data).map(([k,v]) => ({key:k, ...v})).sort((a,b) => a.createdAt - b.createdAt);
 
                 msgs.forEach(m => {
                     const isMe = m.uid === user.uid;
-                    const div = document.createElement('div');
-                    div.className = `msg-row ${isMe ? 'me' : 'other'}`;
                     
-                    // Обработка имени
-                    const name = m.displayName || 'Призрак';
-                    const tag = m.username || 'anon';
+                    // Контейнер строки
+                    const row = document.createElement('div');
+                    row.className = `msg-row ${isMe ? 'me' : 'other'}`;
                     
-                    // Обработка админа (корона)
-                    let adminIcon = '';
-                    if (tag === 'admin') adminIcon = '<span class="admin-badge">👑</span>';
+                    // Аватарка (только для чужих)
+                    const ava = document.createElement('img');
+                    ava.className = 'msg-avatar';
+                    ava.src = m.photoURL || 'https://via.placeholder.com/32';
+                    if(!isMe) row.appendChild(ava);
 
-                    // Обработка картинки
-                    let txt = m.text;
-                    if(txt.startsWith('http')) txt = `<img src="${txt}" style="max-width:100%; border-radius:8px;">`;
+                    // Пузырь
+                    const bubble = document.createElement('div');
+                    bubble.className = 'msg-bubble';
+                    
+                    // Событие для контекстного меню
+                    bubble.addEventListener('contextmenu', (e) => openCtxMenu(e, m));
 
-                    // Кнопка удаления (видна только если body.is-admin)
-                    const deleteBtn = `<div class="btn-delete" onclick="deleteMsg('${m.key}')">✕</div>`;
+                    // Имя автора (у чужих)
+                    if(!isMe) {
+                        let crown = m.username === 'admin' ? '<span class="admin-crown">👑</span>' : '';
+                        bubble.innerHTML += `<div class="msg-name">${m.displayName}${crown}</div>`;
+                    }
 
-                    div.innerHTML = `
-                        <div class="msg-bubble">
-                            ${deleteBtn}
-                            <span class="msg-name" onclick="alert('@${tag}')">${name} ${adminIcon}</span>
-                            ${txt}
+                    // Ответ (Reply UI)
+                    if(m.replyTo) {
+                        bubble.innerHTML += `
+                            <div class="reply-quote">
+                                <span class="reply-name">${m.replyTo.name}</span>
+                                <span class="reply-text">${m.replyTo.text}</span>
+                            </div>
+                        `;
+                    }
+
+                    // Текст (с поддержкой картинок)
+                    let content = m.text;
+                    if(content.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        content = `<img src="${content}" style="max-width:100%; border-radius:8px; display:block;">`;
+                    }
+                    
+                    // Мета (время + изм)
+                    const date = new Date(m.createdAt);
+                    const time = date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0');
+                    const editedMark = m.isEdited ? ' (изм.)' : '';
+
+                    bubble.innerHTML += `
+                        <span>${content}</span>
+                        <div class="msg-meta">
+                            <span>${editedMark}</span>
+                            <span>${time}</span>
                         </div>
                     `;
-                    ui.list.appendChild(div);
+
+                    row.appendChild(bubble);
+                    ui.messages.appendChild(row);
                 });
-                ui.list.scrollTop = ui.list.scrollHeight;
+                ui.messages.scrollTop = ui.messages.scrollHeight;
             });
         }
 
-        // --- НАСТРОЙКИ ---
-        document.getElementById('btn-settings').onclick = () => {
-            ui.settings.style.display = ui.settings.style.display === 'block' ? 'none' : 'block';
+        // --- CONTEXT MENU ---
+        let ctxMsg = null; // Сообщение, на котором открыли меню
+
+        function openCtxMenu(e, msg) {
+            e.preventDefault();
+            ctxMsg = msg;
+            
+            // Скрыть/показать кнопки в зависимости от прав
+            const isMine = msg.uid === user.uid;
+            document.getElementById('ctx-edit').style.display = isMine ? 'flex' : 'none';
+            document.getElementById('ctx-delete').style.display = (isMine || isAdmin) ? 'flex' : 'none';
+
+            // Позиция
+            ui.ctxMenu.style.display = 'block';
+            let x = e.clientX;
+            let y = e.clientY;
+            
+            // Чтобы не вылезало за экран
+            if(x + 160 > window.innerWidth) x -= 160;
+            if(y + 150 > window.innerHeight) y -= 150;
+
+            ui.ctxMenu.style.left = x + 'px';
+            ui.ctxMenu.style.top = y + 'px';
+        }
+
+        // Закрытие меню при клике в пустоту
+        document.addEventListener('click', (e) => {
+            if(!ui.ctxMenu.contains(e.target)) ui.ctxMenu.style.display = 'none';
+        });
+
+        // --- ACTIONS (REPLY / EDIT / DELETE) ---
+        
+        document.getElementById('ctx-reply').onclick = () => {
+            setupAction('reply', ctxMsg);
+            ui.ctxMenu.style.display = 'none';
+        };
+
+        document.getElementById('ctx-edit').onclick = () => {
+            setupAction('edit', ctxMsg);
+            ui.ctxMenu.style.display = 'none';
         };
         
-        // Логика смены цветов
-        const r = document.querySelector(':root');
-        
-        document.getElementById('set-primary').addEventListener('input', (e) => {
-            r.style.setProperty('--primary', e.target.value);
-            r.style.setProperty('--msg-me', e.target.value);
-            localStorage.setItem('theme-prime', e.target.value);
-        });
-        document.getElementById('set-me').addEventListener('input', (e) => {
-            r.style.setProperty('--msg-me', e.target.value);
-             localStorage.setItem('theme-me', e.target.value);
-        });
-        document.getElementById('set-other').addEventListener('input', (e) => {
-            r.style.setProperty('--msg-other', e.target.value);
-             localStorage.setItem('theme-other', e.target.value);
-        });
-
-        window.resetTheme = () => {
-            r.style = '';
-            localStorage.clear();
+        document.getElementById('ctx-copy').onclick = () => {
+            navigator.clipboard.writeText(ctxMsg.text);
+            ui.ctxMenu.style.display = 'none';
         };
 
-        // Загрузка сохраненной темы
-        if(localStorage.getItem('theme-prime')) r.style.setProperty('--primary', localStorage.getItem('theme-prime'));
-        if(localStorage.getItem('theme-me')) r.style.setProperty('--msg-me', localStorage.getItem('theme-me'));
-        if(localStorage.getItem('theme-other')) r.style.setProperty('--msg-other', localStorage.getItem('theme-other'));
+        document.getElementById('ctx-delete').onclick = () => {
+            if(confirm("Удалить сообщение?")) {
+                remove(ref(db, `messages/${ctxMsg.key}`));
+            }
+            ui.ctxMenu.style.display = 'none';
+        };
+
+        function setupAction(type, msg) {
+            currentAction = type;
+            targetMsg = msg;
+            ui.actionBar.style.display = 'flex';
+            
+            if(type === 'reply') {
+                ui.actionTitle.innerText = "Ответ пользователю " + msg.displayName;
+                ui.actionText.innerText = msg.text;
+                ui.input.focus();
+            } else if(type === 'edit') {
+                ui.actionTitle.innerText = "Редактирование";
+                ui.actionText.innerText = msg.text;
+                ui.input.value = msg.text;
+                ui.input.focus();
+            }
+        }
+
+        window.cancelAction = () => {
+            currentAction = null;
+            targetMsg = null;
+            ui.actionBar.style.display = 'none';
+            ui.input.value = '';
+        };
 
 
-        // Мобилка
-        window.openChat = () => { if(window.innerWidth<=700) { document.body.classList.add('chat-open'); } };
-        document.getElementById('btn-back').onclick = () => document.body.classList.remove('chat-open');
+        // --- THEME SETTINGS ---
+        window.openSettings = () => {
+            ui.settings.style.display = 'flex';
+            window.toggleDrawer(); // Закрыть меню
+            
+            // Init preview colors
+            updatePreview();
+        };
+        window.closeSettings = () => ui.settings.style.display = 'none';
+
+        // Inputs
+        const inPrime = document.getElementById('set-primary');
+        const inMeBg = document.getElementById('set-me-bg');
+        const inMeTxt = document.getElementById('set-me-text');
+        
+        // Listeners for Live Preview
+        inPrime.addEventListener('input', updatePreview);
+        inMeBg.addEventListener('input', updatePreview);
+        inMeTxt.addEventListener('input', updatePreview);
+
+        function updatePreview() {
+            // Apply to preview elements ONLY
+            document.getElementById('prev-bubble-me').style.backgroundColor = inMeBg.value;
+            document.getElementById('prev-bubble-me').style.color = inMeTxt.value;
+            
+            // Button style in preview modal
+            document.querySelector('#settings-modal .btn-main').style.backgroundColor = inPrime.value;
+        }
+
+        window.saveTheme = () => {
+            const r = document.documentElement.style;
+            r.setProperty('--primary', inPrime.value);
+            r.setProperty('--msg-me-bg', inMeBg.value);
+            r.setProperty('--msg-me-text', inMeTxt.value);
+            
+            // Save to LS
+            localStorage.setItem('theme_prime', inPrime.value);
+            localStorage.setItem('theme_me_bg', inMeBg.value);
+            localStorage.setItem('theme_me_txt', inMeTxt.value);
+            
+            closeSettings();
+        };
+
+        function loadTheme() {
+            const r = document.documentElement.style;
+            const p = localStorage.getItem('theme_prime');
+            if(p) {
+                r.setProperty('--primary', p);
+                inPrime.value = p;
+            }
+            const mb = localStorage.getItem('theme_me_bg');
+            if(mb) {
+                r.setProperty('--msg-me-bg', mb);
+                inMeBg.value = mb;
+            }
+            const mt = localStorage.getItem('theme_me_txt');
+            if(mt) {
+                r.setProperty('--msg-me-text', mt);
+                inMeTxt.value = mt;
+            }
+        }
+
     </script>
 </body>
 </html>
