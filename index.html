@@ -3,242 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NARRATORS // V6 RED</title>
+    <title>NARRATORS // REALTIME</title>
     <style>
         :root {
-            /* ТВОЯ ПАЛИТРА */
             --bg-body: #ffffff;
-            --bg-sidebar: #f7f7f7; /* Чуть сероватый для списка */
+            --bg-sidebar: #f7f7f7;
             --bg-chat: #ffffff;
-            --primary: #ff0033;    /* КРАСНЫЙ ГЛАВНЫЙ */
-            --text-main: #222222;
-            --text-dim: #666666;
-            --border: #dddddd;
-            
-            /* Сообщения */
+            --primary: #ff0033; /* Красный Mirror's Edge */
+            --text-main: #222;
+            --border: #ddd;
             --msg-me: #ff0033;
-            --msg-me-text: #ffffff;
+            --msg-me-text: #fff;
             --msg-other: #f0f0f0;
-            --msg-other-text: #000000;
+            --msg-other-text: #000;
         }
 
         * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: sans-serif; height: 100vh; display: flex; overflow: hidden; color: var(--text-main); }
+
+        /* Экраны */
+        .panel { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:999; }
         
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            display: flex;
-        }
+        button { padding:12px 24px; background:var(--primary); color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer; text-transform:uppercase; }
+        input { padding:12px; border:1px solid var(--border); width:300px; margin-bottom:15px; border-radius:4px; outline:none; }
+        input:focus { border-color: var(--primary); }
 
-        /* --- ПОЛНОЭКРАННЫЕ ПАНЕЛИ (Вход/Рега) --- */
-        .full-screen-panel {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #fff;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            z-index: 2000;
-        }
-
-        h1 { color: var(--primary); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        h2 { color: var(--text-main); margin-bottom: 20px; }
-
-        input {
-            padding: 12px; border: 1px solid var(--border); border-radius: 4px;
-            font-size: 1rem; width: 300px; margin-bottom: 15px; outline: none;
-            background: #f9f9f9;
-        }
-        input:focus { border-color: var(--primary); background: #fff; }
+        /* Интерфейс */
+        #app { display:none; width:100%; height:100%; }
         
-        button.btn-primary {
-            padding: 12px 30px; border: none; background: var(--primary); color: #fff;
-            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 1rem;
-            text-transform: uppercase; transition: 0.2s;
-        }
-        button.btn-primary:hover { transform: scale(1.02); }
+        #sidebar { width:350px; background:var(--bg-sidebar); border-right:1px solid var(--border); display:flex; flex-direction:column; }
+        .sidebar-header { padding:15px; border-bottom:1px solid var(--border); }
+        .chat-list { flex:1; overflow-y:auto; }
+        .chat-item { padding:15px; display:flex; gap:10px; cursor:pointer; align-items:center; transition:0.2s; }
+        .chat-item:hover { background:#fff; }
+        .chat-item.active { background:#fff; border-right:4px solid var(--primary); }
+        .avatar { width:45px; height:45px; background:#ddd; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold; color:#fff; }
+        .avatar.red { background:var(--primary); }
 
-        /* --- ПРИЛОЖЕНИЕ (2 колонки) --- */
-        #app-layout {
-            display: none; /* Скрыто пока не загрузится */
-            width: 100%; height: 100%;
-        }
-
-        /* ЛЕВАЯ КОЛОНКА */
-        #sidebar {
-            width: 350px;
-            height: 100%;
-            background: var(--bg-sidebar);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-        }
-
-        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border); }
-        .search-box { width: 100%; margin: 0; border-radius: 20px; }
-
-        .chat-list { flex: 1; overflow-y: auto; }
-
-        .chat-item {
-            padding: 15px; display: flex; align-items: center; gap: 15px;
-            cursor: pointer; border-bottom: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .chat-item:hover { background: #fff; border-bottom-color: var(--border); }
-        .chat-item.active { background: #fff; border-right: 4px solid var(--primary); }
+        #chat { flex:1; display:flex; flex-direction:column; background:var(--bg-chat); }
+        .chat-header { height:60px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 20px; }
+        #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:10px; }
         
-        .avatar {
-            width: 50px; height: 50px; border-radius: 50%; 
-            background: var(--text-dim); color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 1.2rem;
-        }
-        .avatar.red { background: var(--primary); }
+        .msg { max-width:70%; padding:10px 15px; border-radius:10px; font-size:0.95rem; word-wrap:break-word; }
+        .msg.me { align-self:flex-end; background:var(--msg-me); color:var(--msg-me-text); border-bottom-right-radius:2px; }
+        .msg.other { align-self:flex-start; background:var(--msg-other); color:var(--msg-other-text); border-bottom-left-radius:2px; }
+        .msg-name { font-size:0.75rem; font-weight:bold; margin-bottom:3px; opacity:0.8; display:block; cursor:pointer;}
 
-        /* ПРАВАЯ КОЛОНКА (ЧАТ) */
-        #main-chat {
-            flex: 1; height: 100%;
-            display: flex; flex-direction: column;
-            background: var(--bg-chat);
-            position: relative;
-        }
+        .input-box { padding:15px; border-top:1px solid var(--border); display:flex; gap:10px; }
+        #msg-in { flex:1; margin:0; }
 
-        .chat-header {
-            padding: 10px 20px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-            height: 60px;
-        }
-
-        #messages {
-            flex: 1; overflow-y: auto; padding: 20px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-
-        .message {
-            max-width: 60%; padding: 10px 15px; border-radius: 10px;
-            font-size: 0.95rem; line-height: 1.4; position: relative;
-        }
-        
-        /* СВОИ (Красные) */
-        .message.me {
-            background: var(--msg-me); 
-            color: var(--msg-me-text);
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-        
-        /* ЧУЖИЕ (Серые/Белые) */
-        .message.other {
-            background: var(--msg-other);
-            color: var(--msg-other-text);
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-        }
-
-        .msg-name {
-            font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; display: block;
-            color: inherit; opacity: 0.8; cursor: pointer;
-        }
-
-        .input-area {
-            padding: 15px; border-top: 1px solid var(--border);
-            display: flex; gap: 10px; align-items: center;
-        }
-        
-        #btn-send {
-            background: none; border: none; color: var(--primary); 
-            font-size: 1.5rem; cursor: pointer; padding: 0 10px;
-        }
-
-        /* АДАПТИВНОСТЬ */
         @media (max-width: 700px) {
-            #sidebar { width: 100%; display: flex; }
-            #main-chat { display: none; width: 100%; }
-            
-            body.chat-open #sidebar { display: none; }
-            body.chat-open #main-chat { display: flex; }
-            
-            #btn-back { display: block !important; margin-right: 10px; }
+            #sidebar { width:100%; }
+            #chat { display:none; width:100%; }
+            body.chat-open #sidebar { display:none; }
+            body.chat-open #chat { display:flex; }
+            #btn-back { display:block !important; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 1. ВХОД -->
-    <div id="login-panel" class="full-screen-panel">
-        <h1>NARRATORS</h1>
-        <p style="color: #888; margin-bottom: 30px;">AUTHORIZATION REQUIRED</p>
-        <button id="btn-login" class="btn-primary">ВОЙТИ ЧЕРЕЗ GOOGLE</button>
+    <!-- ВХОД -->
+    <div id="login-screen" class="panel">
+        <h1 style="color:var(--primary)">NARRATORS</h1>
+        <button id="btn-login">Войти через Google</button>
     </div>
 
-    <!-- 2. РЕГИСТРАЦИЯ ПРОФИЛЯ -->
-    <div id="reg-panel" class="full-screen-panel" style="display: none;">
-        <h1>IDENTITY</h1>
-        <p style="color: #666; margin-bottom: 20px;">Создайте свой идентификатор</p>
-        
-        <input type="text" id="reg-nick" placeholder="Отображаемое имя (Nick)" maxlength="20">
-        <input type="text" id="reg-tag" placeholder="@username (Уникальный тег)" maxlength="15">
-        <button id="btn-save-profile" class="btn-primary">ПОДТВЕРДИТЬ</button>
+    <!-- РЕГИСТРАЦИЯ -->
+    <div id="reg-screen" class="panel" style="display:none;">
+        <h2>Регистрация</h2>
+        <p>Придумайте никнейм и ID</p>
+        <input id="reg-nick" placeholder="Никнейм (Nick)">
+        <input id="reg-tag" placeholder="@username (ID)">
+        <button id="btn-save">Сохранить</button>
     </div>
 
-    <!-- 3. ИНТЕРФЕЙС -->
-    <div id="app-layout">
-        
-        <!-- SIDEBAR -->
+    <!-- ПРИЛОЖЕНИЕ -->
+    <div id="app">
         <div id="sidebar">
             <div class="sidebar-header">
-                <input type="text" class="search-box" placeholder="Поиск @user..." id="search-input">
+                <div style="font-weight:bold; color:var(--primary)">NARRATORS // RTDB</div>
             </div>
-            
-            <div class="chat-list" id="chat-list">
-                <!-- Общий чат -->
+            <div class="chat-list">
                 <div class="chat-item active" onclick="openChat()">
                     <div class="avatar red">G</div>
-                    <div class="chat-info">
-                        <div style="font-weight: bold;">Global Channel</div>
-                        <div style="font-size: 0.8rem; color: #888;">Общий поток данных</div>
+                    <div>
+                        <div style="font-weight:bold">Global Chat</div>
+                        <div style="font-size:0.8rem; color:#777">Общий канал</div>
                     </div>
                 </div>
             </div>
-            
-            <div style="padding: 15px; border-top: 1px solid var(--border); text-align: center;">
-                 <span id="my-tag-display" style="font-weight:bold; color: var(--primary);">Loading...</span>
-            </div>
+            <div style="padding:15px; text-align:center; font-size:0.9rem; color:#777" id="my-profile">...</div>
         </div>
 
-        <!-- MAIN CHAT -->
-        <div id="main-chat">
+        <div id="chat">
             <div class="chat-header">
-                <div style="display:flex; align-items:center;">
-                    <button id="btn-back" style="display:none; border:none; background:none; font-size:1.5rem; color:var(--text-main);">⬅</button>
-                    <div style="font-weight:bold; font-size: 1.1rem; color: var(--primary);">// GLOBAL CHANNEL</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button id="btn-back" style="display:none; background:none; color:#000; font-size:1.5rem; padding:0;">⬅</button>
+                    <span style="font-weight:bold">GLOBAL CHAT</span>
                 </div>
-                <button id="btn-logout" style="border:none; background:none; cursor:pointer; font-size:1.2rem;" title="Выйти">🚪</button>
+                <button id="btn-logout" style="background:#ccc; font-size:0.8rem; padding:5px 10px;">Выход</button>
             </div>
-
             <div id="messages"></div>
-
-            <div class="input-area">
-                <button id="btn-attach" style="border:none; background:none; font-size:1.3rem; cursor:pointer; opacity: 0.6;">📷</button>
-                <input type="text" id="msg-input" placeholder="Введите сообщение..." style="flex:1; margin:0; border-radius: 20px;">
-                <button id="btn-send">➤</button>
+            <div class="input-box">
+                <button id="btn-img" style="background:none; color:#000; font-size:1.5rem; padding:0 10px;">📷</button>
+                <input id="msg-in" placeholder="Сообщение...">
+                <button id="btn-send" style="background:none; color:var(--primary); font-size:1.5rem; padding:0 10px;">➤</button>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT -->
     <script type="module">
+        // ИМПОРТЫ ДЛЯ REALTIME DATABASE (ВАЖНО!)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // КОНФИГ
-        const firebaseConfig = {
+        const config = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
             authDomain: "narrators-messenger.firebaseapp.com",
-            databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com",
+            databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com", // ЭТО ГЛАВНОЕ ДЛЯ ТЕБЯ
             projectId: "narrators-messenger",
             storageBucket: "narrators-messenger.firebasestorage.app",
             messagingSenderId: "421115209686",
@@ -246,165 +130,137 @@
             measurementId: "G-XN1B0KZ5ML"
         };
 
-        const app = initializeApp(firebaseConfig);
+        const app = initializeApp(config);
         const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+        const db = getDatabase(app); // ПОДКЛЮЧИЛИ REALTIME DB
+        
+        let user = null;
+        let profile = null;
 
-        const els = {
-            login: document.getElementById('login-panel'),
-            reg: document.getElementById('reg-panel'),
-            app: document.getElementById('app-layout'),
-            btnLogin: document.getElementById('btn-login'),
-            btnReg: document.getElementById('btn-save-profile'),
-            btnOut: document.getElementById('btn-logout'),
-            inputNick: document.getElementById('reg-nick'),
-            inputTag: document.getElementById('reg-tag'),
-            myTag: document.getElementById('my-tag-display'),
-            msgList: document.getElementById('messages'),
-            msgInput: document.getElementById('msg-input'),
-            btnSend: document.getElementById('btn-send'),
-            btnAttach: document.getElementById('btn-attach'),
-            btnBack: document.getElementById('btn-back')
+        // Элементы
+        const ui = {
+            login: document.getElementById('login-screen'),
+            reg: document.getElementById('reg-screen'),
+            app: document.getElementById('app'),
+            list: document.getElementById('messages'),
+            in: document.getElementById('msg-in'),
+            myProfile: document.getElementById('my-profile')
         };
 
-        let user = null;
-        let userData = null;
-
-        // --- AUTH ---
-        els.btnLogin.addEventListener('click', () => signInWithPopup(auth, provider));
-        els.btnOut.addEventListener('click', () => signOut(auth));
+        // 1. АВТОРИЗАЦИЯ
+        document.getElementById('btn-login').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
 
         onAuthStateChanged(auth, async (u) => {
             user = u;
             if (user) {
-                // Скрываем вход, показываем загрузку (или просто белый фон на сек)
-                els.login.style.display = 'none';
+                ui.login.style.display = 'none';
                 
-                try {
-                    // Ищем профиль в базе
-                    const docRef = doc(db, "users", user.uid);
-                    const docSnap = await getDoc(docRef);
-
-                    if (docSnap.exists()) {
-                        // Профиль есть -> открываем чат
-                        userData = docSnap.data();
-                        initApp();
+                // ПРОВЕРКА ПРОФИЛЯ В REALTIME DB
+                const dbRef = ref(db);
+                get(child(dbRef, `users/${user.uid}`)).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        profile = snapshot.val();
+                        startApp();
                     } else {
-                        // Профиля нет -> открываем регистрацию
-                        els.reg.style.display = 'flex';
-                        els.inputNick.value = user.displayName;
+                        ui.reg.style.display = 'flex';
+                        document.getElementById('reg-nick').value = user.displayName;
                     }
-                } catch (e) {
-                    console.error("Ошибка получения профиля:", e);
-                    // Если ошибка (например, нет прав) - всё равно покажем чат, но без ника
-                    userData = { displayName: user.displayName, usernameDisplay: 'anon' };
-                    initApp(); 
-                }
+                }).catch((error) => {
+                    console.error(error);
+                });
             } else {
-                // Вышли
-                els.login.style.display = 'flex';
-                els.reg.style.display = 'none';
-                els.app.style.display = 'none';
+                ui.login.style.display = 'flex';
+                ui.reg.style.display = 'none';
+                ui.app.style.display = 'none';
             }
         });
 
-        // --- REGISTRATION ---
-        els.btnReg.addEventListener('click', async () => {
-            const nick = els.inputNick.value.trim();
-            let tag = els.inputTag.value.trim().replace('@', '');
-            if(nick.length < 1 || tag.length < 1) return alert('Заполните поля!');
+        // 2. РЕГИСТРАЦИЯ
+        document.getElementById('btn-save').onclick = () => {
+            const nick = document.getElementById('reg-nick').value.trim();
+            const tag = document.getElementById('reg-tag').value.trim().replace('@','');
+            
+            if(!nick || !tag) return alert('Заполни поля!');
 
-            try {
-                const newData = {
-                    displayName: nick,
-                    usernameDisplay: tag,
-                    username: tag.toLowerCase(),
-                    uid: user.uid,
-                    photoURL: user.photoURL
-                };
-                await setDoc(doc(db, "users", user.uid), newData);
-                userData = newData;
-                els.reg.style.display = 'none';
-                initApp();
-            } catch (e) {
-                console.error(e);
-                alert("Ошибка сохранения. Проверь консоль.");
-            }
-        });
+            const newData = {
+                displayName: nick,
+                username: tag.toLowerCase(),
+                usernameDisplay: tag,
+                uid: user.uid
+            };
 
-        // --- APP LOGIC ---
-        function initApp() {
-            els.app.style.display = 'flex';
-            els.myTag.innerText = '@' + (userData.usernameDisplay || 'user');
-            loadChat();
+            // СОХРАНЯЕМ В USERS
+            set(ref(db, 'users/' + user.uid), newData).then(() => {
+                profile = newData;
+                ui.reg.style.display = 'none';
+                startApp();
+            });
+        };
+
+        function startApp() {
+            ui.app.style.display = 'flex';
+            ui.myProfile.innerText = '@' + profile.usernameDisplay;
+            loadMessages();
         }
 
-        async function sendMsg(txt) {
+        // 3. ОТПРАВКА (PUSH в Realtime)
+        function send(txt) {
             if(!txt || !user) return;
-            try {
-                await addDoc(collection(db, "messages"), {
-                    text: txt,
-                    uid: user.uid,
-                    displayName: userData.displayName,
-                    username: userData.usernameDisplay,
-                    createdAt: serverTimestamp()
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        els.btnSend.addEventListener('click', () => {
-            const val = els.msgInput.value.trim();
-            if(val) { sendMsg(val); els.msgInput.value = ''; }
-        });
-        els.msgInput.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') {
-                const val = els.msgInput.value.trim();
-                if(val) { sendMsg(val); els.msgInput.value = ''; }
-            }
-        });
-        els.btnAttach.addEventListener('click', () => {
-            const url = prompt("URL картинки:");
-            if(url) sendMsg(url);
-        });
-
-        function loadChat() {
-            const q = query(collection(db, "messages"), orderBy("createdAt", "asc"), limit(50));
-            onSnapshot(q, (snap) => {
-                els.msgList.innerHTML = '';
-                snap.forEach(d => {
-                    const m = d.data();
-                    const isMe = m.uid === user.uid;
-                    const div = document.createElement('div');
-                    div.className = `message ${isMe ? 'me' : 'other'}`;
-                    
-                    let content = m.text;
-                    if(content.match(/\.(jpg|jpeg|png|gif)/i) || content.startsWith('http')) {
-                         if(content.startsWith('http')) content = `<img src="${content}" style="max-width:100%; border-radius:5px; margin-top:5px;">`;
-                    }
-                    
-                    div.innerHTML = `
-                        <span class="msg-name" onclick="alert('@${m.username}')">${m.displayName || 'Anon'}</span>
-                        ${content}
-                    `;
-                    els.msgList.appendChild(div);
-                });
-                els.msgList.scrollTop = els.msgList.scrollHeight;
+            const msgListRef = ref(db, 'messages');
+            const newMsgRef = push(msgListRef);
+            set(newMsgRef, {
+                text: txt,
+                uid: user.uid,
+                displayName: profile.displayName,
+                username: profile.usernameDisplay,
+                createdAt: Date.now()
             });
         }
 
-        // Mobile Nav
-        window.openChat = () => {
-            if(window.innerWidth <= 700) {
-                document.body.classList.add('chat-open');
-                els.btnBack.style.display = 'block';
-            }
+        document.getElementById('btn-send').onclick = () => {
+            if(ui.in.value.trim()) { send(ui.in.value.trim()); ui.in.value=''; }
         };
-        els.btnBack.addEventListener('click', () => {
-            document.body.classList.remove('chat-open');
-            els.btnBack.style.display = 'none';
-        });
+        ui.in.onkeypress = (e) => {
+             if(e.key==='Enter' && ui.in.value.trim()) { send(ui.in.value.trim()); ui.in.value=''; }
+        };
+        document.getElementById('btn-img').onclick = () => {
+            const url = prompt("URL картинки:");
+            if(url) send(url);
+        };
 
+        // 4. ЗАГРУЗКА ЧАТА (REALTIME LISTENER)
+        function loadMessages() {
+            const messagesRef = ref(db, 'messages');
+            onValue(messagesRef, (snapshot) => {
+                ui.list.innerHTML = '';
+                const data = snapshot.val();
+                
+                if(!data) return;
+
+                // Realtime DB возвращает объект, превращаем в массив
+                const msgs = Object.values(data);
+                // Сортируем по времени (старые сверху)
+                msgs.sort((a, b) => a.createdAt - b.createdAt);
+
+                msgs.forEach(m => {
+                    const isMe = m.uid === user.uid;
+                    const div = document.createElement('div');
+                    div.className = `msg ${isMe ? 'me' : 'other'}`;
+                    
+                    let txt = m.text;
+                    if(txt.startsWith('http')) txt = `<img src="${txt}" style="max-width:100%; border-radius:5px;">`;
+
+                    div.innerHTML = `<span class="msg-name" onclick="alert('@${m.username}')">${m.displayName}</span>${txt}`;
+                    ui.list.appendChild(div);
+                });
+                ui.list.scrollTop = ui.list.scrollHeight;
+            });
+        }
+
+        // Мобильная версия
+        window.openChat = () => { if(window.innerWidth<=700) { document.body.classList.add('chat-open'); } };
+        document.getElementById('btn-back').onclick = () => document.body.classList.remove('chat-open');
     </script>
 </body>
 </html>
