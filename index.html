@@ -3,57 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NARRATORS // REALTIME</title>
+    <title>NARRATORS // ADMIN V9</title>
     <style>
         :root {
+            /* Переменные темы (меняются через настройки) */
             --bg-body: #ffffff;
-            --bg-sidebar: #f7f7f7;
+            --bg-sidebar: #f5f5f5;
             --bg-chat: #ffffff;
-            --primary: #ff0033; /* Красный Mirror's Edge */
-            --text-main: #222;
-            --border: #ddd;
+            --primary: #ff0033;
+            --text-main: #222222;
+            --border: #e0e0e0;
             --msg-me: #ff0033;
-            --msg-me-text: #fff;
-            --msg-other: #f0f0f0;
-            --msg-other-text: #000;
+            --msg-me-text: #ffffff;
+            --msg-other: #f2f2f2;
+            --msg-other-text: #000000;
         }
 
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: sans-serif; height: 100vh; display: flex; overflow: hidden; color: var(--text-main); }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; overflow: hidden; color: var(--text-main); background: var(--bg-body); }
 
-        /* Экраны */
-        .panel { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:999; }
+        /* --- ЭКРАНЫ --- */
+        .panel { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-chat); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:2000; }
         
-        button { padding:12px 24px; background:var(--primary); color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer; text-transform:uppercase; }
-        input { padding:12px; border:1px solid var(--border); width:300px; margin-bottom:15px; border-radius:4px; outline:none; }
+        button { cursor: pointer; border: none; outline: none; transition: 0.2s; }
+        .btn-primary { padding:12px 24px; background:var(--primary); color:#fff; border-radius:6px; font-weight:bold; text-transform:uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-primary:active { transform: scale(0.95); }
+        
+        input { padding:12px; border:1px solid var(--border); width:300px; margin-bottom:15px; border-radius:6px; outline:none; background: #fff; color: #000; }
         input:focus { border-color: var(--primary); }
 
-        /* Интерфейс */
+        /* --- ОСНОВНОЙ ЛЕЙАУТ --- */
         #app { display:none; width:100%; height:100%; }
         
-        #sidebar { width:350px; background:var(--bg-sidebar); border-right:1px solid var(--border); display:flex; flex-direction:column; }
-        .sidebar-header { padding:15px; border-bottom:1px solid var(--border); }
-        .chat-list { flex:1; overflow-y:auto; }
-        .chat-item { padding:15px; display:flex; gap:10px; cursor:pointer; align-items:center; transition:0.2s; }
-        .chat-item:hover { background:#fff; }
-        .chat-item.active { background:#fff; border-right:4px solid var(--primary); }
-        .avatar { width:45px; height:45px; background:#ddd; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold; color:#fff; }
-        .avatar.red { background:var(--primary); }
-
-        #chat { flex:1; display:flex; flex-direction:column; background:var(--bg-chat); }
-        .chat-header { height:60px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 20px; }
-        #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:10px; }
+        /* Боковая панель (Фиксированная ширина!) */
+        #sidebar { 
+            flex: 0 0 320px; /* Жестко 320px, не сжиматься */
+            background:var(--bg-sidebar); 
+            border-right:1px solid var(--border); 
+            display:flex; flex-direction:column; 
+        }
         
-        .msg { max-width:70%; padding:10px 15px; border-radius:10px; font-size:0.95rem; word-wrap:break-word; }
-        .msg.me { align-self:flex-end; background:var(--msg-me); color:var(--msg-me-text); border-bottom-right-radius:2px; }
-        .msg.other { align-self:flex-start; background:var(--msg-other); color:var(--msg-other-text); border-bottom-left-radius:2px; }
-        .msg-name { font-size:0.75rem; font-weight:bold; margin-bottom:3px; opacity:0.8; display:block; cursor:pointer;}
+        .sidebar-header { padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+        .chat-list { flex:1; overflow-y:auto; }
+        .chat-item { padding:15px 20px; display:flex; gap:15px; cursor:pointer; align-items:center; transition:0.2s; border-bottom: 1px solid transparent; }
+        .chat-item:hover { background:rgba(0,0,0,0.05); }
+        .chat-item.active { background:#fff; border-left: 4px solid var(--primary); }
+        
+        .avatar { width:50px; height:50px; background:#ccc; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold; color:#fff; font-size: 1.2rem; flex-shrink: 0; }
+        .avatar.red { background: linear-gradient(135deg, var(--primary), #cc0000); }
 
-        .input-box { padding:15px; border-top:1px solid var(--border); display:flex; gap:10px; }
-        #msg-in { flex:1; margin:0; }
+        /* ЧАТ */
+        #chat { flex:1; display:flex; flex-direction:column; background:var(--bg-chat); min-width: 0; /* Важно для flex */ position: relative; }
+        
+        .chat-header { 
+            height:65px; border-bottom:1px solid var(--border); 
+            display:flex; justify-content:space-between; align-items:center; 
+            padding:0 20px; background: var(--bg-chat);
+        }
 
+        /* Кнопки управления */
+        .header-btn { background:none; font-size:1.4rem; padding:5px; color: var(--text-main); margin-left: 10px; }
+        .header-btn:hover { opacity: 0.7; }
+
+        /* Сообщения */
+        #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:8px; }
+        
+        .msg-row { display: flex; flex-direction: column; max-width: 75%; position: relative; }
+        .msg-row.me { align-self: flex-end; align-items: flex-end; }
+        .msg-row.other { align-self: flex-start; align-items: flex-start; }
+
+        .msg-bubble { 
+            padding:10px 16px; border-radius:12px; font-size:0.95rem; word-wrap:break-word; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative;
+        }
+        
+        .msg-row.me .msg-bubble { background:var(--msg-me); color:var(--msg-me-text); border-bottom-right-radius: 2px; }
+        .msg-row.other .msg-bubble { background:var(--msg-other); color:var(--msg-other-text); border-bottom-left-radius: 2px; }
+
+        .msg-name { 
+            font-size:0.75rem; font-weight:bold; margin-bottom:4px; opacity:0.8; 
+            cursor:pointer; display: flex; align-items: center; gap: 5px;
+        }
+        
+        /* Иконка Админа */
+        .admin-badge { color: gold; font-size: 1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+        /* Кнопка удаления (только для админа) */
+        .btn-delete {
+            position: absolute; top: -10px; right: -10px;
+            background: red; color: white; width: 20px; height: 20px;
+            border-radius: 50%; font-size: 12px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; display: none; /* Скрыто по умолчанию */
+            z-index: 10;
+        }
+        /* Показываем кнопку удаления только если добавлен класс admin-mode */
+        body.is-admin .btn-delete { display: flex; }
+
+        /* Ввод */
+        .input-box { padding:15px; border-top:1px solid var(--border); display:flex; gap:10px; align-items: center; background: var(--bg-chat); }
+        #msg-in { flex:1; margin:0; border-radius: 20px; padding: 10px 20px; }
+        
+        /* Модалка настроек */
+        #settings-modal {
+            display: none; position: absolute; top: 70px; right: 20px;
+            background: #fff; border: 1px solid var(--border); padding: 20px;
+            border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); width: 250px; z-index: 3000;
+        }
+        .set-row { margin-bottom: 10px; }
+        .set-row label { display: block; font-size: 0.8rem; color: #777; margin-bottom: 5px; }
+        .set-row input { width: 100%; height: 35px; padding: 0; border: none; }
+
+        /* Мобилка */
         @media (max-width: 700px) {
-            #sidebar { width:100%; }
+            #sidebar { width:100%; flex: 1; }
             #chat { display:none; width:100%; }
             body.chat-open #sidebar { display:none; }
             body.chat-open #chat { display:flex; }
@@ -65,64 +127,90 @@
 
     <!-- ВХОД -->
     <div id="login-screen" class="panel">
-        <h1 style="color:var(--primary)">NARRATORS</h1>
-        <button id="btn-login">Войти через Google</button>
+        <h1 style="color:var(--primary); font-size: 2.5rem;">NARRATORS</h1>
+        <p style="color:#888; margin-bottom: 30px;">AUTHORIZATION</p>
+        <button id="btn-login" class="btn-primary">ВОЙТИ ЧЕРЕЗ GOOGLE</button>
     </div>
 
-    <!-- РЕГИСТРАЦИЯ -->
+    <!-- РЕГИСТРАЦИЯ (Введи @admin чтобы стать админом) -->
     <div id="reg-screen" class="panel" style="display:none;">
-        <h2>Регистрация</h2>
-        <p>Придумайте никнейм и ID</p>
-        <input id="reg-nick" placeholder="Никнейм (Nick)">
-        <input id="reg-tag" placeholder="@username (ID)">
-        <button id="btn-save">Сохранить</button>
+        <h2>Идентификация</h2>
+        <p>Для прав создателя введи тег <b>@admin</b></p>
+        <input id="reg-nick" placeholder="Имя (например: EXEKTOR)">
+        <input id="reg-tag" placeholder="@username">
+        <button id="btn-save" class="btn-primary">НАЧАТЬ</button>
     </div>
 
     <!-- ПРИЛОЖЕНИЕ -->
     <div id="app">
+        <!-- СЛЕВА -->
         <div id="sidebar">
             <div class="sidebar-header">
-                <div style="font-weight:bold; color:var(--primary)">NARRATORS // RTDB</div>
+                <div style="font-weight:900; color:var(--primary); font-size: 1.2rem;">NARRATORS V9</div>
+                <div style="font-size: 0.8rem; color: #888;">Realtime</div>
             </div>
             <div class="chat-list">
                 <div class="chat-item active" onclick="openChat()">
                     <div class="avatar red">G</div>
                     <div>
                         <div style="font-weight:bold">Global Chat</div>
-                        <div style="font-size:0.8rem; color:#777">Общий канал</div>
+                        <div style="font-size:0.8rem; color:#777">Общий сервер</div>
                     </div>
                 </div>
             </div>
-            <div style="padding:15px; text-align:center; font-size:0.9rem; color:#777" id="my-profile">...</div>
+            <div style="padding:15px; text-align:center; font-size:0.8rem; color:#aaa;" id="my-profile">Loading...</div>
         </div>
 
+        <!-- СПРАВА -->
         <div id="chat">
             <div class="chat-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <button id="btn-back" style="display:none; background:none; color:#000; font-size:1.5rem; padding:0;">⬅</button>
-                    <span style="font-weight:bold">GLOBAL CHAT</span>
+                    <button id="btn-back" class="header-btn" style="display:none;">⬅</button>
+                    <span style="font-weight:bold">GLOBAL HUB</span>
                 </div>
-                <button id="btn-logout" style="background:#ccc; font-size:0.8rem; padding:5px 10px;">Выход</button>
+                <div>
+                    <button id="btn-settings" class="header-btn" title="Настройки">⚙️</button>
+                    <button id="btn-logout" class="header-btn" title="Выход">🚪</button>
+                </div>
             </div>
+
+            <!-- МОДАЛКА НАСТРОЕК -->
+            <div id="settings-modal">
+                <h3>Внешний вид</h3>
+                <div class="set-row">
+                    <label>Основной цвет</label>
+                    <input type="color" id="set-primary" value="#ff0033">
+                </div>
+                <div class="set-row">
+                    <label>Фон (Свой)</label>
+                    <input type="color" id="set-me" value="#ff0033">
+                </div>
+                <div class="set-row">
+                    <label>Фон (Чужой)</label>
+                    <input type="color" id="set-other" value="#f2f2f2">
+                </div>
+                <button onclick="resetTheme()" style="width:100%; padding:5px; background:#444; color:#fff; border-radius:4px;">Сброс</button>
+            </div>
+
             <div id="messages"></div>
+
             <div class="input-box">
-                <button id="btn-img" style="background:none; color:#000; font-size:1.5rem; padding:0 10px;">📷</button>
-                <input id="msg-in" placeholder="Сообщение...">
-                <button id="btn-send" style="background:none; color:var(--primary); font-size:1.5rem; padding:0 10px;">➤</button>
+                <button id="btn-img" class="header-btn">📷</button>
+                <input id="msg-in" placeholder="Написать сообщение..." autocomplete="off">
+                <button id="btn-send" class="header-btn" style="color:var(--primary)">➤</button>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // ИМПОРТЫ ДЛЯ REALTIME DATABASE (ВАЖНО!)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const config = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
             authDomain: "narrators-messenger.firebaseapp.com",
-            databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com", // ЭТО ГЛАВНОЕ ДЛЯ ТЕБЯ
+            databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com",
             projectId: "narrators-messenger",
             storageBucket: "narrators-messenger.firebasestorage.app",
             messagingSenderId: "421115209686",
@@ -132,22 +220,23 @@
 
         const app = initializeApp(config);
         const auth = getAuth(app);
-        const db = getDatabase(app); // ПОДКЛЮЧИЛИ REALTIME DB
+        const db = getDatabase(app);
         
         let user = null;
         let profile = null;
+        let isAdmin = false; // Флаг админа
 
-        // Элементы
         const ui = {
             login: document.getElementById('login-screen'),
             reg: document.getElementById('reg-screen'),
             app: document.getElementById('app'),
             list: document.getElementById('messages'),
             in: document.getElementById('msg-in'),
-            myProfile: document.getElementById('my-profile')
+            myProfile: document.getElementById('my-profile'),
+            settings: document.getElementById('settings-modal')
         };
 
-        // 1. АВТОРИЗАЦИЯ
+        // --- AUTH ---
         document.getElementById('btn-login').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
         document.getElementById('btn-logout').onclick = () => signOut(auth);
 
@@ -155,28 +244,24 @@
             user = u;
             if (user) {
                 ui.login.style.display = 'none';
-                
-                // ПРОВЕРКА ПРОФИЛЯ В REALTIME DB
-                const dbRef = ref(db);
-                get(child(dbRef, `users/${user.uid}`)).then((snapshot) => {
-                    if (snapshot.exists()) {
-                        profile = snapshot.val();
-                        startApp();
+                get(child(ref(db), `users/${user.uid}`)).then((snap) => {
+                    if (snap.exists()) {
+                        profile = snap.val();
+                        loginSuccess();
                     } else {
                         ui.reg.style.display = 'flex';
-                        document.getElementById('reg-nick').value = user.displayName;
+                        document.getElementById('reg-nick').value = "EXEKTOR"; // Подсказка для тебя
                     }
-                }).catch((error) => {
-                    console.error(error);
                 });
             } else {
                 ui.login.style.display = 'flex';
                 ui.reg.style.display = 'none';
                 ui.app.style.display = 'none';
+                document.body.classList.remove('is-admin');
             }
         });
 
-        // 2. РЕГИСТРАЦИЯ
+        // --- РЕГИСТРАЦИЯ ---
         document.getElementById('btn-save').onclick = () => {
             const nick = document.getElementById('reg-nick').value.trim();
             const tag = document.getElementById('reg-tag').value.trim().replace('@','');
@@ -190,26 +275,32 @@
                 uid: user.uid
             };
 
-            // СОХРАНЯЕМ В USERS
             set(ref(db, 'users/' + user.uid), newData).then(() => {
                 profile = newData;
                 ui.reg.style.display = 'none';
-                startApp();
+                loginSuccess();
             });
         };
 
-        function startApp() {
+        function loginSuccess() {
             ui.app.style.display = 'flex';
-            ui.myProfile.innerText = '@' + profile.usernameDisplay;
+            ui.myProfile.innerText = `${profile.displayName} (@${profile.usernameDisplay})`;
+            
+            // ПРОВЕРКА НА АДМИНА
+            if (profile.usernameDisplay === 'admin') {
+                isAdmin = true;
+                document.body.classList.add('is-admin'); // Включаем кнопку удаления в CSS
+                alert("Добро пожаловать, Создатель. Режим Администратора активирован.");
+            }
+
             loadMessages();
         }
 
-        // 3. ОТПРАВКА (PUSH в Realtime)
+        // --- ЧАТ (REALTIME) ---
         function send(txt) {
             if(!txt || !user) return;
-            const msgListRef = ref(db, 'messages');
-            const newMsgRef = push(msgListRef);
-            set(newMsgRef, {
+            const newRef = push(ref(db, 'messages'));
+            set(newRef, {
                 text: txt,
                 uid: user.uid,
                 displayName: profile.displayName,
@@ -225,40 +316,94 @@
              if(e.key==='Enter' && ui.in.value.trim()) { send(ui.in.value.trim()); ui.in.value=''; }
         };
         document.getElementById('btn-img').onclick = () => {
-            const url = prompt("URL картинки:");
+            const url = prompt("Ссылка на картинку:");
             if(url) send(url);
         };
 
-        // 4. ЗАГРУЗКА ЧАТА (REALTIME LISTENER)
+        // ФУНКЦИЯ УДАЛЕНИЯ (ТОЛЬКО ДЛЯ АДМИНА)
+        window.deleteMsg = (key) => {
+            if(confirm("Удалить это сообщение навсегда?")) {
+                remove(ref(db, 'messages/' + key));
+            }
+        };
+
         function loadMessages() {
-            const messagesRef = ref(db, 'messages');
-            onValue(messagesRef, (snapshot) => {
+            onValue(ref(db, 'messages'), (snapshot) => {
                 ui.list.innerHTML = '';
                 const data = snapshot.val();
-                
                 if(!data) return;
 
-                // Realtime DB возвращает объект, превращаем в массив
-                const msgs = Object.values(data);
-                // Сортируем по времени (старые сверху)
+                // Превращаем в массив с ключами (чтобы удалять)
+                const msgs = Object.entries(data).map(([key, val]) => ({ key, ...val }));
                 msgs.sort((a, b) => a.createdAt - b.createdAt);
 
                 msgs.forEach(m => {
                     const isMe = m.uid === user.uid;
                     const div = document.createElement('div');
-                    div.className = `msg ${isMe ? 'me' : 'other'}`;
+                    div.className = `msg-row ${isMe ? 'me' : 'other'}`;
                     
-                    let txt = m.text;
-                    if(txt.startsWith('http')) txt = `<img src="${txt}" style="max-width:100%; border-radius:5px;">`;
+                    // Обработка имени
+                    const name = m.displayName || 'Призрак';
+                    const tag = m.username || 'anon';
+                    
+                    // Обработка админа (корона)
+                    let adminIcon = '';
+                    if (tag === 'admin') adminIcon = '<span class="admin-badge">👑</span>';
 
-                    div.innerHTML = `<span class="msg-name" onclick="alert('@${m.username}')">${m.displayName}</span>${txt}`;
+                    // Обработка картинки
+                    let txt = m.text;
+                    if(txt.startsWith('http')) txt = `<img src="${txt}" style="max-width:100%; border-radius:8px;">`;
+
+                    // Кнопка удаления (видна только если body.is-admin)
+                    const deleteBtn = `<div class="btn-delete" onclick="deleteMsg('${m.key}')">✕</div>`;
+
+                    div.innerHTML = `
+                        <div class="msg-bubble">
+                            ${deleteBtn}
+                            <span class="msg-name" onclick="alert('@${tag}')">${name} ${adminIcon}</span>
+                            ${txt}
+                        </div>
+                    `;
                     ui.list.appendChild(div);
                 });
                 ui.list.scrollTop = ui.list.scrollHeight;
             });
         }
 
-        // Мобильная версия
+        // --- НАСТРОЙКИ ---
+        document.getElementById('btn-settings').onclick = () => {
+            ui.settings.style.display = ui.settings.style.display === 'block' ? 'none' : 'block';
+        };
+        
+        // Логика смены цветов
+        const r = document.querySelector(':root');
+        
+        document.getElementById('set-primary').addEventListener('input', (e) => {
+            r.style.setProperty('--primary', e.target.value);
+            r.style.setProperty('--msg-me', e.target.value);
+            localStorage.setItem('theme-prime', e.target.value);
+        });
+        document.getElementById('set-me').addEventListener('input', (e) => {
+            r.style.setProperty('--msg-me', e.target.value);
+             localStorage.setItem('theme-me', e.target.value);
+        });
+        document.getElementById('set-other').addEventListener('input', (e) => {
+            r.style.setProperty('--msg-other', e.target.value);
+             localStorage.setItem('theme-other', e.target.value);
+        });
+
+        window.resetTheme = () => {
+            r.style = '';
+            localStorage.clear();
+        };
+
+        // Загрузка сохраненной темы
+        if(localStorage.getItem('theme-prime')) r.style.setProperty('--primary', localStorage.getItem('theme-prime'));
+        if(localStorage.getItem('theme-me')) r.style.setProperty('--msg-me', localStorage.getItem('theme-me'));
+        if(localStorage.getItem('theme-other')) r.style.setProperty('--msg-other', localStorage.getItem('theme-other'));
+
+
+        // Мобилка
         window.openChat = () => { if(window.innerWidth<=700) { document.body.classList.add('chat-open'); } };
         document.getElementById('btn-back').onclick = () => document.body.classList.remove('chat-open');
     </script>
