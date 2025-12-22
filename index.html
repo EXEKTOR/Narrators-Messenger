@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLACERON SYSTEM</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00ff41;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            border: 2px solid #00ff41;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            position: relative;
+        }
+        h1 {
+            text-transform: uppercase;
+            border-bottom: 1px dashed #00ff41;
+            padding-bottom: 10px;
+            margin-top: 0;
+            text-shadow: 2px 2px #000;
+        }
+        .status {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .blink {
+            animation: blinker 1s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+        #console-output {
+            height: 200px;
+            overflow-y: hidden;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .glitch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="glitch"></div>
+    <div class="container">
+        <h1>Placeron Node <span class="blink">_</span></h1>
+        <div class="status">[STATUS]: ONLINE via DuckDNS</div>
+        <div class="status">[SERVER]: RUNNING</div>
+        <br>
+        <div id="console-output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('console-output');
+        const messages = [
+            "Initializing handshake protocol...",
+            "Connecting to satellite uplink...",
+            "Decrypting user data...",
+            "Access granted.",
+            "Loading interface modules...",
+            "Checking visual parameters...",
+            "System optimal.",
+            "Waiting for command input...",
+            "Scanning local network...",
+            "Ping: 14ms",
+            "Secure connection established."
+        ];
+
+        function addLine() {
+            const line = document.createElement('div');
+            // Выбираем случайное сообщение
+            const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+            // Добавляем timestamp
+            const time = new Date().toLocaleTimeString();
+            line.innerText = `[${time}] > ${randomMsg}`;
+            
+            output.appendChild(line);
+            
+            // Автопрокрутка вниз
+            if (output.childElementCount > 10) {
+                output.removeChild(output.firstChild);
+            }
+        }
+
+        // Запускаем генерацию текста
+        setInterval(addLine, 800);
+    </script>
+</body>
+</html>
