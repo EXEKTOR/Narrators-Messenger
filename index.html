@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Narrators v0.1.2 Guest Entry</title>
+    <title>Narrators v0.1.2</title>
     <style>
         :root {
             /* --- THEME DEFAULTS --- */
@@ -62,7 +62,7 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
 
-        /* AUTH SCREEN (UPDATED) */
+        /* AUTH SCREEN */
         .panel { 
             position: fixed; top:0; left:0; width:100%; height:100%; 
             background: #fff; display: flex; flex-direction: column; 
@@ -91,8 +91,8 @@
         }
 
         /* APP LAYOUT */
-        #app { display: none; width: 100%; height: 100%; display: flex; opacity: 0; transition: opacity 0.5s ease; }
-        #app.visible { opacity: 1; }
+        #app { display: none; width: 100%; height: 100%; flex-direction: row; opacity: 0; transition: opacity 0.5s ease; }
+        #app.visible { opacity: 1; display: flex; }
 
         /* SIDEBAR */
         #sidebar { 
@@ -100,7 +100,7 @@
             border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100;
         }
         .sidebar-header { padding: 15px; display: flex; gap: 10px; align-items: center; }
-        .burger-btn { font-size: 1.6rem; background: none; color: var(--text-sec); padding: 5px; }
+        .burger-btn { font-size: 1.6rem; background: none; color: var(--text-sec); padding: 5px; display: flex; align-items: center; justify-content: center; }
         .search-box { flex: 1; background: #f1f1f1; border-radius: 18px; padding: 8px 15px; display: flex; }
         .search-input { border: none; background: transparent; outline: none; width: 100%; font-size: 0.95rem; }
 
@@ -138,12 +138,12 @@
             padding: 10px 14px; border-radius: var(--radius); 
             font-size: 1rem; line-height: 1.4; position: relative; 
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); opacity: var(--bubble-opacity);
-            max-width: 480px; word-wrap: break-word;
+            max-width: 80%; word-wrap: break-word;
         }
         .msg-row.other .bubble { background: var(--msg-other); color: var(--msg-other-text); border-bottom-left-radius: 2px; }
         .msg-row.me .bubble { background: var(--msg-me); color: var(--msg-me-text); border-bottom-right-radius: 2px; }
 
-        .sender-name { font-size: 0.75rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; cursor: pointer; }
+        .sender-name { font-size: 0.75rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
         .msg-meta { font-size: 0.7rem; opacity: 0.6; text-align: right; margin-top: 4px; display: block; }
         .admin-crown { color: gold; margin-left: 5px; }
         .msg-img { max-width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer; display: block; }
@@ -160,7 +160,7 @@
         .icon-btn:hover { color: var(--primary); background: #f5f5f5; }
         #msg-input { flex: 1; border: none; outline: none; padding: 10px; font-size: 1rem; resize: none; max-height: 100px; background: transparent; }
 
-        /* DRAWER (LEFT MENU) */
+        /* DRAWER */
         #menu-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 2000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #menu-overlay.open { opacity: 1; pointer-events: all; }
         #drawer { position: fixed; top:0; left:0; width: 300px; height: 100%; background: #fff; z-index: 2001; transform: translateX(-100%); transition: transform 0.3s var(--ease); display: flex; flex-direction: column; }
@@ -175,127 +175,75 @@
         .menu-item { padding: 15px 25px; display: flex; gap: 15px; align-items: center; cursor: pointer; font-weight: 500; transition: 0.1s; }
         .menu-item:hover { background: #f5f5f5; }
 
-        /* SETTINGS INSIDE DRAWER */
         .settings-section { display: none; padding: 0 20px; animation: fadeIn 0.3s; }
         .settings-section.active { display: block; }
         .control-group { margin-bottom: 20px; }
         .control-label { display: block; margin-bottom: 8px; font-size: 0.9rem; font-weight: 600; color: #555; }
-        input[type="range"] { width: 100%; cursor: pointer; }
-        input[type="color"] { width: 100%; height: 40px; border: none; background: none; cursor: pointer; }
         
-        .theme-preview {
-            height: 100px; background: var(--bg-chat-color); background-image: var(--bg-chat-img); background-size: cover;
-            border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; padding: 10px; gap: 5px;
-        }
-
         /* CONTEXT MENU */
         #ctx-menu { position: fixed; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); width: 180px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); z-index: 9999; display: none; padding: 5px; }
         .ctx-btn { padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
         .ctx-btn:hover { background: var(--primary); color: #fff; }
         .ctx-btn.del { color: red; }
-        .ctx-btn.del:hover { background: red; color: white; }
 
         @keyframes fadeUp { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-        /* MOBILE */
         @media (max-width: 768px) {
             #sidebar { width: 100%; }
             #chat-area { display: none; width: 100%; position: absolute; top:0; left:0; height:100%; z-index: 150; }
             body.chat-open #sidebar { display: none; }
             body.chat-open #chat-area { display: flex; }
-            .btn-back { display: block !important; margin-right: 10px; }
+            .btn-back { display: flex !important; margin-right: 10px; }
         }
         .btn-back { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- AUTH PANEL (UPDATED) -->
+    <!-- AUTH -->
     <div id="auth-panel" class="panel">
         <h1 style="color:var(--primary); font-size:2.5rem; margin-bottom:10px;">Narrators</h1>
-        <p style="color:#777; margin-bottom:30px;">Demo Release v0.1</p>
-        
+        <p style="color:#777; margin-bottom:30px;">Demo Release v0.1.2</p>
         <div class="auth-container">
-            <!-- GUEST / NICKNAME FORM -->
             <input id="guest-nick" class="auth-input" placeholder="Никнейм">
             <input id="guest-tag" class="auth-input" placeholder="@username">
             <button id="btn-guest" class="btn-primary">ВОЙТИ</button>
-
-            <!-- DIVIDER -->
             <div class="divider">или</div>
-
-            <!-- GOOGLE -->
             <button id="btn-google" class="btn-secondary">Войти через Google</button>
         </div>
     </div>
 
-    <!-- GOOGLE REGISTRATION (HIDDEN) -->
-    <div id="reg-panel" class="panel" style="display:none;">
-        <h2 style="margin-bottom:20px;">Настройка профиля</h2>
-        <input id="in-nick" class="auth-input" placeholder="Имя">
-        <input id="in-tag" class="auth-input" placeholder="@username">
-        <input id="in-ava" class="auth-input" placeholder="URL Аватарки">
-        <button id="btn-reg" class="btn-primary">ГОТОВО</button>
-    </div>
-
     <!-- APP -->
     <div id="app">
-        
-        <!-- DRAWER -->
         <div id="menu-overlay" onclick="toggleDrawer(false)"></div>
         <div id="drawer">
             <div class="drawer-header">
-                <img id="my-ava" class="drawer-avatar" src="">
+                <img id="my-ava" class="drawer-avatar" src="https://via.placeholder.com/70">
                 <div id="my-name" class="drawer-name">User</div>
                 <div id="my-tag" class="drawer-tag">@tag</div>
             </div>
-
-            <!-- MAIN MENU -->
             <div id="menu-main" class="drawer-content">
-                <div class="menu-item" onclick="showSettings()"><i>🎨</i> Настройки темы</div>
-                <div style="flex:1"></div>
-                <div class="menu-item" onclick="doLogout()" style="color:#ff3b30"><i>🚪</i> Выйти</div>
+                <div class="menu-item" onclick="showSettings()">🎨 Настройки темы</div>
+                <div class="menu-item" onclick="doLogout()" style="color:#ff3b30">🚪 Выйти</div>
             </div>
-
-            <!-- SETTINGS -->
             <div id="menu-settings" class="drawer-content settings-section">
-                <div class="menu-item" onclick="hideSettings()" style="color:var(--primary)"><i>⬅</i> Назад</div>
+                <div class="menu-item" onclick="hideSettings()" style="color:var(--primary)">⬅ Назад</div>
                 <div style="padding:20px">
-                    <div class="control-group">
-                        <label class="control-label">Предпросмотр</label>
-                        <div class="theme-preview" id="prev-box">
-                            <div style="background:var(--msg-other); color:var(--msg-other-text); padding:8px; border-radius:8px; align-self:flex-start; font-size:0.9rem;">Привет!</div>
-                            <div style="background:var(--msg-me); color:var(--msg-me-text); padding:8px; border-radius:8px; align-self:flex-end; font-size:0.9rem;">Хай!</div>
-                        </div>
-                    </div>
-                    
                     <div class="control-group"><label class="control-label">Акцент</label><input type="color" id="set-primary" oninput="applyTheme()"></div>
-                    <div class="control-group"><label class="control-label">Фон чата</label><input type="color" id="set-bg-color" oninput="applyTheme()"></div>
-                    <div class="control-group"><label class="control-label">Мои сообщения</label><input type="color" id="set-me-bg" oninput="applyTheme()"></div>
-                    <div class="control-group"><label class="control-label">Текст моих</label><input type="color" id="set-me-text" oninput="applyTheme()"></div>
-                    <div class="control-group"><label class="control-label">Чужие сообщения</label><input type="color" id="set-other-bg" oninput="applyTheme()"></div>
-                    
-                    <div class="control-group"><label class="control-label">Размер шрифта</label><input type="range" min="12" max="20" id="set-font" oninput="applyTheme()"></div>
-                    <div class="control-group"><label class="control-label">Скругление</label><input type="range" min="0" max="20" id="set-radius" oninput="applyTheme()"></div>
-                    <div class="control-group"><label class="control-label">Прозрачность</label><input type="range" min="50" max="100" id="set-opacity" oninput="applyTheme()"></div>
-                    
-                    <div class="control-group"><label class="control-label">Картинка фона (URL)</label><input id="set-bg-img" class="auth-input" style="width:100%; padding:8px;" oninput="applyTheme()"></div>
-
-                    <button class="btn-primary" onclick="saveTheme()" style="width:100%">СОХРАНИТЬ</button>
-                    <button onclick="resetTheme()" style="width:100%; margin-top:10px; padding:10px; border-radius:8px; background:#f0f0f0;">Сброс</button>
+                    <div class="control-group"><label class="control-label">Размер шрифта</label><input type="range" min="12" max="22" id="set-font" oninput="applyTheme()"></div>
+                    <button class="btn-primary" onclick="saveTheme()">СОХРАНИТЬ</button>
                 </div>
             </div>
         </div>
 
-        <!-- SIDEBAR -->
         <div id="sidebar">
             <div class="sidebar-header">
                 <button class="burger-btn" onclick="toggleDrawer(true)">☰</button>
                 <div class="search-box"><input class="search-input" placeholder="Поиск..."></div>
             </div>
             <div class="chat-list">
-                <div class="chat-item active" onclick="openChat()">
+                <div class="chat-item active" onclick="openChatView()">
                     <img src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" class="avatar">
                     <div class="chat-info">
                         <div class="chat-title">Global Chat</div>
@@ -305,28 +253,24 @@
             </div>
         </div>
 
-        <!-- CHAT AREA -->
         <div id="chat-area">
             <div class="chat-header">
                 <div style="display:flex; align-items:center;">
-                    <button class="burger-btn btn-back" onclick="closeChat()">⬅</button>
+                    <button class="burger-btn btn-back" onclick="closeChatView()">⬅</button>
                     <div>
                         <div class="header-title">Global Chat</div>
                         <div class="header-status">online</div>
                     </div>
                 </div>
-                <button class="burger-btn">⋮</button>
             </div>
-            
             <div id="messages"></div>
-
             <div class="input-area">
                 <div class="reply-bar" id="reply-bar">
-                    <div style="overflow:hidden">
+                    <div id="reply-info">
                         <div style="font-weight:bold; color:var(--primary)" id="reply-name">User</div>
                         <div style="font-size:0.85rem; opacity:0.7" id="reply-text">text</div>
                     </div>
-                    <button onclick="cancelAction()" style="background:none; font-size:1.2rem;">✕</button>
+                    <button onclick="cancelAction()">✕</button>
                 </div>
                 <div class="input-row">
                     <button class="icon-btn" onclick="sendImg()">📷</button>
@@ -337,11 +281,9 @@
         </div>
     </div>
 
-    <!-- CONTEXT MENU -->
     <div id="ctx-menu">
         <div class="ctx-btn" onclick="handleCtx('reply')">↩ Ответить</div>
-        <div class="ctx-btn" onclick="handleCtx('copy')">📋 Копировать</div>
-        <div class="ctx-btn" id="ctx-edit" onclick="handleCtx('edit')">✏ Редактировать</div>
+        <div class="ctx-btn" id="ctx-edit" onclick="handleCtx('edit')">✏ Изменить</div>
         <div class="ctx-btn del" id="ctx-del" onclick="handleCtx('delete')">🗑 Удалить</div>
     </div>
 
@@ -355,211 +297,61 @@
             authDomain: "narrators-messenger.firebaseapp.com",
             databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com",
             projectId: "narrators-messenger",
-            storageBucket: "narrators-messenger.firebasestorage.app",
-            messagingSenderId: "421115209686",
             appId: "1:421115209686:web:94d5560793540f14f02677"
         };
 
-        let app, auth, db;
-        try {
-            app = initializeApp(config);
-            auth = getAuth(app);
-            db = getDatabase(app);
-        } catch (e) {
-            alert("Firebase Error: " + e.message);
-        }
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
-        let user = null;
-        let profile = null;
-        let isAdmin = false;
-        
-        // UI
+        let user = null, profile = null, isAdmin = false;
+        let actionState = null, actionMsg = null, ctxMsg = null;
+
         const ui = {
             auth: document.getElementById('auth-panel'),
-            reg: document.getElementById('reg-panel'),
             app: document.getElementById('app'),
-            drawer: document.getElementById('drawer'),
-            overlay: document.getElementById('menu-overlay'),
-            input: document.getElementById('msg-input'),
             msgs: document.getElementById('messages'),
+            input: document.getElementById('msg-input'),
             replyBar: document.getElementById('reply-bar')
         };
 
-        // --- AUTH LOGIC ---
-        
-        // 1. GUEST ENTRY
+        // AUTH
         document.getElementById('btn-guest').onclick = () => {
             const nick = document.getElementById('guest-nick').value.trim();
             const tag = document.getElementById('guest-tag').value.trim().replace('@','');
-            
-            if(!nick || !tag) return alert('Введите Ник и Тег!');
-            
-            // Входим анонимно
-            signInAnonymously(auth).then((result) => {
-                // Сразу сохраняем профиль (чтобы не вылезала рега)
-                const newData = {
-                    displayName: nick,
-                    username: tag.toLowerCase(),
-                    usernameDisplay: tag,
-                    photoURL: '',
-                    uid: result.user.uid
-                };
-                return set(ref(db, `users/${result.user.uid}`), newData);
-            }).catch(e => alert("Ошибка входа: " + e.message));
-        };
-
-        // 2. GOOGLE ENTRY
-        document.getElementById('btn-google').onclick = () => {
-            signInWithPopup(auth, new GoogleAuthProvider()).catch(e => alert("Ошибка Google: " + e.message));
-        };
-        
-        window.doLogout = () => { if(confirm('Выйти?')) signOut(auth); };
-
-        // 3. AUTH STATE LISTENER
-        onAuthStateChanged(auth, u => {
-            user = u;
-            if (user) {
-                ui.auth.style.display = 'none';
-                get(child(ref(db), `users/${user.uid}`)).then(snap => {
-                    if(snap.exists()){
-                        profile = snap.val();
-                        startApp();
-                    } else {
-                        // Если зашел через Гугл впервые - показываем регу
-                        ui.reg.style.display = 'flex';
-                        document.getElementById('in-nick').value = user.displayName || '';
-                    }
-                });
-            } else {
-                ui.auth.style.display = 'flex';
-                ui.reg.style.display = 'none';
-                ui.app.classList.remove('visible');
-                setTimeout(()=>ui.app.style.display='none', 500);
-            }
-        });
-
-        // 4. GOOGLE REGISTRATION SAVE
-        document.getElementById('btn-reg').onclick = () => {
-            const nick = document.getElementById('in-nick').value.trim();
-            const tag = document.getElementById('in-tag').value.trim().replace('@','');
-            const ava = document.getElementById('in-ava').value.trim();
-            
-            if(!nick || !tag) return alert('Введите имя и тег');
-
-            const data = {
-                displayName: nick,
-                username: tag.toLowerCase(),
-                usernameDisplay: tag,
-                photoURL: ava || user.photoURL,
-                uid: user.uid
-            };
-            set(ref(db, `users/${user.uid}`), data).then(() => {
-                profile = data;
-                ui.reg.style.display = 'none';
-                startApp();
+            if(!nick || !tag) return;
+            signInAnonymously(auth).then(res => {
+                const data = { displayName: nick, usernameDisplay: tag, uid: res.user.uid };
+                set(ref(db, `users/${res.user.uid}`), data);
             });
         };
 
+        onAuthStateChanged(auth, u => {
+            user = u;
+            if(user) {
+                get(child(ref(db), `users/${user.uid}`)).then(snap => {
+                    profile = snap.val();
+                    if(profile) startApp();
+                });
+            } else {
+                ui.auth.style.display = 'flex';
+                ui.app.style.display = 'none';
+            }
+        });
+
+        window.doLogout = () => signOut(auth);
+
         function startApp() {
+            ui.auth.style.display = 'none';
             ui.app.style.display = 'flex';
-            setTimeout(()=>ui.app.classList.add('visible'), 50);
-            
-            document.getElementById('my-ava').src = profile.photoURL || 'https://via.placeholder.com/50';
+            setTimeout(() => ui.app.classList.add('visible'), 50);
             document.getElementById('my-name').innerText = profile.displayName;
             document.getElementById('my-tag').innerText = '@' + profile.usernameDisplay;
-            
-            if(profile.usernameDisplay === 'admin') isAdmin = true;
-
+            isAdmin = profile.usernameDisplay === 'admin';
             loadMessages();
-            try { loadLocalTheme(); } catch(e) {}
         }
 
-        // --- THEME ---
-        const root = document.documentElement.style;
-        const els = {
-            font: document.getElementById('set-font'),
-            radius: document.getElementById('set-radius'),
-            opacity: document.getElementById('set-opacity'),
-            prim: document.getElementById('set-primary'),
-            bgCol: document.getElementById('set-bg-color'),
-            bgImg: document.getElementById('set-bg-img'),
-            meBg: document.getElementById('set-me-bg'),
-            meTxt: document.getElementById('set-me-text'),
-            othBg: document.getElementById('set-other-bg'),
-        };
-
-        window.applyTheme = () => {
-            root.setProperty('--font-size', els.font.value + 'px');
-            root.setProperty('--radius', els.radius.value + 'px');
-            root.setProperty('--bubble-opacity', els.opacity.value / 100);
-            root.setProperty('--primary', els.prim.value);
-            root.setProperty('--bg-chat-color', els.bgCol.value);
-            root.setProperty('--msg-me', els.meBg.value);
-            root.setProperty('--msg-me-text', els.meTxt.value);
-            root.setProperty('--msg-other', els.othBg.value);
-            root.setProperty('--bg-chat-img', els.bgImg.value ? `url('${els.bgImg.value}')` : 'none');
-        };
-
-        window.saveTheme = () => {
-            const t = {
-                font: els.font.value, radius: els.radius.value, op: els.opacity.value,
-                prim: els.prim.value, bgc: els.bgCol.value, bgi: els.bgImg.value,
-                mb: els.meBg.value, mt: els.meTxt.value, ob: els.othBg.value
-            };
-            localStorage.setItem('theme_v2', JSON.stringify(t));
-            toggleDrawer(false);
-        };
-
-        window.resetTheme = () => {
-            localStorage.removeItem('theme_v2');
-            location.reload();
-        };
-
-        function loadLocalTheme() {
-            const saved = localStorage.getItem('theme_v2');
-            if(saved) {
-                const t = JSON.parse(saved);
-                els.font.value = t.font || 16; 
-                els.radius.value = t.radius !== undefined ? t.radius : 12; 
-                els.opacity.value = t.op || 100;
-                els.prim.value = t.prim || '#3390ec'; 
-                els.bgCol.value = t.bgc || '#ffffff'; 
-                els.bgImg.value = t.bgi || '';
-                els.meBg.value = t.mb || '#eeffde'; 
-                els.meTxt.value = t.mt || '#000000'; 
-                els.othBg.value = t.ob || '#f4f4f5';
-                applyTheme();
-            }
-        }
-
-        // --- DRAWER ---
-        window.toggleDrawer = (open) => {
-            if(open) {
-                ui.drawer.classList.add('open');
-                ui.overlay.classList.add('open');
-            } else {
-                ui.drawer.classList.remove('open');
-                ui.overlay.classList.remove('open');
-                setTimeout(() => {
-                    document.getElementById('menu-main').style.display = 'block';
-                    document.getElementById('menu-settings').classList.remove('active');
-                }, 300);
-            }
-        };
-        window.showSettings = () => {
-            document.getElementById('menu-main').style.display = 'none';
-            document.getElementById('menu-settings').classList.add('active');
-        };
-        window.hideSettings = () => {
-            document.getElementById('menu-settings').classList.remove('active');
-            document.getElementById('menu-main').style.display = 'block';
-        };
-
-        // --- MESSAGES ---
-        let actionState = null;
-        let actionMsg = null;
-        let ctxMsg = null;
-
+        // MESSAGES
         window.sendMsg = () => {
             const txt = ui.input.value.trim();
             if(!txt) return;
@@ -567,30 +359,21 @@
             if(actionState === 'edit' && actionMsg) {
                 update(ref(db, `messages/${actionMsg.key}`), { text: txt, isEdited: true });
             } else {
-                const msg = {
-                    text: txt,
-                    uid: user.uid,
-                    displayName: profile.displayName,
-                    username: profile.usernameDisplay,
-                    photoURL: profile.photoURL,
+                const m = {
+                    text: txt, uid: user.uid, displayName: profile.displayName,
                     createdAt: Date.now()
                 };
-                if(actionState === 'reply' && actionMsg) {
-                    msg.replyTo = { name: actionMsg.displayName, text: actionMsg.text };
-                }
-                push(ref(db, 'messages'), msg);
+                if(actionState === 'reply') m.replyTo = { name: actionMsg.displayName, text: actionMsg.text };
+                push(ref(db, 'messages'), m);
             }
             cancelAction();
             ui.input.value = '';
         };
 
-        ui.input.addEventListener('keydown', e => {
-            if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-        });
-
-        window.sendImg = () => {
-            const url = prompt('URL Картинки:');
-            if(url) { ui.input.value = url; sendMsg(); }
+        window.cancelAction = () => {
+            actionState = null; actionMsg = null;
+            ui.replyBar.style.display = 'none';
+            ui.input.placeholder = "Сообщение...";
         };
 
         function loadMessages() {
@@ -598,99 +381,77 @@
                 ui.msgs.innerHTML = '';
                 const data = snap.val();
                 if(!data) return;
-                
-                const list = Object.entries(data).map(([k,v]) => ({key:k, ...v})).sort((a,b)=>a.createdAt - b.createdAt);
-                
-                list.forEach(m => {
+                Object.entries(data).sort((a,b)=>a[1].createdAt - b[1].createdAt).forEach(([key, m]) => {
                     const isMe = m.uid === user.uid;
-                    const el = document.createElement('div');
-                    el.className = `msg-row ${isMe ? 'me' : 'other'}`;
+                    const row = document.createElement('div');
+                    row.className = `msg-row ${isMe ? 'me' : 'other'}`;
                     
-                    let content = (m.text || "").replace(/</g,"&lt;");
-                    if(content.match(/\.(jpg|png|gif|webp)/i) || content.startsWith('data:image')) {
-                        content = `<img src="${content}" class="msg-img" onclick="window.open(this.src)">`;
-                    }
+                    let content = m.text.replace(/</g,"&lt;");
+                    if(content.match(/\.(jpg|png|gif|webp)/i)) content = `<img src="${content}" class="msg-img">`;
 
-                    let reply = '';
-                    if(m.replyTo) {
-                        reply = `<div style="border-left:3px solid var(--primary); padding-left:6px; margin-bottom:5px; font-size:0.85em; opacity:0.8">
-                            <b>${m.replyTo.name}</b><br>${m.replyTo.text.substring(0,30)}...
-                        </div>`;
-                    }
-
-                    let crown = m.username === 'admin' ? '<span class="admin-crown">👑</span>' : '';
-                    let time = new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                    let edit = m.isEdited ? ' (изм.)' : '';
-
-                    el.innerHTML = `
-                        <div class="bubble" oncontextmenu="openCtx(event, '${m.key}', '${m.uid}')">
-                            <div class="sender-name">${m.displayName} ${crown}</div>
-                            ${reply}
+                    row.innerHTML = `
+                        <div class="bubble" id="msg-${key}">
+                            <div class="sender-name">${m.displayName}</div>
+                            ${m.replyTo ? `<div style="border-left:2px solid var(--primary); padding-left:5px; font-size:0.8rem; margin-bottom:5px; opacity:0.6"><b>${m.replyTo.name}</b>: ${m.replyTo.text}</div>` : ''}
                             <div>${content}</div>
-                            <span class="msg-meta">${edit} ${time}</span>
+                            <span class="msg-meta">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}${m.isEdited?' (изм.)':''}</span>
                         </div>
                     `;
-                    el.querySelector('.bubble').data = m;
-                    ui.msgs.appendChild(el);
+                    const bubble = row.querySelector('.bubble');
+                    bubble.oncontextmenu = (e) => openCtx(e, {key, ...m});
+                    ui.msgs.appendChild(row);
                 });
                 ui.msgs.scrollTop = ui.msgs.scrollHeight;
             });
         }
 
-        // --- CONTEXT ---
-        window.openCtx = (e, key, uid) => {
+        // CONTEXT MENU LOGIC
+        window.openCtx = (e, msg) => {
             e.preventDefault();
-            ctxMsg = e.currentTarget.data;
-            ctxMsg.key = key;
-
+            ctxMsg = msg;
             const menu = document.getElementById('ctx-menu');
             menu.style.display = 'block';
-            let x = e.clientX, y = e.clientY;
-            if(x + 180 > window.innerWidth) x -= 180;
-            if(y + 150 > window.innerHeight) y -= 150;
-            menu.style.left = x + 'px'; menu.style.top = y + 'px';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 190) + 'px';
+            menu.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
 
-            const isMine = uid === user.uid;
+            const isMine = msg.uid === user.uid;
             document.getElementById('ctx-edit').style.display = isMine ? 'block' : 'none';
             document.getElementById('ctx-del').style.display = (isMine || isAdmin) ? 'block' : 'none';
         };
 
-        document.addEventListener('click', e => {
-            if(!document.getElementById('ctx-menu').contains(e.target)) 
-                document.getElementById('ctx-menu').style.display = 'none';
-        });
-
         window.handleCtx = (act) => {
-            if(!ctxMsg) return;
             if(act === 'reply') {
                 actionState = 'reply'; actionMsg = ctxMsg;
                 ui.replyBar.style.display = 'flex';
                 document.getElementById('reply-name').innerText = ctxMsg.displayName;
                 document.getElementById('reply-text').innerText = ctxMsg.text;
                 ui.input.focus();
-            }
-            if(act === 'edit') {
+            } else if(act === 'edit') {
                 actionState = 'edit'; actionMsg = ctxMsg;
-                ui.replyBar.style.display = 'flex';
-                document.getElementById('reply-name').innerText = "Редактирование";
-                document.getElementById('reply-text').innerText = ctxMsg.text;
-                ui.input.value = ctxMsg.text; ui.input.focus();
+                ui.input.value = ctxMsg.text;
+                ui.input.placeholder = "Редактирование...";
+                ui.input.focus();
+            } else if(act === 'delete') {
+                if(confirm('Удалить сообщение?')) remove(ref(db, `messages/${ctxMsg.key}`));
             }
-            if(act === 'copy') navigator.clipboard.writeText(ctxMsg.text);
-            if(act === 'delete') {
-                if(confirm('Удалить?')) remove(ref(db, `messages/${ctxMsg.key}`));
-            }
+            document.getElementById('ctx-menu').style.display = 'none';
         };
 
-        window.cancelAction = () => {
-            actionState = null; actionMsg = null;
-            ui.replyBar.style.display = 'none';
-            ui.input.value = '';
-        };
+        document.addEventListener('click', () => document.getElementById('ctx-menu').style.display = 'none');
 
-        // Mobile
-        window.openChat = () => document.body.classList.add('chat-open');
-        window.closeChat = () => document.body.classList.remove('chat-open');
+        // MOBILE VIEW HELPERS
+        window.openChatView = () => document.body.classList.add('chat-open');
+        window.closeChatView = () => document.body.classList.remove('chat-open');
+        
+        // THEME
+        window.showSettings = () => { document.getElementById('menu-main').style.display='none'; document.getElementById('menu-settings').classList.add('active'); };
+        window.hideSettings = () => { document.getElementById('menu-settings').classList.remove('active'); document.getElementById('menu-main').style.display='block'; };
+        window.applyTheme = () => {
+            const root = document.documentElement.style;
+            root.setProperty('--primary', document.getElementById('set-primary').value);
+            root.setProperty('--font-size', document.getElementById('set-font').value + 'px');
+        };
+        window.saveTheme = () => { localStorage.setItem('theme', JSON.stringify({p: document.getElementById('set-primary').value, f: document.getElementById('set-font').value})); toggleDrawer(false); };
     </script>
 </body>
 </html>
