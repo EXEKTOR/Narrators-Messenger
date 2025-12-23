@@ -3,522 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Narrators Messenger v0.1.2 | Full Source</title>
+    <title>Narrators Messenger | Enterprise Edition v0.1.3</title>
 
     <style>
         :root {
-            /* Основная палитра */
-            --primary: #3390ec;
-            --primary-soft: rgba(51, 144, 236, 0.1);
-            --bg-body: #ffffff;
+            /* Палитра брендовых цветов */
+            --primary-color: #3390ec;
+            --primary-light: rgba(51, 144, 236, 0.15);
+            --accent-color: #0088cc;
             
-            /* Настройки чата */
-            --bg-chat-img: none;
-            --bg-chat-color: #ffffff;
-            
-            /* Пузыри сообщений */
-            --msg-me: #eeffde;
-            --msg-me-text: #000000;
-            --msg-other: #f4f4f5;
-            --msg-other-text: #000000;
-            
-            /* Геометрия и шрифты */
-            --radius: 12px;
-            --font-size: 16px;
-            --bubble-opacity: 1;
-
-            /* Служебные цвета */
+            /* Цвета интерфейса */
+            --bg-window: #ffffff;
             --bg-sidebar: #ffffff;
-            --border: #e4e4e4;
-            --text-main: #000000;
-            --text-sec: #707579;
-            --shadow: 0 4px 12px rgba(0,0,0,0.1);
-            --ease: cubic-bezier(0.25, 1, 0.5, 1);
+            --bg-chat-surface: #f4f4f5;
+            
+            /* Настройки сообщений */
+            --msg-bubble-me: #eeffde;
+            --msg-text-me: #000000;
+            --msg-bubble-other: #ffffff;
+            --msg-text-other: #000000;
+            
+            /* Геометрия элементов */
+            --border-radius-lg: 16px;
+            --border-radius-md: 12px;
+            --border-radius-sm: 8px;
+            
+            /* Типографика */
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --base-font-size: 16px;
+            
+            /* Границы и тени */
+            --border-light: 1px solid #e4e4e4;
+            --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --transition-speed: 0.3s;
         }
 
-        /* Базовый сброс стилей */
-        * { 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-            margin: 0; 
+        /* Глобальные сбросы и базовые настройки */
+        * {
+            margin: 0;
             padding: 0;
+            box-sizing: border-box;
             outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            height: 100vh; 
-            width: 100vw; 
-            display: flex; 
-            overflow: hidden; 
-            background: var(--bg-body); 
-            color: var(--text-main);
-            font-size: var(--font-size);
+
+        body {
+            font-family: var(--font-main);
+            font-size: var(--base-font-size);
+            background-color: var(--bg-window);
+            color: #000000;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            overflow: hidden;
             line-height: 1.5;
         }
 
-        /* Компоненты форм */
-        button { 
-            cursor: pointer; 
-            border: none; 
-            transition: all 0.2s ease; 
-            user-select: none;
-            display: flex;
+        /* --- КОМПОНЕНТЫ КНОПОК --- */
+        .btn {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s ease, opacity 0.2s ease;
+            user-select: none;
         }
 
-        button:active { 
-            transform: scale(0.95); 
-            opacity: 0.8; 
+        .btn:active {
+            transform: scale(0.96);
+            opacity: 0.9;
         }
 
-        /* Стили для панелей авторизации и регистрации */
-        .panel { 
-            position: fixed; 
-            inset: 0; 
-            background: #ffffff; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 9999; 
-            padding: 30px;
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(51, 144, 236, 0.3);
+        }
+
+        /* --- ЭКРАНЫ АВТОРИЗАЦИИ --- */
+        .full-screen-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 40px;
             text-align: center;
         }
-        
-        .auth-card {
-            width: 100%; 
-            max-width: 360px;
-            padding: 20px;
+
+        .auth-logo {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--primary-color);
+            letter-spacing: -2px;
+            margin-bottom: 8px;
         }
 
-        .input-field { 
-            padding: 15px; 
-            border: 1px solid var(--border); 
-            border-radius: 12px; 
-            width: 100%; 
-            font-size: 16px; 
-            background: #fdfdfd;
-            margin-bottom: 15px;
-            transition: border-color 0.2s;
-        }
-
-        .input-field:focus {
-            border-color: var(--primary);
-        }
-
-        .btn-main { 
-            padding: 16px; 
-            background: var(--primary); 
-            color: #ffffff; 
-            border-radius: 12px; 
-            font-weight: 600; 
-            font-size: 16px; 
+        .auth-input-group {
             width: 100%;
-            box-shadow: 0 4px 15px rgba(51, 144, 236, 0.2);
+            max-width: 320px;
+            margin-top: 20px;
         }
 
-        /* Основная сетка приложения */
-        #app { 
-            display: none; 
-            width: 100%; 
-            height: 100%; 
-            opacity: 0; 
-            transition: opacity 0.6s var(--ease); 
+        .standard-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #f0f0f0;
+            border-radius: var(--border-radius-md);
+            font-size: 1rem;
+            margin-bottom: 12px;
+            transition: border-color 0.2s ease;
         }
 
-        #app.visible { 
-            display: flex; 
-            opacity: 1; 
+        .standard-input:focus {
+            border-color: var(--primary-color);
         }
 
-        /* Левая панель (Списко чатов) */
-        #sidebar { 
-            width: 380px; 
-            flex-shrink: 0; 
-            background: var(--bg-sidebar); 
-            border-right: 1px solid var(--border); 
-            display: flex; 
-            flex-direction: column; 
+        /* --- СТРУКТУРА ПРИЛОЖЕНИЯ --- */
+        #main-application {
+            display: none;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        #main-application.is-active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* --- САЙДБАР (ЛЕВАЯ ПАНЕЛЬ) --- */
+        #sidebar-container {
+            width: 360px;
+            height: 100%;
+            background: var(--bg-sidebar);
+            border-right: var(--border-light);
+            display: flex;
+            flex-direction: column;
             z-index: 500;
         }
 
-        .sidebar-top { 
-            padding: 15px 20px; 
-            display: flex; 
-            align-items: center; 
-            gap: 15px;
-            border-bottom: 1px solid var(--border);
+        .sidebar-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .chat-list-container { 
-            flex: 1; 
-            overflow-y: auto; 
+        /* БЛОК ПОИСКА */
+        .search-module {
+            padding: 8px 16px 16px 16px;
+            border-bottom: var(--border-light);
         }
 
-        .chat-row { 
-            padding: 12px 20px; 
-            display: flex; 
-            gap: 15px; 
-            align-items: center; 
-            cursor: pointer; 
-            border-bottom: 1px solid #f9f9f9;
+        .search-bar-inner {
+            position: relative;
+            display: flex;
+            align-items: center;
         }
 
-        .chat-row:hover { background: #f7f9fb; }
-        .chat-row.active { background: var(--primary-soft); }
-
-        .user-avatar { 
-            width: 55px; 
-            height: 55px; 
-            border-radius: 50%; 
-            background: #f0f0f0; 
-            object-fit: cover;
-            flex-shrink: 0;
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            color: #999;
+            font-size: 14px;
         }
 
-        /* Правая панель (Окно чата) */
-        #chat-window { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            background-color: var(--bg-chat-color); 
-            background-image: var(--bg-chat-img); 
-            background-size: cover; 
+        .search-field {
+            width: 100%;
+            background: #f1f1f2;
+            border: none;
+            padding: 10px 10px 10px 40px;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        .search-field:focus {
+            background: #ffffff;
+            box-shadow: inset 0 0 0 2px var(--primary-color);
+        }
+
+        /* Результаты поиска */
+        #search-results-overlay {
+            margin-top: 8px;
+            display: none;
+            background: #fff;
+            border-radius: var(--border-radius-sm);
+            max-height: 400px;
+            overflow-y: auto;
+            border: var(--border-light);
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* --- ОКНО ЧАТА (ЦЕНТРАЛЬНАЯ ПАНЕЛЬ) --- */
+        #viewport-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-chat-surface);
             position: relative;
         }
 
-        .chat-top-bar { 
-            height: 65px; 
-            background: rgba(255,255,255,0.95); 
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid var(--border); 
-            display: flex; 
-            align-items: center; 
-            padding: 0 25px; 
+        .viewport-header {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: var(--border-light);
             z-index: 100;
         }
 
-        #messages-view { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 25px 8%; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            scroll-behavior: smooth;
+        #message-flow-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 10%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        /* Пузыри сообщений */
-        .msg-wrapper { 
-            display: flex; 
-            width: 100%; 
-            animation: slideIn 0.35s var(--ease); 
+        /* --- СООБЩЕНИЯ --- */
+        .message-row {
+            display: flex;
+            width: 100%;
+            animation: messageEntry 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
         }
 
-        .msg-wrapper.my-msg { justify-content: flex-end; }
-
-        .msg-bubble { 
-            padding: 12px 16px; 
-            border-radius: var(--radius); 
-            max-width: 70%; 
-            position: relative; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            word-wrap: break-word;
+        .message-row.is-me {
+            justify-content: flex-end;
         }
 
-        .msg-wrapper.other-msg .msg-bubble { 
-            background: var(--msg-other); 
-            color: var(--msg-other-text); 
-            border-bottom-left-radius: 4px; 
+        .message-bubble {
+            padding: 10px 16px;
+            max-width: 70%;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius-md);
         }
 
-        .msg-wrapper.my-msg .msg-bubble { 
-            background: var(--msg-me); 
-            color: var(--msg-me-text); 
-            border-bottom-right-radius: 4px; 
+        .is-me .message-bubble {
+            background-color: var(--msg-bubble-me);
+            color: var(--msg-text-me);
+            border-bottom-right-radius: 4px;
         }
 
-        .author-tag { 
-            font-size: 13px; 
-            font-weight: 700; 
-            color: var(--primary); 
-            margin-bottom: 5px; 
+        .is-other .message-bubble {
+            background-color: var(--msg-bubble-other);
+            color: var(--msg-text-other);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-author {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
             display: block;
         }
 
-        .time-stamp { 
-            font-size: 11px; 
-            opacity: 0.5; 
-            text-align: right; 
-            margin-top: 5px; 
-            display: block; 
+        /* --- ПАНЕЛЬ ВВОДА --- */
+        .input-system-footer {
+            background: #ffffff;
+            padding: 12px 20px;
+            border-top: var(--border-light);
         }
 
-        /* Нижняя часть чата (ввод) */
-        .bottom-controls { 
-            background: #ffffff; 
-            padding: 15px 25px; 
-            border-top: 1px solid var(--border); 
+        .input-layout-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
-        .input-group { 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
+        #main-text-area {
+            flex: 1;
+            border: none;
+            padding: 10px 0;
+            font-size: 16px;
+            resize: none;
+            max-height: 150px;
+            background: transparent;
         }
 
-        #main-input { 
-            flex: 1; 
-            border: none; 
-            font-size: 16px; 
-            padding: 5px 0;
-            resize: none; 
-            max-height: 120px; 
-            background: transparent; 
-        }
-
-        /* Боковое меню (Drawer) */
-        #side-menu { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 320px; 
-            height: 100%; 
-            background: #ffffff; 
-            z-index: 2000; 
-            transform: translateX(-100%); 
-            transition: transform 0.4s var(--ease); 
-            display: flex; 
-            flex-direction: column; 
+        /* --- БОКОВОЕ МЕНЮ --- */
+        #navigation-drawer {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: #ffffff;
+            z-index: 2000;
+            transition: left var(--transition-speed) var(--ease);
             box-shadow: 10px 0 30px rgba(0,0,0,0.1);
         }
 
-        #side-menu.active { transform: translateX(0); }
-
-        .menu-header { 
-            padding: 40px 25px; 
-            background: var(--primary); 
-            color: #ffffff; 
+        #navigation-drawer.is-open {
+            left: 0;
         }
 
-        .menu-items { padding: 15px; flex: 1; }
-
-        .menu-link { 
-            padding: 14px 18px; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-size: 15px; 
-            margin-bottom: 5px;
+        /* АНИМАЦИИ */
+        @keyframes messageEntry {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .menu-link:hover { background: #f5f5f5; }
-
-        /* Контекстное меню */
-        #context-popup { 
-            position: fixed; 
-            background: #ffffff; 
-            width: 200px; 
-            border-radius: 14px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-            z-index: 10000; 
-            display: none; 
-            padding: 8px; 
-        }
-
-        .popup-item { 
-            padding: 12px 15px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 14px; 
-        }
-
-        .popup-item:hover { background: #f0f0f0; }
-
-        /* Анимации */
-        @keyframes slideIn { 
-            from { opacity: 0; transform: translateY(15px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* Адаптивность для телефонов */
-        @media (max-width: 850px) {
-            #sidebar { width: 100%; }
-            #chat-window { 
-                display: none; 
-                position: fixed; 
-                inset: 0; 
-                z-index: 600; 
+        /* АДАПТИВНОСТЬ */
+        @media (max-width: 800px) {
+            #sidebar-container { width: 100%; }
+            #viewport-chat {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 800;
             }
-            body.is-chatting #chat-window { display: flex; }
-            .mobile-back-btn { display: flex !important; }
+            body.chat-mode-active #viewport-chat { display: flex; }
         }
-
-        .mobile-back-btn { display: none; font-size: 24px; margin-right: 15px; }
-
-        /* Оверлей */
-        .blur-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.3);
-            z-index: 1999;
-            display: none;
-            backdrop-filter: blur(2px);
-        }
-        .blur-overlay.active { display: block; }
     </style>
 </head>
 <body>
 
-    <div id="screen-auth" class="panel">
-        <div class="auth-card">
-            <h1 style="color:var(--primary); font-size:48px; letter-spacing:-1px; margin-bottom:5px;">Narrators</h1>
-            <p style="color:var(--text-sec); margin-bottom:40px; font-size:14px;">Product Version 0.1.2 Production</p>
-            
-            <button id="auth-google-trigger" class="btn-main" style="background:#fff; color:#444; border:1px solid #ddd; box-shadow:none;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" style="margin-right:12px;">
-                Войти через аккаунт Google
+    <section id="auth-gateway" class="full-screen-panel">
+        <h1 class="auth-logo">Narrators</h1>
+        <p style="color: #888; margin-bottom: 40px;">Professional Messaging Platform</p>
+        <div class="auth-input-group">
+            <button id="google-auth-button" class="btn btn-primary" style="width: 100%; padding: 16px;">
+                Continue with Google Account
             </button>
-            <p style="margin-top:25px; font-size:12px; color:#aaa; line-height:1.6;">
-                Входя в приложение, вы соглашаетесь с правилами сообщества Narrators.
-            </p>
         </div>
-    </div>
+    </section>
 
-    <div id="screen-reg" class="panel" style="display:none;">
-        <div class="auth-card">
-            <h2 style="margin-bottom:10px; font-size:28px;">Завершите настройку</h2>
-            <p style="color:var(--text-sec); margin-bottom:30px;">Как вас будут видеть другие пользователи?</p>
-            
-            <div style="text-align:left;">
-                <label style="font-size:12px; font-weight:700; color:var(--primary); margin-left:10px; margin-bottom:5px; display:block;">ВАШЕ ИМЯ</label>
-                <input id="reg-nickname" class="input-field" placeholder="Например: Иван Иванов">
-                
-                <label style="font-size:12px; font-weight:700; color:var(--primary); margin-left:10px; margin-bottom:5px; display:block;">УНИКАЛЬНЫЙ ТЕГ</label>
-                <input id="reg-username" class="input-field" placeholder="Например: ivan_cool">
-                
-                <label style="font-size:12px; font-weight:700; color:var(--primary); margin-left:10px; margin-bottom:5px; display:block;">ССЫЛКА НА АВАТАР (ОПЦИОНАЛЬНО)</label>
-                <input id="reg-avatar-url" class="input-field" placeholder="https://image.com/my-photo.jpg">
-            </div>
-
-            <button id="reg-confirm-btn" class="btn-main" style="margin-top:10px;">СОЗДАТЬ АККАУНТ</button>
+    <section id="profile-setup" class="full-screen-panel" style="display: none;">
+        <h2 style="margin-bottom: 24px;">Setup Your Profile</h2>
+        <div class="auth-input-group">
+            <input id="input-display-name" class="standard-input" placeholder="Your full name">
+            <input id="input-username-tag" class="standard-input" placeholder="@username_tag">
+            <button id="save-profile-action" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                START MESSAGING
+            </button>
         </div>
-    </div>
+    </section>
 
-    <div id="app">
-        <div id="app-overlay" class="blur-overlay" onclick="uiAction.closeMenu()"></div>
+    <main id="main-application">
         
-        <div id="side-menu">
-            <div class="menu-header">
-                <img id="user-profile-img" class="user-avatar" style="width:80px; height:80px; border:4px solid rgba(255,255,255,0.2); margin-bottom:15px;">
-                <div id="user-display-name" style="font-weight:700; font-size:20px;">Загрузка...</div>
-                <div id="user-display-tag" style="opacity:0.7; font-size:14px;">@username</div>
+        <div id="navigation-drawer">
+            <div style="background: var(--primary-color); padding: 40px 24px; color: #fff;">
+                <img id="drawer-user-avatar" style="width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); margin-bottom: 15px; object-fit: cover;">
+                <h3 id="drawer-user-name" style="margin-bottom: 4px;">User Name</h3>
+                <p id="drawer-user-tag" style="opacity: 0.8; font-size: 14px;">@tag</p>
             </div>
-            
-            <div class="menu-items">
-                <div id="menu-view-main">
-                    <div class="menu-link" onclick="uiAction.showSettings()">🎨 Настройки внешнего вида</div>
-                    <div class="menu-link" onclick="uiAction.logout()" style="color:#ff3b30; margin-top:20px;">🚪 Выйти из профиля</div>
-                </div>
-
-                <div id="menu-view-settings" style="display:none;">
-                    <button onclick="uiAction.hideSettings()" style="color:var(--primary); font-weight:700; margin-bottom:20px; font-size:13px;">⬅ НАЗАД В МЕНЮ</button>
-                    <div style="display:flex; flex-direction:column; gap:20px;">
-                        <div class="setting-item">
-                            <label style="display:block; font-size:12px; margin-bottom:8px;">РАЗМЕР ШРИФТА (px)</label>
-                            <input type="range" id="ui-font-range" min="12" max="22" value="16" style="width:100%;" oninput="themeCore.preview()">
-                        </div>
-                        <div class="setting-item">
-                            <label style="display:block; font-size:12px; margin-bottom:8px;">СКРУГЛЕНИЕ УГЛОВ (px)</label>
-                            <input type="range" id="ui-radius-range" min="0" max="25" value="12" style="width:100%;" oninput="themeCore.preview()">
-                        </div>
-                        <div class="setting-item">
-                            <label style="display:block; font-size:12px; margin-bottom:8px;">ОСНОВНОЙ ЦВЕТ</label>
-                            <input type="color" id="ui-color-primary" value="#3390ec" style="width:100%; height:40px; border:none; cursor:pointer;" oninput="themeCore.preview()">
-                        </div>
-                        <div class="setting-item">
-                            <label style="display:block; font-size:12px; margin-bottom:8px;">ЦВЕТ МОИХ СООБЩЕНИЙ</label>
-                            <input type="color" id="ui-color-me" value="#eeffde" style="width:100%; height:40px; border:none;" oninput="themeCore.preview()">
-                        </div>
-                    </div>
-                    <button class="btn-main" onclick="themeCore.save()" style="margin-top:40px; padding:12px;">ПРИМЕНИТЬ И СОХРАНИТЬ</button>
-                </div>
-            </div>
+            <nav style="padding: 20px;">
+                <button onclick="appCore.logout()" style="color: #ff3b30; padding: 12px; font-weight: 600;">Logout</button>
+            </nav>
         </div>
 
-        <div id="sidebar">
-            <div class="sidebar-top">
-                <button onclick="uiAction.openMenu()" style="font-size:24px; color:var(--text-sec);">☰</button>
-                <div style="font-weight:800; font-size:20px; flex:1; text-align:center; letter-spacing:-0.5px;">Narrators</div>
-            </div>
-            
-            <div class="chat-list-container">
-                <div class="chat-row active" onclick="uiAction.openChatRoom()">
-                    <div style="position:relative;">
-                        <img src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" class="user-avatar">
-                    </div>
-                    <div style="flex:1; overflow:hidden;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <b style="font-size:16px;">Global Chat Room</b>
-                            <span style="font-size:11px; color:#aaa;">online</span>
-                        </div>
-                        <div style="font-size:13px; color:var(--text-sec); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            Добро пожаловать в общее пространство!
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <aside id="sidebar-container">
+            <div class="sidebar-header">
+                <button id="drawer-trigger" style="font-size: 24px;">☰</button>
+                <span style="font-weight: 800; font-size: 18px; color: var(--primary-color);">NARRATORS</span>
+                <div style="width: 24px;"></div> </div>
 
-        <div id="chat-window">
-            <div class="chat-top-bar">
-                <button class="mobile-back-btn" onclick="uiAction.closeChatRoom()">⬅</button>
-                <div style="display:flex; align-items:center; gap:12px;">
+            <div class="search-module">
+                <div class="search-bar-inner">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="global-search-input" class="search-field" placeholder="Search people...">
+                </div>
+                <div id="search-results-overlay"></div>
+            </div>
+
+            <div id="chat-roster-list" style="flex: 1; overflow-y: auto;">
+                <div class="chat-row" onclick="uiManager.openGlobalRoom()" style="padding: 15px 20px; display: flex; gap: 14px; align-items: center; cursor: pointer;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width: 50px; height: 50px; border-radius: 50%;">
                     <div>
-                        <div style="font-weight:700; font-size:17px;">Global Chat Room</div>
-                        <div style="font-size:12px; color:var(--primary);">v0.1.2 Production Channel</div>
+                        <div style="font-weight: 700;">Global Chat Room</div>
+                        <div style="font-size: 13px; color: #999;">Connect with everyone</div>
                     </div>
                 </div>
             </div>
+        </aside>
 
-            <div id="messages-view"></div>
-
-            <div class="bottom-controls">
-                <div id="reply-preview" style="display:none; background:#f5f5f5; padding:10px; border-left:4px solid var(--primary); margin-bottom:12px; border-radius:5px; align-items:center; justify-content:space-between;">
-                    <div style="overflow:hidden;">
-                        <b id="reply-author-name" style="color:var(--primary); font-size:13px;"></b><br>
-                        <span id="reply-author-text" style="font-size:13px; opacity:0.7;"></span>
-                    </div>
-                    <button onclick="chatEngine.cancelAction()" style="padding:5px;">✕</button>
-                </div>
-
-                <div class="input-group">
-                    <button onclick="chatEngine.attachImage()" style="font-size:22px; color:#999;">📷</button>
-                    <textarea id="main-input" placeholder="Напишите что-нибудь..." rows="1"></textarea>
-                    <button id="send-msg-btn" onclick="chatEngine.sendMessage()" style="color:var(--primary); font-size:26px;">➤</button>
-                </div>
+        <section id="viewport-chat">
+            <div class="viewport-header">
+                <button onclick="uiManager.backToRoster()" style="margin-right: 15px; font-size: 20px; display: none;" class="mobile-only-back">⬅</button>
+                <div style="font-weight: 700;">Global Chat Room</div>
             </div>
-        </div>
-    </div>
 
-    <div id="context-popup">
-        <div class="popup-item" onclick="chatEngine.handleAction('reply')">↩ Ответить</div>
-        <div class="popup-item" onclick="chatEngine.handleAction('copy')">📋 Копировать текст</div>
-        <div id="popup-edit-btn" class="popup-item" onclick="chatEngine.handleAction('edit')">✏ Редактировать</div>
-        <div id="popup-delete-btn" class="popup-item" onclick="chatEngine.handleAction('delete')" style="color:#ff3b30;">🗑 Удалить для всех</div>
-    </div>
+            <div id="message-flow-container">
+                </div>
+
+            <footer class="input-system-footer">
+                <div class="input-layout-row">
+                    <textarea id="main-text-area" placeholder="Type a message..." rows="1"></textarea>
+                    <button id="send-message-trigger" style="color: var(--primary-color); font-size: 28px;">➤</button>
+                </div>
+            </footer>
+        </section>
+    </main>
 
     <script type="module">
-        /* Импорт необходимых модулей Firebase */
+        /* 1. ПОДКЛЮЧЕНИЕ БИБЛИОТЕК 
+           Используем официальный CDN Google Firebase.
+        */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
             getAuth, 
             signInWithRedirect, 
-            getRedirectResult, 
-            GoogleAuthProvider, 
             onAuthStateChanged, 
-            signOut 
+            signOut, 
+            GoogleAuthProvider 
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { 
             getDatabase, 
@@ -527,12 +433,11 @@
             push, 
             onValue, 
             get, 
-            child, 
-            update, 
-            remove 
+            child 
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        /* --- КОНФИГУРАЦИЯ FIREBASE --- */
+        /* 2. КОНФИГУРАЦИЯ СЕРВЕРНОЙ ЧАСТИ 
+        */
         const firebaseConfig = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
             authDomain: "narrators-messenger.firebaseapp.com",
@@ -543,341 +448,278 @@
             appId: "1:421115209686:web:94d5560793540f14f02677"
         };
 
-        /* Инициализация сервисов */
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-        const provider = new GoogleAuthProvider();
+        /* 3. ИНИЦИАЛИЗАЦИЯ ИНСТАНСОВ 
+        */
+        const appInstance = initializeApp(firebaseConfig);
+        const authModule = getAuth(appInstance);
+        const dbInstance = getDatabase(appInstance);
+        const authProvider = new GoogleAuthProvider();
 
-        /* Глобальное состояние приложения */
-        let state = {
-            user: null,
-            profile: null,
-            isAdmin: false,
-            activeAction: null, // 'reply' или 'edit'
-            targetMessage: null,
-            contextTarget: null
-        };
+        /* 4. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ СОСТОЯНИЯ 
+        */
+        let sessionUser = null;
+        let sessionProfile = null;
 
-        /* --- ЯДРО АВТОРИЗАЦИИ --- */
-        document.getElementById('auth-google-trigger').addEventListener('click', () => {
-            signInWithRedirect(auth, provider);
-        });
-
-        onAuthStateChanged(auth, (firebaseUser) => {
-            if (firebaseUser) {
-                state.user = firebaseUser;
-                validateUserProfile();
-            } else {
-                toggleScreen('screen-auth');
-            }
-        });
-
-        async function validateUserProfile() {
-            const userRef = ref(db);
-            try {
-                const snapshot = await get(child(userRef, `users/${state.user.uid}`));
-                if (snapshot.exists()) {
-                    state.profile = snapshot.val();
-                    launchMainApp();
-                } else {
-                    toggleScreen('screen-reg');
-                    document.getElementById('reg-nickname').value = state.user.displayName || "";
-                }
-            } catch (error) {
-                console.error("Ошибка при проверке профиля:", error);
-            }
-        }
-
-        document.getElementById('reg-confirm-btn').addEventListener('click', async () => {
-            const nick = document.getElementById('reg-nickname').value.trim();
-            const tag = document.getElementById('reg-username').value.trim().replace('@', '');
-            const ava = document.getElementById('reg-avatar-url').value.trim();
-
-            if (nick.length < 2 || tag.length < 2) {
-                alert("Имя и тег должны содержать минимум 2 символа.");
-                return;
-            }
-
-            state.profile = {
-                uid: state.user.uid,
-                displayName: nick,
-                username: tag.toLowerCase(),
-                usernameDisplay: tag,
-                photoURL: ava || state.user.photoURL || 'https://via.placeholder.com/150'
-            };
-
-            await set(ref(db, `users/${state.user.uid}`), state.profile);
-            launchMainApp();
-        });
-
-        /* --- ЗАПУСК ГЛАВНОГО ИНТЕРФЕЙСА --- */
-        function launchMainApp() {
-            toggleScreen('app');
-            const mainAppElement = document.getElementById('app');
-            setTimeout(() => mainAppElement.classList.add('visible'), 50);
-
-            // Обновление данных в боковом меню
-            document.getElementById('user-profile-img').src = state.profile.photoURL;
-            document.getElementById('user-display-name').innerText = state.profile.displayName;
-            document.getElementById('user-display-tag').innerText = '@' + state.profile.usernameDisplay;
-
-            // Проверка прав администратора
-            if (state.profile.usernameDisplay.toLowerCase() === 'admin') {
-                state.isAdmin = true;
-            }
-
-            themeCore.load();
-            chatEngine.listen();
-        }
-
-        /* --- ДВИЖОК ЧАТА --- */
-        window.chatEngine = {
-            sendMessage: function() {
-                const input = document.getElementById('main-input');
-                const text = input.value.trim();
-                
-                if (!text) return;
-
-                if (state.activeAction === 'edit' && state.targetMessage) {
-                    update(ref(db, `messages/${state.targetMessage.key}`), {
-                        text: text,
-                        isEdited: true
-                    });
-                } else {
-                    const messageData = {
-                        uid: state.user.uid,
-                        displayName: state.profile.displayName,
-                        username: state.profile.usernameDisplay,
-                        text: text,
-                        createdAt: Date.now()
-                    };
-
-                    if (state.activeAction === 'reply' && state.targetMessage) {
-                        messageData.replyTo = {
-                            author: state.targetMessage.displayName,
-                            content: state.targetMessage.text
-                        };
-                    }
-
-                    push(ref(db, 'messages'), messageData);
-                }
-
-                this.cancelAction();
+        /* 5. ЯДРО ПРИЛОЖЕНИЯ (AppCore)
+           Отвечает за авторизацию и управление жизненным циклом сессии.
+        */
+        window.appCore = {
+            init: function() {
+                this.bindAuthEvents();
             },
 
-            listen: function() {
-                const messagesContainer = document.getElementById('messages-view');
-                onValue(ref(db, 'messages'), (snapshot) => {
-                    messagesContainer.innerHTML = '';
-                    const data = snapshot.val();
-                    if (!data) return;
+            bindAuthEvents: function() {
+                // Слушатель изменения состояния входа
+                onAuthStateChanged(authModule, async (user) => {
+                    if (user) {
+                        sessionUser = user;
+                        await this.synchronizeProfile();
+                    } else {
+                        this.showAuthPanel();
+                    }
+                });
 
-                    const sortedEntries = Object.entries(data).sort((a, b) => a[1].createdAt - b[1].createdAt);
+                // Кнопка входа
+                document.getElementById('google-auth-button').onclick = () => {
+                    signInWithRedirect(authModule, authProvider);
+                };
 
-                    sortedEntries.forEach(([msgId, msg]) => {
-                        const isMyMessage = msg.uid === state.user.uid;
-                        const wrapper = document.createElement('div');
-                        wrapper.className = `msg-wrapper ${isMyMessage ? 'my-msg' : 'other-msg'}`;
+                // Кнопка сохранения профиля
+                document.getElementById('save-profile-action').onclick = () => {
+                    this.performRegistration();
+                };
+            },
 
-                        // Обработка текста (защита от XSS и детект картинок)
-                        let processedText = msg.text.replace(/</g, "&lt;");
-                        if (processedText.match(/\.(jpg|jpeg|png|gif|webp)/i)) {
-                            processedText = `<img src="${processedText}" style="max-width:100%; border-radius:8px; margin-top:5px; cursor:pointer;" onclick="window.open(this.src)">`;
-                        }
+            synchronizeProfile: async function() {
+                const userRef = child(ref(dbInstance), `users/${sessionUser.uid}`);
+                const snapshot = await get(userRef);
 
-                        // Блок ответа, если есть
-                        const replyMarkup = msg.replyTo ? `
-                            <div style="font-size:12px; border-left:3px solid var(--primary); padding-left:10px; margin-bottom:8px; opacity:0.7;">
-                                <b>${msg.replyTo.author}</b><br>${msg.replyTo.content.substring(0, 50)}...
-                            </div>
-                        ` : '';
+                if (snapshot.exists()) {
+                    sessionProfile = snapshot.val();
+                    this.launchInterface();
+                } else {
+                    document.getElementById('auth-gateway').style.display = 'none';
+                    document.getElementById('profile-setup').style.display = 'flex';
+                }
+            },
 
-                        wrapper.innerHTML = `
-                            <div class="msg-bubble" id="msg-${msgId}">
-                                <span class="author-tag">${msg.displayName} ${msg.username === 'admin' ? '👑' : ''}</span>
-                                ${replyMarkup}
-                                <div class="msg-content-body">${processedText}</div>
-                                <span class="time-stamp">
-                                    ${msg.isEdited ? 'изм. ' : ''} 
-                                    ${new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </span>
-                            </div>
-                        `;
+            performRegistration: async function() {
+                const nameInput = document.getElementById('input-display-name').value.trim();
+                const tagInput = document.getElementById('input-username-tag').value.trim().replace('@', '');
 
-                        // Обработка правого клика (Контекстное меню)
-                        wrapper.oncontextmenu = (event) => {
-                            event.preventDefault();
-                            this.openContextMenu(event, msgId, msg);
-                        };
+                if (nameInput.length < 2) return alert("Please enter a valid name");
 
-                        messagesContainer.appendChild(wrapper);
-                    });
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                sessionProfile = {
+                    uid: sessionUser.uid,
+                    displayName: nameInput,
+                    usernameDisplay: tagInput,
+                    photoURL: sessionUser.photoURL || 'https://via.placeholder.com/150'
+                };
+
+                await set(ref(dbInstance, `users/${sessionUser.uid}`), sessionProfile);
+                this.launchInterface();
+            },
+
+            launchInterface: function() {
+                document.getElementById('auth-gateway').style.display = 'none';
+                document.getElementById('profile-setup').style.display = 'none';
+                
+                const mainApp = document.getElementById('main-application');
+                mainApp.classList.add('is-active');
+
+                // Синхронизация данных меню
+                document.getElementById('drawer-user-avatar').src = sessionProfile.photoURL;
+                document.getElementById('drawer-user-name').innerText = sessionProfile.displayName;
+                document.getElementById('drawer-user-tag').innerText = '@' + sessionProfile.usernameDisplay;
+
+                messagingEngine.init();
+                searchEngine.init();
+            },
+
+            showAuthPanel: function() {
+                document.getElementById('auth-gateway').style.display = 'flex';
+                document.getElementById('main-application').classList.remove('is-active');
+            },
+
+            logout: function() {
+                if (confirm("Are you sure you want to logout?")) {
+                    signOut(authModule);
+                    location.reload();
+                }
+            }
+        };
+
+        /* 6. ПОИСКОВЫЙ ДВИЖОК (SearchEngine)
+           Реализует поиск по всей базе пользователей в реальном времени.
+        */
+        window.searchEngine = {
+            init: function() {
+                const searchField = document.getElementById('global-search-input');
+                const overlay = document.getElementById('search-results-overlay');
+
+                searchField.addEventListener('input', async (event) => {
+                    const searchTerm = event.target.value.trim().toLowerCase();
+                    
+                    if (searchTerm.length === 0) {
+                        overlay.style.display = 'none';
+                        return;
+                    }
+
+                    const usersSnapshot = await get(ref(dbInstance, 'users'));
+                    if (usersSnapshot.exists()) {
+                        this.renderResults(usersSnapshot.val(), searchTerm);
+                    }
                 });
             },
 
-            openContextMenu: function(e, key, data) {
-                state.contextTarget = { key, ...data };
-                const popup = document.getElementById('context-popup');
-                popup.style.display = 'block';
-                
-                let posX = e.clientX;
-                let posY = e.clientY;
+            renderResults: function(usersData, term) {
+                const overlay = document.getElementById('search-results-overlay');
+                overlay.innerHTML = '';
+                let matchCounter = 0;
 
-                // Корректировка позиции, чтобы меню не уходило за экран
-                if (posX + 200 > window.innerWidth) posX -= 200;
-                if (posY + 150 > window.innerHeight) posY -= 150;
+                Object.values(usersData).forEach(user => {
+                    const matchName = user.displayName.toLowerCase().includes(term);
+                    const matchTag = user.usernameDisplay.toLowerCase().includes(term);
 
-                popup.style.left = posX + 'px';
-                popup.style.top = posY + 'px';
+                    if (matchName || matchTag) {
+                        matchCounter++;
+                        const resultItem = document.createElement('div');
+                        resultItem.style.cssText = 'padding: 10px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #f9f9f9;';
+                        resultItem.innerHTML = `
+                            <img src="${user.photoURL}" style="width: 32px; height: 32px; border-radius: 50%;">
+                            <div style="font-size: 14px;">
+                                <strong>${user.displayName}</strong>
+                                <span style="color: var(--primary-color); margin-left: 4px;">@${user.usernameDisplay}</span>
+                            </div>
+                        `;
+                        
+                        resultItem.onclick = () => {
+                            alert(`Private messaging with ${user.displayName} is coming soon in v0.1.4!`);
+                        };
 
-                const isMine = data.uid === state.user.uid;
-                document.getElementById('popup-edit-btn').style.display = isMine ? 'block' : 'none';
-                document.getElementById('popup-delete-btn').style.display = (isMine || state.isAdmin) ? 'block' : 'none';
-            },
-
-            handleAction: function(type) {
-                const popup = document.getElementById('context-popup');
-                popup.style.display = 'none';
-
-                if (type === 'reply') {
-                    state.activeAction = 'reply';
-                    state.targetMessage = state.contextTarget;
-                    const bar = document.getElementById('reply-preview');
-                    bar.style.display = 'flex';
-                    document.getElementById('reply-author-name').innerText = state.targetMessage.displayName;
-                    document.getElementById('reply-author-text').innerText = state.targetMessage.text;
-                    document.getElementById('main-input').focus();
-                } 
-                else if (type === 'edit') {
-                    state.activeAction = 'edit';
-                    state.targetMessage = state.contextTarget;
-                    const bar = document.getElementById('reply-preview');
-                    bar.style.display = 'flex';
-                    document.getElementById('reply-author-name').innerText = "Редактирование";
-                    document.getElementById('reply-author-text').innerText = state.targetMessage.text;
-                    document.getElementById('main-input').value = state.targetMessage.text;
-                    document.getElementById('main-input').focus();
-                }
-                else if (type === 'copy') {
-                    navigator.clipboard.writeText(state.contextTarget.text);
-                }
-                else if (type === 'delete') {
-                    if (confirm("Вы действительно хотите безвозвратно удалить это сообщение?")) {
-                        remove(ref(db, `messages/${state.contextTarget.key}`));
+                        overlay.appendChild(resultItem);
                     }
-                }
-            },
+                });
 
-            cancelAction: function() {
-                state.activeAction = null;
-                state.targetMessage = null;
-                document.getElementById('reply-preview').style.display = 'none';
-                document.getElementById('main-input').value = '';
-            },
-
-            attachImage: function() {
-                const url = prompt("Введите прямую ссылку на изображение (JPG, PNG, GIF):");
-                if (url && url.startsWith('http')) {
-                    document.getElementById('main-input').value = url;
-                    this.sendMessage();
+                overlay.style.display = matchCounter > 0 ? 'block' : 'none';
+                if (matchCounter === 0) {
+                    overlay.innerHTML = '<div style="padding: 15px; color: #999; font-size: 13px; text-align:center;">No people found</div>';
+                    overlay.style.display = 'block';
                 }
             }
         };
 
-        /* --- ЯДРО ТЕМЫ (UI CUSTOMIZATION) --- */
-        window.themeCore = {
-            preview: function() {
-                const root = document.documentElement.style;
-                const fz = document.getElementById('ui-font-range').value;
-                const rd = document.getElementById('ui-radius-range').value;
-                const pr = document.getElementById('ui-color-primary').value;
-                const me = document.getElementById('ui-color-me').value;
-
-                root.setProperty('--font-size', fz + 'px');
-                root.setProperty('--radius', rd + 'px');
-                root.setProperty('--primary', pr);
-                root.setProperty('--msg-me', me);
+        /* 7. ДВИЖОК СООБЩЕНИЙ (MessagingEngine)
+           Отвечает за прием и передачу данных в реальном времени.
+        */
+        window.messagingEngine = {
+            init: function() {
+                this.listenForMessages();
+                this.attachSendHandlers();
             },
 
-            save: function() {
-                const settings = {
-                    fz: document.getElementById('ui-font-range').value,
-                    rd: document.getElementById('ui-radius-range').value,
-                    pr: document.getElementById('ui-color-primary').value,
-                    me: document.getElementById('ui-color-me').value
+            listenForMessages: function() {
+                const messagesRef = ref(dbInstance, 'messages');
+                onValue(messagesRef, (snapshot) => {
+                    const container = document.getElementById('message-flow-container');
+                    container.innerHTML = '';
+                    
+                    const data = snapshot.val();
+                    if (!data) return;
+
+                    Object.entries(data).forEach(([key, msg]) => {
+                        this.appendMessageToUI(msg);
+                    });
+                    
+                    container.scrollTop = container.scrollHeight;
+                });
+            },
+
+            appendMessageToUI: function(msg) {
+                const container = document.getElementById('message-flow-container');
+                const isMe = msg.uid === sessionUser.uid;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = `message-row ${isMe ? 'is-me' : 'is-other'}`;
+
+                wrapper.innerHTML = `
+                    <div class="message-bubble">
+                        <span class="message-author">${msg.displayName}</span>
+                        <div class="message-text-content">${this.sanitize(msg.text)}</div>
+                        <div style="font-size: 10px; opacity: 0.4; text-align: right; margin-top: 4px;">
+                            ${new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(wrapper);
+            },
+
+            attachSendHandlers: function() {
+                const btn = document.getElementById('send-message-trigger');
+                const area = document.getElementById('main-text-area');
+
+                const processSend = () => {
+                    const content = area.value.trim();
+                    if (!content) return;
+
+                    push(ref(dbInstance, 'messages'), {
+                        uid: sessionUser.uid,
+                        displayName: sessionProfile.displayName,
+                        text: content,
+                        createdAt: Date.now()
+                    });
+
+                    area.value = '';
+                    area.style.height = 'auto';
                 };
-                localStorage.setItem('narrators_custom_ui', JSON.stringify(settings));
-                uiAction.closeMenu();
+
+                btn.onclick = processSend;
+                area.onkeydown = (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        processSend();
+                    }
+                };
             },
 
-            load: function() {
-                const saved = localStorage.getItem('narrators_custom_ui');
-                if (saved) {
-                    const t = JSON.parse(saved);
-                    document.getElementById('ui-font-range').value = t.fz;
-                    document.getElementById('ui-radius-range').value = t.rd;
-                    document.getElementById('ui-color-primary').value = t.pr;
-                    document.getElementById('ui-color-me').value = t.me;
-                    this.preview();
-                }
+            sanitize: function(str) {
+                return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             }
         };
 
-        /* --- UI ACTIONS --- */
-        window.uiAction = {
-            openMenu: function() {
-                document.getElementById('side-menu').classList.add('active');
-                document.getElementById('app-overlay').classList.add('active');
+        /* 8. МЕНЕДЖЕР ИНТЕРФЕЙСА (UIManager)
+           Управляет визуальными переключениями.
+        */
+        window.uiManager = {
+            toggleDrawer: function(open) {
+                const drawer = document.getElementById('navigation-drawer');
+                drawer.classList.toggle('is-open', open);
             },
-            closeMenu: function() {
-                document.getElementById('side-menu').classList.remove('active');
-                document.getElementById('app-overlay').classList.remove('active');
-                this.hideSettings();
+
+            openGlobalRoom: function() {
+                document.body.classList.add('chat-mode-active');
             },
-            showSettings: function() {
-                document.getElementById('menu-view-main').style.display = 'none';
-                document.getElementById('menu-view-settings').style.display = 'block';
-            },
-            hideSettings: function() {
-                document.getElementById('menu-view-settings').style.display = 'none';
-                document.getElementById('menu-view-main').style.display = 'block';
-            },
-            logout: function() {
-                if (confirm("Выйти из аккаунта?")) signOut(auth);
-            },
-            openChatRoom: function() {
-                document.body.classList.add('is-chatting');
-            },
-            closeChatRoom: function() {
-                document.body.classList.remove('is-chatting');
+
+            backToRoster: function() {
+                document.body.classList.remove('chat-mode-active');
             }
         };
 
-        /* Вспомогательные функции */
-        function toggleScreen(screenId) {
-            const screens = ['screen-auth', 'screen-reg', 'app'];
-            screens.forEach(id => {
-                document.getElementById(id).style.display = (id === screenId) ? 'flex' : 'none';
-            });
-        }
-
-        // Закрытие контекстного меню при клике в любое место
+        // Событие для открытия меню
+        document.getElementById('drawer-trigger').onclick = () => uiManager.toggleDrawer(true);
+        
+        // Закрытие меню при клике снаружи
         document.addEventListener('click', (e) => {
-            const popup = document.getElementById('context-popup');
-            if (!e.target.closest('#context-popup')) {
-                popup.style.display = 'none';
+            const drawer = document.getElementById('navigation-drawer');
+            const trigger = document.getElementById('drawer-trigger');
+            if (drawer.classList.contains('is-open') && !drawer.contains(e.target) && e.target !== trigger) {
+                uiManager.toggleDrawer(false);
             }
         });
 
-        // Отправка по Enter
-        document.getElementById('main-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                chatEngine.sendMessage();
-            }
-        });
+        /* ЗАПУСК ПРИЛОЖЕНИЯ */
+        appCore.init();
 
     </script>
 </body>
