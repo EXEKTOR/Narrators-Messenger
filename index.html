@@ -161,6 +161,11 @@
         .msg-avatar{ width:40px;height:40px;border-radius:50%; object-fit:cover; cursor:pointer; transition:transform .12s var(--ease) }
         .msg-avatar:hover{ transform:scale(1.06) }
 
+        /* explicit sizes/colors for author/content/time */
+        .author-tag { display:block; font-size:13px; font-weight:800; color:var(--primary); margin-bottom:6px; line-height:1; }
+        .msg-content-body { display:block; font-size:15px; color:#14202b; line-height:1.35; white-space:pre-wrap; word-break:break-word; margin-bottom:6px; }
+        .time-stamp { display:block; font-size:12px; color:var(--muted); text-align:right; opacity:0.85; }
+
         #reply-preview{ display:none; padding:10px; border-left:4px solid var(--primary); background:#fff; border-radius:10px; margin-bottom:10px; box-shadow:var(--shadow-sm) }
 
         .profile-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:10001; display:none; backdrop-filter:blur(3px); }
@@ -199,7 +204,7 @@
     <div id="app" class="fade-in" style="display:flex;">
         <div id="sidebar" class="sidebar">
             <div class="sidebar-top">
-                <img id="user-profile-img" class="user-avatar" src="https://via.placeholder.com/150" title="Открыть профиль">
+                <img id="user-profile-img" class="user-avatar" src="https://via.placeholder.com/150" title="Открыть профиль" onerror="this.src='https://via.placeholder.com/150'">
                 <div class="sidebar-meta">
                     <div class="name" id="user-display-name">Загрузка...</div>
                     <div class="tag muted-xs" id="user-display-tag">@username</div>
@@ -223,7 +228,7 @@
 
             <div class="chat-list-container" id="conversations-list">
                 <div class="chat-row" id="row-global" onclick="uiAction.openGlobal()">
-                    <img class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width:46px;height:46px;border-radius:8px;">
+                    <img class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width:46px;height:46px;border-radius:8px;" onerror="this.src='https://via.placeholder.com/150'">
                     <div style="flex:1">
                         <div style="display:flex;justify-content:space-between;align-items:center">
                             <div style="font-weight:700">Global Chat Room</div>
@@ -237,7 +242,7 @@
 
         <div id="chat-window">
             <div class="chat-top-bar">
-                <img id="chat-top-avatar" src="https://via.placeholder.com/100" style="width:44px;height:44px;border-radius:10px;object-fit:cover">
+                <img id="chat-top-avatar" src="https://via.placeholder.com/100" style="width:44px;height:44px;border-radius:10px;object-fit:cover" onerror="this.src='https://via.placeholder.com/100'">
                 <div>
                     <div id="chat-top-title" style="font-weight:800">Global Chat Room</div>
                     <div id="chat-top-sub" class="muted-xs">Общий чат</div>
@@ -268,7 +273,7 @@
         </div>
 
         <div class="profile-top" style="display:flex; gap:12px; align-items:center;">
-            <img id="p-avatar" src="https://via.placeholder.com/150" alt="avatar" style="width:96px; height:96px; border-radius:12px; object-fit:cover;">
+            <img id="p-avatar" src="https://via.placeholder.com/150" alt="avatar" style="width:96px; height:96px; border-radius:12px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/150'">
             <div style="flex:1;">
                 <div id="p-displayname" style="font-weight:800; font-size:18px;">Имя</div>
                 <div id="p-username" class="muted-xs">@username</div>
@@ -470,14 +475,8 @@
                 initGroupSearch();
                 uiAction.openGlobal();
 
-                // sidebar menu wiring
-                const sidebarBtn = document.getElementById('sidebar-menu-btn');
-                const sidebarMenu = document.getElementById('sidebar-menu');
-                sidebarBtn.onclick = (e) => {
-                    const expanded = sidebarBtn.getAttribute('aria-expanded') === 'true';
-                    if (expanded) closeSidebarMenu();
-                    else openSidebarMenu();
-                };
+                // NOTE: do NOT rebind sidebarBtn here - single binding is done below to avoid double-toggles.
+                // Only wire menu item clicks:
                 document.getElementById('menu-personalization').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
                 document.getElementById('menu-settings').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
                 document.getElementById('menu-add-group').onclick = () => { uiAction.openCreateGroup(); closeSidebarMenu(); };
@@ -559,7 +558,7 @@
             const row = document.createElement('div');
             row.className = 'chat-row';
             row.dataset.convKey = key;
-            row.innerHTML = `<img src="${avatar||'https://via.placeholder.com/150'}" class="user-avatar" style="width:46px; height:46px; border-radius:8px;">
+            row.innerHTML = `<img src="${avatar||'https://via.placeholder.com/150'}" class="user-avatar" style="width:46px; height:46px; border-radius:8px;" onerror="this.src='https://via.placeholder.com/150'">
                 <div style="flex:1;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div class="conv-title" style="font-weight:700;">${title}</div>
@@ -607,7 +606,7 @@
                     const div = document.createElement('div');
                     div.className = 'chat-row';
                     div.style.padding = '8px 12px';
-                    div.innerHTML = `<img src="${u.photoURL||'https://via.placeholder.com/150'}" class="user-avatar" style="width:36px;height:36px;">
+                    div.innerHTML = `<img src="${u.photoURL||'https://via.placeholder.com/150'}" class="user-avatar" style="width:36px;height:36px;" onerror="this.src='https://via.placeholder.com/150'">
                         <div style="flex:1;">
                             <div style="font-weight:700;">${u.displayName}</div>
                             <div class="muted-xs" style="color:var(--primary);">@${u.usernameDisplay||u.username}</div>
@@ -640,7 +639,7 @@
                     row.style.borderRadius = '8px';
                     row.style.border = '1px solid var(--border)';
                     row.style.marginBottom = '8px';
-                    row.innerHTML = `<img src="${u.photoURL || 'https://via.placeholder.com/150'}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">
+                    row.innerHTML = `<img src="${u.photoURL || 'https://via.placeholder.com/150'}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/150'">
                         <div style="flex:1;">
                             <div style="font-weight:700;">${u.displayName}</div>
                             <div style="font-size:12px; color:var(--muted);">@${u.usernameDisplay||u.username}</div>
@@ -1086,6 +1085,9 @@
         const sidebarBtn = document.getElementById('sidebar-menu-btn');
         const sidebarMenu = document.getElementById('sidebar-menu');
 
+        // ensure clicks inside menu don't bubble up
+        sidebarMenu.addEventListener('click', (e) => e.stopPropagation());
+
         function openSidebarMenu(){
             sidebarMenu.classList.add('active');
             sidebarMenu.setAttribute('aria-hidden','false');
@@ -1112,6 +1114,14 @@
             }, 220 + items.length*20);
         }
 
+        // single click handler with stopPropagation to prevent document click from closing right after opening
+        sidebarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = sidebarMenu.classList.contains('active');
+            if (isOpen) closeSidebarMenu();
+            else openSidebarMenu();
+        });
+
         document.addEventListener('click', (e) => {
             if (!sidebarMenu.contains(e.target) && !sidebarBtn.contains(e.target)) {
                 if (sidebarMenu.classList.contains('active')) closeSidebarMenu();
@@ -1123,12 +1133,6 @@
         });
 
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sidebarMenu.classList.contains('active')) closeSidebarMenu(); });
-
-        sidebarBtn.addEventListener('click', (e) => {
-            const isOpen = sidebarMenu.classList.contains('active');
-            if (isOpen) closeSidebarMenu();
-            else openSidebarMenu();
-        });
 
         // animate new conversation rows
         const convList = document.getElementById('conversations-list');
