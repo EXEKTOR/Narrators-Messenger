@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Narrators Messenger v0.1.6</title>
+    <title>Narrators Messenger v0.1.6 (UI fixes)</title>
 
     <style>
         :root {
@@ -25,6 +25,7 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; outline:none; }
+        html,body { height:100%; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             height:100vh; width:100vw; display:flex; overflow:hidden;
@@ -49,7 +50,8 @@
         /* APP LAYOUT */
         #app { display:none; width:100%; height:100%; opacity:0; transition:opacity 0.45s var(--ease); }
         #app.visible { display:flex; opacity:1; }
-        #sidebar { width:360px; flex-shrink:0; background:var(--bg-body); border-right:1px solid var(--border); display:flex; flex-direction:column; z-index:500; }
+        /* sidebar is positioned relative so its dropdown menu can be anchored near avatar */
+        #sidebar { width:360px; flex-shrink:0; background:var(--bg-body); border-right:1px solid var(--border); display:flex; flex-direction:column; z-index:500; position:relative; }
         .sidebar-top { padding:12px 16px; display:flex; gap:12px; align-items:center; border-bottom:1px solid var(--border); }
         .chat-list-container { flex:1; overflow-y:auto; padding-bottom:12px; }
         .chat-row { padding:12px 16px; display:flex; gap:12px; align-items:center; cursor:pointer; border-bottom:1px solid #f9f9f9; }
@@ -95,7 +97,7 @@
         .profile-modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); width:92%; max-width:520px; background:#fff; border-radius:14px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,0.3); z-index:10002; display:none; transition:all 0.18s var(--ease); opacity:0; }
         .profile-modal.active { display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
 
-        /* settings modal */
+        /* settings modal: center fixed, should not shift left */
         .settings-modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); width:92%; max-width:560px; background:#fff; border-radius:12px; padding:18px; box-shadow:0 30px 80px rgba(0,0,0,0.25); z-index:10003; display:none; opacity:0; transition:all 0.18s var(--ease); }
         .settings-modal.active { display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
 
@@ -103,14 +105,14 @@
         .group-modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); background:#fff; z-index:10004; width:92%; max-width:620px; border-radius:12px; padding:16px; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
         .group-modal.active { display:block; transform:translate(-50%,-50%) scale(1); }
 
-        /* top menu dropdown */
-        .top-menu-btn { background:transparent; border:none; cursor:pointer; font-size:20px; padding:8px; border-radius:8px; }
-        .top-menu { position:absolute; right:18px; top:12px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 24px rgba(0,0,0,0.12); display:none; z-index:10005; min-width:180px; }
-        .top-menu.active { display:block; }
-        .top-menu .item { padding:10px 12px; cursor:pointer; border-bottom:1px solid #f4f4f4; }
-        .top-menu .item:last-child { border-bottom:none; }
-        .top-menu .item:hover { background:#f6f9ff; }
+        /* sidebar menu (moved into sidebar, anchored near avatar) */
+        .sidebar .sidebar-menu { position:absolute; left:14px; top:74px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.12); display:none; z-index:10005; min-width:180px; overflow:hidden; }
+        .sidebar .sidebar-menu.active { display:block; }
+        .sidebar .sidebar-menu .item { padding:10px 12px; cursor:pointer; border-bottom:1px solid #f4f4f4; }
+        .sidebar .sidebar-menu .item:last-child{ border-bottom:none; }
+        .sidebar .sidebar-menu .item:hover { background:#f6f9ff; }
 
+        .top-menu-btn { background:transparent; border:none; cursor:pointer; font-size:20px; padding:6px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; }
         .chip { background:#f3f6fb; padding:6px 10px; border-radius:999px; font-size:13px; display:inline-flex; gap:8px; align-items:center; }
 
         .muted-xs { font-size:12px; color:var(--text-sec); }
@@ -175,9 +177,15 @@
                     <div id="user-display-name" style="font-weight:700;">Загрузка...</div>
                     <div id="user-display-tag" class="muted-xs">@...</div>
                 </div>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <button onclick="uiAction.openCreateGroup()" class="btn btn-primary" style="padding:8px 10px;">+ Группа</button>
-                </div>
+                <!-- Menu button moved to sidebar near avatar (as requested) -->
+                <button id="sidebar-menu-btn" class="top-menu-btn" title="Меню" aria-expanded="false">≡</button>
+            </div>
+
+            <!-- Sidebar menu anchored near avatar (visible on click) -->
+            <div class="sidebar-menu" id="sidebar-menu" aria-hidden="true">
+                <div class="item" id="menu-personalization">Персонализация</div>
+                <div class="item" id="menu-settings">Настройки</div>
+                <div class="item" id="menu-add-group">Добавить группу</div>
             </div>
 
             <div style="padding:12px;">
@@ -207,13 +215,6 @@
                         <div id="chat-top-title" style="font-weight:700;">Global Chat Room</div>
                         <div id="chat-top-sub" class="muted-xs">v0.1.6</div>
                     </div>
-                </div>
-
-                <button id="chat-top-menu-btn" class="top-menu-btn" title="Меню">☰</button>
-                <div id="chat-top-menu" class="top-menu" aria-hidden="true">
-                    <div class="item" id="menu-personalization">Персонализация</div>
-                    <div class="item" id="menu-settings">Настройки</div>
-                    <div class="item" id="menu-add-group">Добавить группу</div>
                 </div>
 
                 <div style="margin-left:auto;">
@@ -352,8 +353,7 @@
             sendPasswordResetEmail,
             onAuthStateChanged,
             signOut,
-            linkWithPopup,
-            signInAnonymously
+            linkWithPopup
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         import {
@@ -394,8 +394,7 @@
         };
 
         const usersCache = {};
-        // track what conversations listed
-        const conversationsIndex = {}; // key -> {type,id,dom}
+        const conversationsIndex = {};
         let dmsListener = null;
         let groupsListener = null;
         let usersListener = null;
@@ -423,12 +422,7 @@
             const email = document.getElementById('login-email').value.trim();
             const pwd = document.getElementById('login-password').value;
             if (!email || !pwd) { showAuthError('Введите email и пароль'); return; }
-            try {
-                await signInWithEmailAndPassword(auth, email, pwd);
-            } catch (err) {
-                console.error(err);
-                showAuthError(err.message || 'Ошибка входа');
-            }
+            try { await signInWithEmailAndPassword(auth, email, pwd); } catch (err) { console.error(err); showAuthError(err.message || 'Ошибка входа'); }
         });
 
         document.getElementById('register-btn').addEventListener('click', async () => {
@@ -451,44 +445,24 @@
                     about: ''
                 };
                 await set(ref(db, `users/${cred.user.uid}`), profile);
-            } catch (err) {
-                console.error(err);
-                showAuthError(err.message || 'Ошибка регистрации');
-            }
+            } catch (err) { console.error(err); showAuthError(err.message || 'Ошибка регистрации'); }
         });
 
         document.getElementById('forgot-password').addEventListener('click', async () => {
             clearAuthMessages();
             const email = prompt('Введите ваш email для восстановления пароля:');
             if (!email) return;
-            try {
-                await sendPasswordResetEmail(auth, email);
-                authInfoEl.style.display = 'block';
-                authInfoEl.innerText = 'Письмо для сброса пароля отправлено (проверьте почту).';
-            } catch (err) {
-                console.error(err);
-                showAuthError(err.message || 'Ошибка отправки письма');
-            }
+            try { await sendPasswordResetEmail(auth, email); authInfoEl.style.display = 'block'; authInfoEl.innerText = 'Письмо для сброса пароля отправлено (проверьте почту).'; }
+            catch (err) { console.error(err); showAuthError(err.message || 'Ошибка отправки письма'); }
         });
 
         document.getElementById('google-btn').addEventListener('click', async () => {
             clearAuthMessages();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (err) {
-                console.warn('Popup failed — falling back to redirect', err);
-                try { await signInWithRedirect(auth, provider); }
-                catch (e) { console.error(e); showAuthError(e.message || 'Ошибка Google входа'); }
-            }
+            try { await signInWithPopup(auth, provider); } catch (err) { console.warn('Popup failed — falling back to redirect', err); try { await signInWithRedirect(auth, provider); } catch (e) { console.error(e); showAuthError(e.message || 'Ошибка Google входа'); } }
         });
 
         document.getElementById('signout-btn').addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-            } catch (err) {
-                console.error('Sign out failed', err);
-                alert('Ошибка выхода: ' + (err.message || err));
-            }
+            try { await signOut(auth); } catch (err) { console.error('Sign out failed', err); alert('Ошибка выхода: ' + (err.message || err)); }
         });
 
         /* -------------------- AUTH state handling -------------------- */
@@ -505,19 +479,11 @@
             window.state.user = firebaseUser;
             try {
                 const snap = await get(child(ref(db), `users/${firebaseUser.uid}`));
-                if (snap.exists()) {
-                    window.state.profile = snap.val();
-                } else {
+                if (snap.exists()) window.state.profile = snap.val();
+                else {
                     const displayName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'User');
                     const username = (displayName.split(' ')[0] || displayName).toLowerCase();
-                    const profile = {
-                        uid: firebaseUser.uid,
-                        displayName,
-                        username: username,
-                        usernameDisplay: username,
-                        photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150',
-                        about: ''
-                    };
+                    const profile = { uid: firebaseUser.uid, displayName, username, usernameDisplay: username, photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150', about: '' };
                     await set(ref(db, `users/${firebaseUser.uid}`), profile);
                     window.state.profile = profile;
                 }
@@ -532,10 +498,8 @@
                 document.getElementById('user-display-name').innerText = window.state.profile.displayName || '';
                 document.getElementById('user-display-tag').innerText = '@' + (window.state.profile.usernameDisplay || '');
 
-                // wire click on sidebar avatar to open own profile
                 document.getElementById('user-profile-img').onclick = () => uiAction.openProfile(window.state.user.uid);
 
-                // start listeners & UI
                 themeCore.load();
                 initUsersCacheListener();
                 initConversationsListener();
@@ -543,14 +507,17 @@
                 initGroupSearch();
                 uiAction.openGlobal();
 
-                // top-menu wiring
-                document.getElementById('chat-top-menu-btn').addEventListener('click', (e) => {
-                    const menu = document.getElementById('chat-top-menu');
-                    menu.classList.toggle('active');
-                });
-                document.getElementById('menu-personalization').onclick = () => { uiAction.openSettings(); document.getElementById('chat-top-menu').classList.remove('active'); };
-                document.getElementById('menu-settings').onclick = () => { uiAction.openSettings(); document.getElementById('chat-top-menu').classList.remove('active'); };
-                document.getElementById('menu-add-group').onclick = () => { uiAction.openCreateGroup(); document.getElementById('chat-top-menu').classList.remove('active'); };
+                // sidebar menu wiring (moved here)
+                const sidebarBtn = document.getElementById('sidebar-menu-btn');
+                const sidebarMenu = document.getElementById('sidebar-menu');
+                sidebarBtn.onclick = (e) => {
+                    const expanded = sidebarBtn.getAttribute('aria-expanded') === 'true';
+                    sidebarBtn.setAttribute('aria-expanded', (!expanded).toString());
+                    sidebarMenu.classList.toggle('active');
+                };
+                document.getElementById('menu-personalization').onclick = () => { uiAction.openSettings(); sidebarMenu.classList.remove('active'); sidebarBtn.setAttribute('aria-expanded','false'); };
+                document.getElementById('menu-settings').onclick = () => { uiAction.openSettings(); sidebarMenu.classList.remove('active'); sidebarBtn.setAttribute('aria-expanded','false'); };
+                document.getElementById('menu-add-group').onclick = () => { uiAction.openCreateGroup(); sidebarMenu.classList.remove('active'); sidebarBtn.setAttribute('aria-expanded','false'); };
 
             } catch (err) {
                 console.error('Error during post-auth flow', err);
@@ -559,16 +526,12 @@
         });
 
         function teardownAfterSignOut() {
-            // reset caches & listeners
             document.getElementById('user-profile-img').onclick = null;
             if (usersListener) usersListener();
             if (dmsListener) dmsListener();
             if (groupsListener) groupsListener();
-            // clear conversations list except global
             const convList = document.getElementById('conversations-list');
-            convList.querySelectorAll('.chat-row').forEach(el => {
-                if (el.id !== 'row-global') el.remove();
-            });
+            convList.querySelectorAll('.chat-row').forEach(el => { if (el.id !== 'row-global') el.remove(); });
             Object.keys(conversationsIndex).forEach(k => delete conversationsIndex[k]);
         }
 
@@ -587,29 +550,27 @@
             });
         }
 
-        /* -------------------- CONVERSATIONS list (DMs & Groups) -------------------- */
+        /* -------------------- CONVERSATIONS list -------------------- */
         function initConversationsListener() {
-            // listen DMs
+            // DMS
             const dmsRef = ref(db, 'dms');
             dmsListener = onValue(dmsRef, (snapshot) => {
                 const all = snapshot.val() || {};
                 Object.entries(all).forEach(([dmId, dm]) => {
                     const members = (dm.meta && dm.meta.members) || dm.members || {};
                     if (window.state.user && members[window.state.user.uid]) {
-                        // ensure listed
                         const otherUid = Object.keys(members).find(u => u !== window.state.user.uid);
                         const title = otherUid ? (usersCache[otherUid] ? usersCache[otherUid].displayName : 'Личный чат') : 'Чат';
                         const avatar = otherUid ? (usersCache[otherUid] ? usersCache[otherUid].photoURL : '') : '';
                         addConversationToList({ type: 'dm', id: dmId, title, avatar, otherUid });
                     } else {
-                        // remove if existed
                         const key = 'dm:' + dmId;
                         if (conversationsIndex[key]) removeConversationFromList(key);
                     }
                 });
             });
 
-            // listen groups
+            // groups
             const groupsRef = ref(db, 'groups');
             groupsListener = onValue(groupsRef, (snapshot) => {
                 const all = snapshot.val() || {};
@@ -628,7 +589,6 @@
         function addConversationToList({ type, id, title, avatar, otherUid }) {
             const key = type + ':' + id;
             if (conversationsIndex[key]) {
-                // update UI if needed
                 const existing = conversationsIndex[key];
                 existing.dom.querySelector('.conv-title').innerText = title;
                 if (avatar) existing.dom.querySelector('img').src = avatar;
@@ -645,11 +605,7 @@
                         <div class="muted-xs" style="color:#aaa;">${type === 'group' ? 'группа' : 'личный'}</div>
                     </div>
                 </div>`;
-            row.onclick = () => {
-                if (type === 'dm') uiAction.openDMById(id, otherUid);
-                else if (type === 'group') uiAction.openGroupChat(id);
-            };
-            // insert after global row
+            row.onclick = () => { if (type === 'dm') uiAction.openDMById(id, otherUid); else if (type === 'group') uiAction.openGroupChat(id); };
             const globalRow = document.getElementById('row-global');
             if (globalRow && globalRow.nextSibling) convList.insertBefore(row, globalRow.nextSibling);
             else convList.appendChild(row);
@@ -695,12 +651,7 @@
                             <div style="font-weight:700;">${u.displayName}</div>
                             <div class="muted-xs" style="color:var(--primary);">@${u.usernameDisplay||u.username}</div>
                         </div>`;
-                    div.onclick = () => {
-                        // open profile modal on click
-                        uiAction.openProfile(u.uid);
-                        resultsBox.innerHTML = '';
-                        searchInput.value = '';
-                    };
+                    div.onclick = () => { uiAction.openProfile(u.uid); resultsBox.innerHTML = ''; searchInput.value = ''; };
                     box.appendChild(div);
                 });
                 resultsBox.appendChild(box);
@@ -770,7 +721,6 @@
                 const messagesContainer = document.getElementById('messages-view');
                 messagesContainer.innerHTML = '<div class="muted-xs" style="padding:12px; opacity:0.6;">Загрузка сообщений...</div>';
                 const messagesRef = ref(db, path);
-                // detach previous? for simplicity: not unsubscribing here (onValue returns function only when using firebase v9 compat). It's ok for demo.
                 currentMessagesUnsub = onValue(messagesRef, (snapshot) => {
                     messagesContainer.innerHTML = '';
                     const data = snapshot.val();
@@ -805,7 +755,6 @@
                         if (isMyMessage) wrapper.innerHTML = bubbleHTML + avatarHTML;
                         else wrapper.innerHTML = avatarHTML + bubbleHTML;
 
-                        // Force justify as fallback
                         try { wrapper.style.justifyContent = isMyMessage ? 'flex-end' : 'flex-start'; } catch(e){}
 
                         wrapper.oncontextmenu = (e) => { e.preventDefault(); window.chatEngine.openContextMenu(e, msgId, { key: msgId, ...msg }); };
@@ -893,13 +842,9 @@
                 chatEngine.openChatListener('messages');
             },
 
-            // open or create DM by user id - used from UI (write button)
             createOrOpenDM: async (otherUid) => {
                 if (!otherUid) return;
-                if (otherUid === window.state.user.uid) {
-                    uiAction.openProfile(otherUid);
-                    return;
-                }
+                if (otherUid === window.state.user.uid) { uiAction.openProfile(otherUid); return; }
                 const u1 = window.state.user.uid;
                 const u2 = otherUid;
                 const chatId = ['dm', ...[u1, u2].sort()].join('_');
@@ -909,13 +854,11 @@
                     const meta = { members: { [u1]: true, [u2]: true }, createdAt: Date.now() };
                     await set(metaRef, meta);
                 }
-                // add to conversations list (listener will also add, but ensure immediate)
                 addConversationToList({ type: 'dm', id: chatId, title: usersCache[otherUid]?.displayName || 'Личный чат', avatar: usersCache[otherUid]?.photoURL || 'https://via.placeholder.com/150', otherUid });
                 uiAction.openDMById(chatId, otherUid);
             },
 
             openDMById: async (chatId, otherUid) => {
-                // fetch other if needed
                 const other = usersCache[otherUid] || {};
                 window.state.currentChat = { type: 'dm', id: chatId, title: other.displayName || 'Личный чат', photo: other.photoURL || '', otherUid };
                 document.getElementById('chat-top-title').innerText = other.displayName || 'Личный чат';
@@ -924,9 +867,7 @@
                 chatEngine.openChatListener(`dms/${chatId}/messages`);
             },
 
-            openDM: async (otherUid) => {
-                await uiAction.createOrOpenDM(otherUid);
-            },
+            openDM: async (otherUid) => { await uiAction.createOrOpenDM(otherUid); },
 
             openProfile: (uid) => {
                 if (!uid) return;
@@ -991,10 +932,7 @@
                     document.getElementById('btn-edit-profile').style.display = 'inline-flex';
                     document.getElementById('btn-save-profile').style.display = 'none';
                     alert('Профиль сохранён');
-                } catch (err) {
-                    console.error(err);
-                    alert('Ошибка при сохранении профиля');
-                }
+                } catch (err) { console.error(err); alert('Ошибка при сохранении профиля'); }
             },
 
             upgradeToGoogle: async () => {
@@ -1009,16 +947,12 @@
                     await update(ref(db, `users/${result.user.uid}`), updates);
                     alert('Аккаунт успешно привязан к Google');
                     uiAction.closeProfile();
-                } catch (err) {
-                    console.error(err);
-                    alert('Ошибка привязки: ' + (err.message || err));
-                }
+                } catch (err) { console.error(err); alert('Ошибка привязки: ' + (err.message || err)); }
             },
 
             openSettings: () => {
                 document.getElementById('settings-modal').classList.add('active');
                 document.getElementById('settings-modal').setAttribute('aria-hidden','false');
-                // initialize controls with current theme
                 const root = document.documentElement.style;
                 document.getElementById('ui-color-primary').value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()) || '#3390ec';
                 document.getElementById('ui-color-me').value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--msg-me').trim()) || '#eeffde';
@@ -1056,11 +990,7 @@
                 renderGroupSelected();
             },
 
-            removeGroupMember: (uid) => {
-                if (!uiAction._groupSelected) return;
-                delete uiAction._groupSelected[uid];
-                renderGroupSelected();
-            },
+            removeGroupMember: (uid) => { if (!uiAction._groupSelected) return; delete uiAction._groupSelected[uid]; renderGroupSelected(); },
 
             createGroup: async () => {
                 const name = (document.getElementById('group-name').value || '').trim();
@@ -1079,10 +1009,7 @@
                     uiAction.closeCreateGroup();
                     addConversationToList({ type: 'group', id: groupId, title: name, avatar: image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png' });
                     uiAction.openGroupChat(groupId, meta);
-                } catch (err) {
-                    console.error(err);
-                    alert('Ошибка при создании группы');
-                }
+                } catch (err) { console.error(err); alert('Ошибка при создании группы'); }
             },
 
             openGroupChat: async (groupId, meta) => {
@@ -1103,11 +1030,9 @@
                 const snap = await get(ref(db, `groups/${groupId}`));
                 if (!snap.exists()) return alert('Группа не найдена');
                 const group = snap.val();
-                // reuse profile modal for group info
                 const overlay = document.getElementById('profile-overlay');
                 const modal = document.getElementById('profile-modal');
                 overlay.classList.add('active'); modal.classList.add('active'); modal.setAttribute('aria-hidden','false');
-
                 document.getElementById('p-avatar').src = group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
                 document.getElementById('p-displayname').innerText = group.name;
                 document.getElementById('p-username').innerText = `${Object.keys(group.members||{}).length} участников`;
@@ -1116,7 +1041,6 @@
                     return `• ${u.displayName || 'User'} @${u.usernameDisplay||u.username||''}`;
                 }).join('\n');
                 document.getElementById('p-about').innerText = memberList || 'Пусто';
-
                 document.getElementById('profile-edit-area').style.display = 'none';
                 document.getElementById('btn-edit-profile').style.display = 'none';
                 document.getElementById('btn-save-profile').style.display = 'none';
@@ -1177,7 +1101,6 @@
             },
             reset: function() {
                 localStorage.removeItem('narrators_custom_ui');
-                // reset to defaults
                 document.documentElement.style.removeProperty('--primary');
                 document.documentElement.style.removeProperty('--msg-me');
                 document.documentElement.style.removeProperty('--bg-body');
@@ -1196,38 +1119,28 @@
             return '#' + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
         }
 
-        /* -------------------- INIT group search binding -------------------- */
-        // attach handler now (group modal input may not exist earlier)
         initGroupSearch();
 
-        /* -------------------- helper UI -------------------- */
         document.addEventListener('click', (e) => {
-            // close top menu when clicking outside
-            const menu = document.getElementById('chat-top-menu');
-            if (menu && menu.classList.contains('active') && !e.target.closest('#chat-top-menu') && !e.target.closest('#chat-top-menu-btn')) {
+            const menu = document.getElementById('sidebar-menu');
+            const btn = document.getElementById('sidebar-menu-btn');
+            if (menu && menu.classList.contains('active') && !e.target.closest('#sidebar-menu') && !e.target.closest('#sidebar-menu-btn')) {
                 menu.classList.remove('active');
+                if (btn) btn.setAttribute('aria-expanded','false');
             }
-            // hide context popup
             if (!e.target.closest('#context-popup')) {
                 const p = document.getElementById('context-popup');
                 if (p) p.style.display = 'none';
             }
         });
 
-        // Enter to send
         document.getElementById('main-input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatEngine.sendMessage(); } });
 
-        // wire settings inputs preview
         ['ui-color-primary','ui-color-me','ui-bg-color','ui-font-range','ui-radius-range'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.addEventListener('input', () => {
-                // apply live preview
-                themeCore.preview();
-            });
+            if (el) el.addEventListener('input', () => { themeCore.preview(); });
         });
 
-        /* -------------------- Utility: open profile by clicking avatar in messages or sidebar -------------------- */
-        // chat-top-avatar click: open info about current chat target (dm/group/self)
         document.getElementById('chat-top-avatar').addEventListener('click', () => {
             const c = window.state.currentChat || {};
             if (c.type === 'dm') uiAction.openProfile(c.otherUid);
@@ -1235,17 +1148,12 @@
             else uiAction.openProfile(window.state.user.uid);
         });
 
-        /* -------------------- small helpers -------------------- */
-        function addConversationIfMissing(type, id, title, avatar, otherUid) {
-            addConversationToList({ type, id, title, avatar, otherUid });
-        }
+        function addConversationIfMissing(type, id, title, avatar, otherUid) { addConversationToList({ type, id, title, avatar, otherUid }); }
 
-        // expose uiAction/chatEngine globally
         window.uiAction = window.uiAction;
         window.chatEngine = window.chatEngine;
         window.themeCore = window.themeCore;
 
-        // load saved theme
         themeCore.load();
 
     </script>
