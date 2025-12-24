@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Narrators Messenger v0.1.6</title>
+    <title>Narrators Messenger v0.1.6 (merged UI fixes)</title>
 
     <style>
         :root{
@@ -166,27 +166,39 @@
         .msg-content-body { display:block; font-size:15px; color:#14202b; line-height:1.35; white-space:pre-wrap; word-break:break-word; margin-bottom:6px; }
         .time-stamp { display:block; font-size:12px; color:var(--muted); text-align:right; opacity:0.85; }
 
-        #reply-preview{ display:none; padding:10px; border-left:4px solid var(--primary); background:#fff; border-radius:10px; margin-bottom:10px; box-shadow:var(--shadow-sm) }
+        /* Bottom input bar */
+        .bottom-controls{ border-top:1px solid var(--border); padding:10px 12px; display:flex; gap:8px; align-items:flex-end; background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8)); }
+        .input-row{ display:flex; gap:8px; align-items:center; flex:1; }
+        #main-input{ width:100%; min-height:44px; max-height:160px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); resize:none; font-size:15px; line-height:1.2; }
+        .control-btn{ width:44px; height:44px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:none; background:#fff; box-shadow:0 6px 18px rgba(11,22,39,0.04); }
+        .control-btn:active{ transform:scale(.98) }
+        #send-msg-btn{ background:var(--primary); color:#fff; width:44px; height:44px; border-radius:10px; border:none; }
 
-        .profile-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:10001; display:none; backdrop-filter:blur(3px); }
-        .profile-overlay.active { display:block; }
-        .profile-modal, .settings-modal, .group-modal{ transition:opacity .22s var(--ease), transform .22s var(--ease), visibility .22s var(--ease); will-change:transform,opacity; }
+        /* reply preview */
+        #reply-preview{ display:none; padding:8px 12px; background:#fff; border-radius:10px; border-left:4px solid var(--primary); box-shadow:var(--shadow-sm); margin-bottom:8px; position:relative; }
+        #reply-preview .close-reply{ position:absolute; right:8px; top:8px; background:transparent; border:none; cursor:pointer; font-size:14px }
+        #reply-preview .reply-author{ font-weight:700; margin-bottom:6px }
+        #reply-preview .reply-text{ color:#333; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80%; }
 
-        .profile-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); width:92%; max-width:520px; background:#fff; border-radius:14px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,0.3); z-index:10002; display:none; opacity:0; }
-        .profile-modal.active{ display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
+        /* group selected chips */
+        .chip{ display:inline-flex; align-items:center; gap:8px; padding:6px 8px; border-radius:999px; background:#fff; border:1px solid var(--border); box-shadow:0 6px 18px rgba(11,22,39,0.03); margin-right:8px; margin-bottom:8px; }
+        .chip img{ width:28px; height:28px; border-radius:6px; object-fit:cover; }
+        .chip span{ font-weight:700; font-size:14px; margin-right:6px; }
 
-        .settings-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); width:92%; max-width:560px; background:#fff; border-radius:12px; padding:18px; box-shadow:0 30px 80px rgba(0,0,0,0.25); z-index:10003; display:none; opacity:0; }
-        .settings-modal.active{ display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
+        /* image modal */
+        .modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.25); z-index:11000; width:min(720px,92%); max-height:80vh; overflow:auto; padding:16px; display:none; }
+        .modal.active{ display:block; }
+        .modal .tabs{ display:flex; gap:8px; margin-bottom:12px; }
+        .modal .tab{ padding:8px 12px; border-radius:8px; cursor:pointer; background:#f6f7fb; }
+        .modal .tab.active{ background:var(--primary); color:#fff }
+        .recent-images{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+        .recent-images img{ width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--border); }
 
-        .group-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); background:#fff; z-index:10004; width:92%; max-width:620px; border-radius:12px; padding:16px; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
-        .group-modal.active{ display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
-
-        .btn{ border-radius:10px; padding:8px 10px; transition:transform .12s var(--ease), box-shadow .12s var(--ease) }
-        .btn:active{ transform:scale(.98) }
-        .btn-primary{ background:var(--primary); color:#fff; border:none }
-        .btn-ghost{ background:#f6f7fb; border:1px solid #efefef }
-
-        .muted-xs{ font-size:12px; color:var(--muted) }
+        /* emoji picker */
+        .emoji-picker{ position:absolute; bottom:64px; right:64px; width:320px; max-height:300px; background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;box-shadow:var(--shadow-sm); display:none; overflow:auto; z-index:12000; }
+        .emoji-grid{ display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
+        .emoji-cell{ font-size:20px; padding:6px; text-align:center; cursor:pointer; border-radius:6px; }
+        .emoji-cell:hover{ background:#f6f7fb }
 
         @media (max-width:900px){
             #sidebar{ width:320px }
@@ -195,9 +207,10 @@
 </head>
 <body>
 
-    <!-- AUTH screens (same as before) -->
-    <div id="screen-auth" class="panel" style="display:none;">
-        <!-- kept minimal because main flows run in app; auth UI lives in previous versions -->
+    <!-- AUTH banners (hidden by default) -->
+    <div id="auth-banners" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:12000;pointer-events:none;">
+        <div id="auth-error" style="display:none;background:#fff4f4;border:1px solid #ffd2d2;color:#8b1d1d;padding:8px 12px;border-radius:8px;margin-bottom:6px;pointer-events:auto;"></div>
+        <div id="auth-info" style="display:none;background:#f0f8ff;border:1px solid #cfe9ff;color:#045;padding:8px 12px;border-radius:8px;pointer-events:auto;"></div>
     </div>
 
     <!-- MAIN APP -->
@@ -212,7 +225,7 @@
                 <button id="sidebar-menu-btn" aria-expanded="false" title="Открыть меню">≡</button>
             </div>
 
-            <div id="sidebar-menu" class="sidebar-menu" aria-hidden="true">
+            <div id="sidebar-menu" class="sidebar-menu" aria-hidden="true" onclick="event.stopPropagation()">
                 <div class="item" id="menu-personalization">🎨 Персонализация</div>
                 <div class="item" id="menu-settings">⚙️ Настройки</div>
                 <div class="item" id="menu-add-group">➕ Добавить группу</div>
@@ -252,19 +265,32 @@
                 </div>
             </div>
 
-            <div id="messages-view"></div>
+            <div id="messages-view" aria-live="polite"></div>
 
-            <div class="bottom-controls">
-                <div id="reply-preview"></div>
-                <div class="input-group" style="padding:12px">
-                    <textarea id="main-input" rows="1" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border)"></textarea>
-                    <button id="send-msg-btn" class="btn btn-primary" onclick="chatEngine.sendMessage()">➤</button>
+            <div style="padding:8px 12px;">
+                <div id="reply-preview">
+                    <button class="close-reply" onclick="chatEngine.cancelAction()">✕</button>
+                    <div class="reply-author" id="reply-author-name"></div>
+                    <div class="reply-text" id="reply-author-text"></div>
+                </div>
+
+                <div class="bottom-controls">
+                    <div class="input-row">
+                        <div style="position:relative; flex:1;">
+                            <textarea id="main-input" rows="1" placeholder="Написать сообщение..."></textarea>
+                            <div id="emoji-picker" class="emoji-picker" aria-hidden="true"></div>
+                        </div>
+                        <button id="emoji-btn" class="control-btn" title="Emoji">🙂</button>
+                        <button id="image-btn" class="control-btn" title="Изображение">🖼️</button>
+                        <button id="attach-btn" class="control-btn" title="Добавить">＋</button>
+                    </div>
+                    <button id="send-msg-btn">➤</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- PROFILE MODAL -->
+    <!-- PROFILE MODAL (kept) -->
     <div id="profile-overlay" class="profile-overlay" onclick="uiAction.closeProfile()"></div>
     <div id="profile-modal" class="profile-modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -299,7 +325,7 @@
         </div>
     </div>
 
-    <!-- SETTINGS MODAL -->
+    <!-- SETTINGS & GROUP MODALS (kept) -->
     <div id="settings-modal" class="settings-modal" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div style="font-weight:800;">Настройки и персонализация</div>
@@ -335,7 +361,6 @@
         </div>
     </div>
 
-    <!-- GROUP MODAL -->
     <div id="group-overlay" class="profile-overlay" onclick="uiAction.closeCreateGroup()"></div>
     <div id="group-modal" class="group-modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -362,32 +387,56 @@
         </div>
     </div>
 
+    <!-- IMAGE MODAL (inlined) -->
+    <div id="image-modal" class="modal" role="dialog" aria-hidden="true">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong>Отправить изображение</strong>
+        <div>
+          <button id="image-modal-close" class="control-btn" style="width:auto;height:auto;padding:6px 8px;">✕</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div id="tab-url" class="tab active">По URL</div>
+        <div id="tab-file" class="tab">Файл</div>
+      </div>
+
+      <div id="tab-url-panel">
+        <input id="image-url-input" class="input-field" placeholder="Вставьте ссылку на изображение (https://...)">
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="image-url-send" class="btn btn-primary">Отправить URL</button>
+        </div>
+      </div>
+
+      <div id="tab-file-panel" style="display:none; margin-top:10px;">
+        <input id="image-file-input" type="file" accept="image/*">
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="image-upload-send" class="btn btn-primary">Загрузить и отправить</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; margin-bottom:8px;">Недавние изображения</div>
+        <div id="recent-images" class="recent-images"></div>
+      </div>
+    </div>
+
     <script type="module">
+        // Firebase imports (app, auth, db, storage)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import {
-            getAuth,
-            GoogleAuthProvider,
-            signInWithPopup,
-            signInWithRedirect,
-            signInWithEmailAndPassword,
-            createUserWithEmailAndPassword,
-            sendPasswordResetEmail,
-            onAuthStateChanged,
-            signOut,
-            linkWithPopup
+            getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+            signInWithEmailAndPassword, createUserWithEmailAndPassword,
+            sendPasswordResetEmail, onAuthStateChanged, signOut, linkWithPopup
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         import {
-            getDatabase,
-            ref,
-            set,
-            push,
-            onValue,
-            get,
-            child,
-            update,
-            remove
+            getDatabase, ref, set, push, onValue, get, child, update, remove
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        import {
+            getStorage, ref as storageRef, uploadBytes, getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
@@ -402,6 +451,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+        const storage = getStorage(app);
         const provider = new GoogleAuthProvider();
 
         window.state = {
@@ -424,78 +474,18 @@
         /* UI helpers */
         const authErrorEl = document.getElementById('auth-error');
         const authInfoEl = document.getElementById('auth-info');
-        function showAuthError(msg){ if(authErrorEl){ authErrorEl.style.display='block'; authErrorEl.innerText=msg;} }
+        function showAuthError(msg){ if(authErrorEl){ authErrorEl.style.display='block'; authErrorEl.innerText=msg; setTimeout(()=>authErrorEl.style.display='none',7000);} }
         function clearAuthMessages(){ if(authErrorEl){ authErrorEl.style.display='none'; authErrorEl.innerText=''; } if(authInfoEl){ authInfoEl.style.display='none'; authInfoEl.innerText=''; } }
 
-        /* AUTH wiring (registration/login flows remain available on earlier screens if used) */
-        // For brevity, only sign out and google are wired here as in previous versions:
+        /* AUTH wiring */
         document.getElementById('signout-btn').addEventListener('click', async () => {
             try { await signOut(auth); } catch (err) { console.error(err); alert('Ошибка выхода: ' + (err.message || err)); }
         });
 
+        /* Minimal google button handling if exists */
         document.getElementById('google-btn')?.addEventListener('click', async () => {
             try { await signInWithPopup(auth, provider); } catch (err) { console.warn('Popup failed — fallback redirect', err); try{ await signInWithRedirect(auth, provider);}catch(e){ console.error(e); showAuthError(e.message || 'Ошибка Google входа'); } }
         });
-
-        /* AUTH state handling */
-        onAuthStateChanged(auth, async (firebaseUser) => {
-            clearAuthMessages();
-            if (!firebaseUser) {
-                teardownAfterSignOut();
-                document.getElementById('app').style.display = 'flex';
-                // show auth screen logic omitted for brevity
-                return;
-            }
-            window.state.user = firebaseUser;
-            try {
-                const snap = await get(child(ref(db), `users/${firebaseUser.uid}`));
-                if (snap.exists()) window.state.profile = snap.val();
-                else {
-                    const displayName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'User');
-                    const username = (displayName.split(' ')[0] || displayName).toLowerCase();
-                    const profile = { uid: firebaseUser.uid, displayName, username, usernameDisplay: username, photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150', about: '' };
-                    await set(ref(db, `users/${firebaseUser.uid}`), profile);
-                    window.state.profile = profile;
-                }
-
-                if ((window.state.profile.usernameDisplay || '').toLowerCase() === 'admin') window.state.isAdmin = true;
-
-                document.getElementById('user-profile-img').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
-                document.getElementById('user-display-name').innerText = window.state.profile.displayName || '';
-                document.getElementById('user-display-tag').innerText = '@' + (window.state.profile.usernameDisplay || '');
-
-                // click avatar opens own profile
-                document.getElementById('user-profile-img').onclick = () => uiAction.openProfile(window.state.user.uid);
-
-                // init app features
-                themeCore.load();
-                initUsersCacheListener();
-                initConversationsListener();
-                initSearch();
-                initGroupSearch();
-                uiAction.openGlobal();
-
-                // NOTE: do NOT rebind sidebarBtn here - single binding is done below to avoid double-toggles.
-                // Only wire menu item clicks:
-                document.getElementById('menu-personalization').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
-                document.getElementById('menu-settings').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
-                document.getElementById('menu-add-group').onclick = () => { uiAction.openCreateGroup(); closeSidebarMenu(); };
-
-            } catch (err) {
-                console.error('post-auth error', err);
-                showAuthError('Ошибка при загрузке профиля: ' + (err.message || err));
-            }
-        });
-
-        function teardownAfterSignOut(){
-            document.getElementById('user-profile-img').onclick = null;
-            if (usersListener) usersListener();
-            if (dmsListener) dmsListener();
-            if (groupsListener) groupsListener();
-            const convList = document.getElementById('conversations-list');
-            convList.querySelectorAll('.chat-row').forEach(el => { if (el.id !== 'row-global') el.remove(); });
-            Object.keys(conversationsIndex).forEach(k => delete conversationsIndex[k]);
-        }
 
         /* Users cache */
         function initUsersCacheListener(){
@@ -652,7 +642,7 @@
 
         function escapeHtml(s) { return (s||'').replace(/'/g, "\\'").replace(/"/g,'\\"'); }
 
-        /* Chat engine */
+        /* Chat engine (kept from prior implementation, but patched here to show reply preview immediately and hide when canceling) */
         window.chatEngine = {
             sendMessage: async function(){
                 const input = document.getElementById('main-input');
@@ -705,7 +695,7 @@
 
                         const replyMarkup = msg.replyTo ? `<div style="font-size:12px; border-left:3px solid var(--primary); padding-left:10px; margin-bottom:8px; opacity:0.8;"><b>${msg.replyTo.author}</b><br>${(msg.replyTo.content||'').substring(0,80)}${(msg.replyTo.content && msg.replyTo.content.length>80)?'...':''}</div>` : '';
 
-                        const avatarHTML = `<img src="${avatarURL}" class="msg-avatar" onclick="uiAction.openProfile('${msg.uid}')" title="Открыть профиль">`;
+                        const avatarHTML = `<img src="${avatarURL}" class="msg-avatar" onclick="uiAction.openProfile('${msg.uid}')" title="Открыть профиль" onerror="this.src='https://via.placeholder.com/150'">`;
                         const bubbleHTML = `<div class="msg-bubble" id="msg-${msgId}">
                             <span class="author-tag">${displayName} ${usernameDisplay.toLowerCase()==='admin' ? '👑' : ''}</span>
                             ${replyMarkup}
@@ -762,10 +752,12 @@
                 if (type === 'reply' || type === 'edit') {
                     window.state.activeAction = type;
                     window.state.targetMessage = window.state.contextTarget;
+                    // Show immediate preview (author + short text)
+                    const ctx = window.state.contextTarget || {};
+                    document.getElementById('reply-author-name').innerText = type === 'edit' ? "Редактирование" : (ctx.displayName || ctx.username || '');
+                    document.getElementById('reply-author-text').innerText = (ctx.text || ctx.content || '').substring(0,200);
                     document.getElementById('reply-preview').style.display = 'block';
-                    document.getElementById('reply-author-name').innerText = type === 'edit' ? "Редактирование" : window.state.targetMessage.displayName;
-                    document.getElementById('reply-author-text').innerText = window.state.targetMessage.text;
-                    if (type === 'edit') document.getElementById('main-input').value = window.state.targetMessage.text;
+                    if (type === 'edit') document.getElementById('main-input').value = window.state.targetMessage.text || '';
                     document.getElementById('main-input').focus();
                 } else if (type === 'copy') {
                     navigator.clipboard.writeText(window.state.contextTarget.text || '');
@@ -787,12 +779,11 @@
             },
 
             attachImage: function(){
-                const url = prompt("Прямая ссылка на картинку:");
-                if (url && url.startsWith('http')) { document.getElementById('main-input').value = url; this.sendMessage(); }
+                document.getElementById('image-modal').classList.add('active');
             }
         };
 
-        /* uiAction */
+        /* uiAction (kept) */
         window.uiAction = {
             openGlobal: () => {
                 window.state.currentChat = { type: 'global', id: 'global', title: 'Global Chat Room' };
@@ -1014,7 +1005,7 @@
             Object.values(selected).forEach(s => {
                 const el = document.createElement('div');
                 el.className = 'chip';
-                el.innerHTML = `<img src="${s.photo||'https://via.placeholder.com/150'}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"><span>${s.name}</span><button onclick="uiAction.removeGroupMember('${s.uid}')" style="background:transparent;border:none;cursor:pointer;">✕</button>`;
+                el.innerHTML = `<img src="${s.photo||'https://via.placeholder.com/150'}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/150'"><span>${s.name}</span><button onclick="uiAction.removeGroupMember('${s.uid}')" style="background:transparent;border:none;cursor:pointer;">✕</button>`;
                 container.appendChild(el);
             });
         }
@@ -1079,62 +1070,34 @@
             return '#' + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
         }
 
+        // INIT
         initGroupSearch();
 
-        /* Polish: sidebar menu open/close with animations */
+        /* Sidebar menu open/close (single binding; no duplicate bindings) */
         const sidebarBtn = document.getElementById('sidebar-menu-btn');
         const sidebarMenu = document.getElementById('sidebar-menu');
-
-        // ensure clicks inside menu don't bubble up
         sidebarMenu.addEventListener('click', (e) => e.stopPropagation());
-
-        function openSidebarMenu(){
-            sidebarMenu.classList.add('active');
-            sidebarMenu.setAttribute('aria-hidden','false');
-            sidebarBtn.setAttribute('aria-expanded','true');
-            sidebarMenu.querySelectorAll('.item').forEach((it, i) => {
-                it.style.opacity = '0';
-                it.style.transform = 'translateY(6px)';
-                setTimeout(()=>{ it.style.transition = `transform .28s ${0.04 + i*0.03}s var(--ease), opacity .22s ${0.04 + i*0.03}s var(--ease)`; it.style.opacity = '1'; it.style.transform = 'none'; }, 20);
-            });
-        }
-
-        function closeSidebarMenu(){
-            const items = Array.from(sidebarMenu.querySelectorAll('.item'));
-            items.reverse().forEach((it, idx) => {
-                it.style.transition = `transform .16s ${idx*0.02}s var(--ease), opacity .12s ${idx*0.02}s var(--ease)`;
-                it.style.transform = 'translateY(6px)';
-                it.style.opacity = '0';
-            });
-            setTimeout(()=>{
-                sidebarMenu.classList.remove('active');
-                sidebarMenu.setAttribute('aria-hidden','true');
-                sidebarBtn.setAttribute('aria-expanded','false');
-                items.reverse().forEach(it => { it.style.transition=''; it.style.transform=''; it.style.opacity=''; });
-            }, 220 + items.length*20);
-        }
-
-        // single click handler with stopPropagation to prevent document click from closing right after opening
-        sidebarBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = sidebarMenu.classList.contains('active');
-            if (isOpen) closeSidebarMenu();
-            else openSidebarMenu();
-        });
-
+        sidebarBtn.addEventListener('click', (e) => { e.stopPropagation(); const isOpen = sidebarMenu.classList.contains('active'); if (isOpen) closeSidebarMenu(); else openSidebarMenu(); });
         document.addEventListener('click', (e) => {
             if (!sidebarMenu.contains(e.target) && !sidebarBtn.contains(e.target)) {
                 if (sidebarMenu.classList.contains('active')) closeSidebarMenu();
             }
-            if (!e.target.closest('#context-popup')) {
-                const p = document.getElementById('context-popup');
-                if (p) p.style.display = 'none';
-            }
+            const p = document.getElementById('context-popup');
+            if (p && !e.target.closest('#context-popup')) p.style.display = 'none';
         });
-
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sidebarMenu.classList.contains('active')) closeSidebarMenu(); });
 
-        // animate new conversation rows
+        function openSidebarMenu(){
+            sidebarMenu.classList.add('active'); sidebarMenu.setAttribute('aria-hidden','false'); sidebarBtn.setAttribute('aria-expanded','true');
+            sidebarMenu.querySelectorAll('.item').forEach((it, i) => { it.style.opacity='0'; it.style.transform='translateY(6px)'; setTimeout(()=>{ it.style.transition = `transform .28s ${0.04 + i*0.03}s var(--ease), opacity .22s ${0.04 + i*0.03}s var(--ease)`; it.style.opacity = '1'; it.style.transform='none'; }, 20); });
+        }
+        function closeSidebarMenu(){
+            const items = Array.from(sidebarMenu.querySelectorAll('.item'));
+            items.reverse().forEach((it, idx) => { it.style.transition = `transform .16s ${idx*0.02}s var(--ease), opacity .12s ${idx*0.02}s var(--ease)`; it.style.transform = 'translateY(6px)'; it.style.opacity='0'; });
+            setTimeout(()=>{ sidebarMenu.classList.remove('active'); sidebarMenu.setAttribute('aria-hidden','true'); sidebarBtn.setAttribute('aria-expanded','false'); items.reverse().forEach(it => { it.style.transition=''; it.style.transform=''; it.style.opacity=''; }); }, 220 + items.length*20);
+        }
+
+        // Conversation list animation
         const convList = document.getElementById('conversations-list');
         const convObserver = new MutationObserver((mutations) => {
             mutations.forEach(m => {
@@ -1158,23 +1121,100 @@
             else uiAction.openProfile(window.state.user.uid);
         });
 
-        // Enter to send
-        document.getElementById('main-input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatEngine.sendMessage(); } });
+        // Enter to send handling & autosize
+        const mainInput = document.getElementById('main-input');
+        mainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatEngine.sendMessage(); } });
+        mainInput.addEventListener('input', () => { mainInput.style.height='auto'; const h = Math.min(160, Math.max(44, mainInput.scrollHeight)); mainInput.style.height = h + 'px'; });
 
-        // theme inputs preview
-        ['ui-color-primary','ui-color-me','ui-bg-color','ui-font-range','ui-radius-range'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('input', () => themeCore.preview());
-        });
+        // Emoji picker + image modal wiring
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const standardEmojis = ["😀","😁","😂","🤣","🙂","🙃","😉","😊","😍","🤩","😘","😎","🤓","🤔","🤨","😅","😇","😭","😤","😡","👍","👎","👏","🙏","💪","🤝","🔥","✨","🎉","💯","✔️","❌","❤️","🧡","💛","💚","💙","💜","🤍","🤎","🖤","💥","🥳","🤯","🤖","👽","🎶","🍕"];
+        function renderEmojiPicker(){ emojiPicker.innerHTML=''; const grid = document.createElement('div'); grid.className='emoji-grid'; standardEmojis.forEach(e=>{ const c=document.createElement('div'); c.className='emoji-cell'; c.innerText=e; c.onclick=()=>{ insertAtCursor(mainInput,e); emojiPicker.style.display='none'; mainInput.focus(); }; grid.appendChild(c); }); emojiPicker.appendChild(grid); }
+        emojiBtn.addEventListener('click', (e)=>{ e.stopPropagation(); if (emojiPicker.style.display==='block') emojiPicker.style.display='none'; else { renderEmojiPicker(); emojiPicker.style.display='block'; } });
+        document.addEventListener('click', (e)=>{ if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display='none'; });
+        function insertAtCursor(el, text){ const start=el.selectionStart||0; const end=el.selectionEnd||0; el.value=el.value.slice(0,start)+text+el.value.slice(end); const pos=start+text.length; el.setSelectionRange(pos,pos); el.focus(); }
 
-        // expose for other inline handlers (already on window)
+        // Image modal logic (send by URL or upload to storage)
+        const imageModal = document.getElementById('image-modal');
+        const imageBtn = document.getElementById('image-btn');
+        const imageClose = document.getElementById('image-modal-close');
+        const tabUrl = document.getElementById('tab-url');
+        const tabFile = document.getElementById('tab-file');
+        const urlPanel = document.getElementById('tab-url-panel');
+        const filePanel = document.getElementById('tab-file-panel');
+        const imageUrlInput = document.getElementById('image-url-input');
+        const imageFileInput = document.getElementById('image-file-input');
+        const imageUrlSend = document.getElementById('image-url-send');
+        const imageUploadSend = document.getElementById('image-upload-send');
+        const recentImagesContainer = document.getElementById('recent-images');
+
+        const RECENT_KEY = 'narrators_recent_images';
+        function loadRecentImages(){ try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); }catch(e){return[]} }
+        function saveRecentImages(arr){ localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(0,20))); }
+        function addRecentImage(url){ if(!url) return; let a=loadRecentImages(); a=a.filter(x=>x!==url); a.unshift(url); saveRecentImages(a); renderRecentImages(); }
+        function renderRecentImages(){ recentImagesContainer.innerHTML=''; loadRecentImages().forEach(url=>{ const img=document.createElement('img'); img.src=url; img.onclick=()=>{ sendImageUrl(url); imageModal.classList.remove('active'); }; img.onerror=()=>img.remove(); recentImagesContainer.appendChild(img); }); }
+
+        imageBtn.addEventListener('click', ()=>{ renderRecentImages(); imageModal.classList.add('active'); });
+        imageClose.addEventListener('click', ()=>imageModal.classList.remove('active'));
+        tabUrl.addEventListener('click', ()=>{ tabUrl.classList.add('active'); tabFile.classList.remove('active'); urlPanel.style.display='block'; filePanel.style.display='none'; });
+        tabFile.addEventListener('click', ()=>{ tabFile.classList.add('active'); tabUrl.classList.remove('active'); urlPanel.style.display='none'; filePanel.style.display='block'; });
+
+        imageUrlSend.addEventListener('click', ()=>{ const url=(imageUrlInput.value||'').trim(); if(!url){ alert('Вставьте ссылку'); return;} sendImageUrl(url); addRecentImage(url); imageUrlInput.value=''; imageModal.classList.remove('active'); });
+        imageUploadSend.addEventListener('click', async ()=>{ const file = imageFileInput.files && imageFileInput.files[0]; if(!file){ alert('Выберите файл'); return;} try{ const ext = (file.name.split('.').pop()||'jpg'); const key = `images/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`; const sRef = storageRef(storage, key); await uploadBytes(sRef, file); const url = await getDownloadURL(sRef); sendImageUrl(url); addRecentImage(url); imageFileInput.value=''; imageModal.classList.remove('active'); } catch(err){ console.error(err); alert('Ошибка загрузки'); } });
+
+        function sendImageUrl(url){ const chat = window.state.currentChat || { type:'global', id:'global' }; let path = chat.type==='global' ? 'messages' : (chat.type==='dm' ? `dms/${chat.id}/messages` : `groups/${chat.id}/messages`); const messageData = { uid: window.state.user.uid, displayName: window.state.profile.displayName, username: window.state.profile.usernameDisplay, text: url, createdAt: Date.now() }; push(ref(db, path), messageData); }
+
+        // Reply preview close already bound to chatEngine.cancelAction which hides it below.
+
+        // Patch chatEngine.handleAction and cancelAction to show/hide preview reliably
+        (function patchChatEngine(){
+            const origHandle = window.chatEngine && window.chatEngine.handleAction;
+            const origCancel = window.chatEngine && window.chatEngine.cancelAction;
+            // if chatEngine exists already, patch directly; else poll
+            function doPatch(){
+                if (window.chatEngine && window.chatEngine.handleAction && window.chatEngine.cancelAction) {
+                    const _origHandle = window.chatEngine.handleAction;
+                    const _origCancel = window.chatEngine.cancelAction;
+                    window.chatEngine.handleAction = function(type){
+                        if (type==='reply' || type==='edit') {
+                            const ctx = window.state.contextTarget || {};
+                            document.getElementById('reply-author-name').innerText = type==='edit' ? "Редактирование" : (ctx.displayName || ctx.username || '');
+                            document.getElementById('reply-author-text').innerText = (ctx.text || ctx.content || '').substring(0,200);
+                            document.getElementById('reply-preview').style.display = 'block';
+                        }
+                        return _origHandle.call(this, type);
+                    };
+                    window.chatEngine.cancelAction = function(){
+                        document.getElementById('reply-preview').style.display = 'none';
+                        return _origCancel.call(this);
+                    };
+                    return true;
+                }
+                return false;
+            }
+            if (!doPatch()){
+                const interval = setInterval(()=>{ if (doPatch()) clearInterval(interval); }, 150);
+            }
+        })();
+
+        // Attach small behaviors: hide emoji on doc click, hide image modal on outside
+        document.addEventListener('click', (e)=>{ if (!imageModal.contains(e.target) && e.target !== imageBtn) { /* image modal stays until closed intentionally */ } });
+
+        // Helper to render chips for group selected - already handled by renderGroupSelected
+
+        // Initial theme load
+        themeCore.load();
+
+        // Expose globals (already set)
         window.uiAction = window.uiAction;
         window.chatEngine = window.chatEngine;
         window.themeCore = window.themeCore;
 
-        // load theme
-        themeCore.load();
+        // Load recent images into view on boot
+        renderRecentImages();
 
+        // Done
     </script>
 </body>
 </html>
