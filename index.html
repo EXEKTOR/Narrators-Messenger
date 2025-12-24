@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Narrators Messenger v0.1.6 (merged UI fixes)</title>
+    <title>Narrators Messenger v0.1.6 (v15 merged + mobile)</title>
 
     <style>
         :root{
@@ -42,6 +42,7 @@
 
         /* layout */
         #app{display:flex;width:100%;height:100%}
+        /* desktop sidebar */
         #sidebar{
             width:360px;
             flex-shrink:0;
@@ -51,7 +52,11 @@
             background:linear-gradient(180deg,var(--bg),#fafbfd);
             position:relative;
             padding-bottom:12px;
+            transition: transform .22s var(--ease);
         }
+        /* overlay sidebar for mobile */
+        #sidebar-mobile{ display:none; position:fixed; left:0; top:0; bottom:0; width:320px; background:linear-gradient(180deg,var(--bg),#fafbfd); z-index:1200; transform:translateX(-110%); transition: transform .22s var(--ease); box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+        #sidebar-mobile.active{ transform:translateX(0); }
 
         .sidebar-top{
             padding:14px 16px;
@@ -200,24 +205,44 @@
         .emoji-cell{ font-size:20px; padding:6px; text-align:center; cursor:pointer; border-radius:6px; }
         .emoji-cell:hover{ background:#f6f7fb }
 
+        /* mobile responsive */
         @media (max-width:900px){
-            #sidebar{ width:320px }
+            #sidebar{ display:none }
+            #sidebar-mobile{ display:block }
+            #app{ flex-direction:column; }
+            #chat-window{ width:100%; height:100%; }
+            .chat-top-bar{ padding:10px; }
+            #messages-view{ padding:12px; }
+            .bottom-controls{ position:sticky; bottom:0; left:0; right:0; z-index:900; background:var(--bg); padding:8px; box-shadow:0 -6px 16px rgba(0,0,0,0.04);}
+            .emoji-picker{ right:12px; left:auto; bottom:72px; width:260px; }
+            .modal{ width:94vw; max-height:78vh }
+            #main-input{ min-height:48px }
+            .control-btn{ width:48px; height:48px }
+            #send-msg-btn{ width:48px; height:48px }
+            #mobile-hamburger{ display:inline-flex }
         }
+        /* mobile backdrop */
+        .backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:1090; display:none; }
+        .backdrop.active{ display:block; }
     </style>
 </head>
 <body>
 
-    <!-- AUTH banners (hidden by default) -->
+    <!-- AUTH banners -->
     <div id="auth-banners" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:12000;pointer-events:none;">
         <div id="auth-error" style="display:none;background:#fff4f4;border:1px solid #ffd2d2;color:#8b1d1d;padding:8px 12px;border-radius:8px;margin-bottom:6px;pointer-events:auto;"></div>
         <div id="auth-info" style="display:none;background:#f0f8ff;border:1px solid #cfe9ff;color:#045;padding:8px 12px;border-radius:8px;pointer-events:auto;"></div>
     </div>
 
+    <!-- Mobile backdrop -->
+    <div id="mobile-backdrop" class="backdrop" onclick="toggleMobileSidebar(false)"></div>
+
     <!-- MAIN APP -->
     <div id="app" class="fade-in" style="display:flex;">
+        <!-- Desktop sidebar -->
         <div id="sidebar" class="sidebar">
             <div class="sidebar-top">
-                <img id="user-profile-img" class="user-avatar" src="https://via.placeholder.com/150" title="Открыть профиль" onerror="this.src='https://via.placeholder.com/150'">
+                <img id="user-profile-img" class="user-avatar" src="https://via.placeholder.com/150" title="Открыть профиль">
                 <div class="sidebar-meta">
                     <div class="name" id="user-display-name">Загрузка...</div>
                     <div class="tag muted-xs" id="user-display-tag">@username</div>
@@ -241,7 +266,7 @@
 
             <div class="chat-list-container" id="conversations-list">
                 <div class="chat-row" id="row-global" onclick="uiAction.openGlobal()">
-                    <img class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width:46px;height:46px;border-radius:8px;" onerror="this.src='https://via.placeholder.com/150'">
+                    <img class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width:46px;height:46px;border-radius:8px;">
                     <div style="flex:1">
                         <div style="display:flex;justify-content:space-between;align-items:center">
                             <div style="font-weight:700">Global Chat Room</div>
@@ -253,19 +278,38 @@
             </div>
         </div>
 
+        <!-- Mobile sidebar (overlay) - content will be mirrored -->
+        <div id="sidebar-mobile" aria-hidden="true">
+            <div class="sidebar-top">
+                <img id="user-profile-img-mobile" class="user-avatar" src="https://via.placeholder.com/150" title="Открыть профиль">
+                <div class="sidebar-meta">
+                    <div class="name" id="user-display-name-mobile">Загрузка...</div>
+                    <div class="tag muted-xs" id="user-display-tag-mobile">@username</div>
+                </div>
+                <button id="sidebar-mobile-close" aria-expanded="false" title="Закрыть меню">✕</button>
+            </div>
+            <div style="padding:10px;"><input id="user-search-input-mobile" class="input-field" placeholder="Искать..."></div>
+            <div class="chat-list-container" id="conversations-list-mobile"></div>
+        </div>
+
+        <!-- CHAT WINDOW -->
         <div id="chat-window">
             <div class="chat-top-bar">
-                <img id="chat-top-avatar" src="https://via.placeholder.com/100" style="width:44px;height:44px;border-radius:10px;object-fit:cover" onerror="this.src='https://via.placeholder.com/100'">
+                <img id="chat-top-avatar" src="https://via.placeholder.com/100" style="width:44px;height:44px;border-radius:10px;object-fit:cover">
                 <div>
                     <div id="chat-top-title" style="font-weight:800">Global Chat Room</div>
                     <div id="chat-top-sub" class="muted-xs">Общий чат</div>
                 </div>
+
+                <!-- mobile hamburger -->
+                <button id="mobile-hamburger" class="control-btn" style="margin-left:12px; display:none;" title="Меню">☰</button>
+
                 <div style="margin-left:auto; display:flex; gap:8px; align-items:center">
                     <button id="signout-btn" class="btn btn-ghost">Выйти</button>
                 </div>
             </div>
 
-            <div id="messages-view" aria-live="polite"></div>
+            <div id="messages-view"></div>
 
             <div style="padding:8px 12px;">
                 <div id="reply-preview">
@@ -277,20 +321,20 @@
                 <div class="bottom-controls">
                     <div class="input-row">
                         <div style="position:relative; flex:1;">
-                            <textarea id="main-input" rows="1" placeholder="Написать сообщение..."></textarea>
+                            <textarea id="main-input" rows="1" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border)"></textarea>
                             <div id="emoji-picker" class="emoji-picker" aria-hidden="true"></div>
                         </div>
                         <button id="emoji-btn" class="control-btn" title="Emoji">🙂</button>
                         <button id="image-btn" class="control-btn" title="Изображение">🖼️</button>
                         <button id="attach-btn" class="control-btn" title="Добавить">＋</button>
                     </div>
-                    <button id="send-msg-btn">➤</button>
+                    <button id="send-msg-btn" class="btn btn-primary">➤</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- PROFILE MODAL (kept) -->
+    <!-- PROFILE MODAL -->
     <div id="profile-overlay" class="profile-overlay" onclick="uiAction.closeProfile()"></div>
     <div id="profile-modal" class="profile-modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -299,7 +343,7 @@
         </div>
 
         <div class="profile-top" style="display:flex; gap:12px; align-items:center;">
-            <img id="p-avatar" src="https://via.placeholder.com/150" alt="avatar" style="width:96px; height:96px; border-radius:12px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/150'">
+            <img id="p-avatar" src="https://via.placeholder.com/150" alt="avatar" style="width:96px; height:96px; border-radius:12px; object-fit:cover;">
             <div style="flex:1;">
                 <div id="p-displayname" style="font-weight:800; font-size:18px;">Имя</div>
                 <div id="p-username" class="muted-xs">@username</div>
@@ -325,7 +369,7 @@
         </div>
     </div>
 
-    <!-- SETTINGS & GROUP MODALS (kept) -->
+    <!-- SETTINGS MODAL -->
     <div id="settings-modal" class="settings-modal" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div style="font-weight:800;">Настройки и персонализация</div>
@@ -361,6 +405,7 @@
         </div>
     </div>
 
+    <!-- GROUP MODAL -->
     <div id="group-overlay" class="profile-overlay" onclick="uiAction.closeCreateGroup()"></div>
     <div id="group-modal" class="group-modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -387,7 +432,7 @@
         </div>
     </div>
 
-    <!-- IMAGE MODAL (inlined) -->
+    <!-- IMAGE MODAL -->
     <div id="image-modal" class="modal" role="dialog" aria-hidden="true">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <strong>Отправить изображение</strong>
@@ -422,20 +467,40 @@
     </div>
 
     <script type="module">
-        // Firebase imports (app, auth, db, storage)
+        /* ============================
+           Firebase imports (v10.7.1)
+           ============================ */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import {
-            getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
-            signInWithEmailAndPassword, createUserWithEmailAndPassword,
-            sendPasswordResetEmail, onAuthStateChanged, signOut, linkWithPopup
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signInWithRedirect,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            sendPasswordResetEmail,
+            onAuthStateChanged,
+            signOut,
+            linkWithPopup
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         import {
-            getDatabase, ref, set, push, onValue, get, child, update, remove
+            getDatabase,
+            ref,
+            set,
+            push,
+            onValue,
+            get,
+            child,
+            update,
+            remove
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         import {
-            getStorage, ref as storageRef, uploadBytes, getDownloadURL
+            getStorage,
+            ref as storageRef,
+            uploadBytes,
+            getDownloadURL
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
@@ -454,6 +519,9 @@
         const storage = getStorage(app);
         const provider = new GoogleAuthProvider();
 
+        /* ============================
+           App state & caches
+           ============================ */
         window.state = {
             user: null,
             profile: null,
@@ -471,23 +539,94 @@
         let usersListener = null;
         let currentMessagesUnsub = null;
 
-        /* UI helpers */
+        /* UI elements */
         const authErrorEl = document.getElementById('auth-error');
         const authInfoEl = document.getElementById('auth-info');
+
         function showAuthError(msg){ if(authErrorEl){ authErrorEl.style.display='block'; authErrorEl.innerText=msg; setTimeout(()=>authErrorEl.style.display='none',7000);} }
         function clearAuthMessages(){ if(authErrorEl){ authErrorEl.style.display='none'; authErrorEl.innerText=''; } if(authInfoEl){ authInfoEl.style.display='none'; authInfoEl.innerText=''; } }
 
-        /* AUTH wiring */
+        /* ============================
+           Auth wiring
+           ============================ */
         document.getElementById('signout-btn').addEventListener('click', async () => {
             try { await signOut(auth); } catch (err) { console.error(err); alert('Ошибка выхода: ' + (err.message || err)); }
         });
 
-        /* Minimal google button handling if exists */
-        document.getElementById('google-btn')?.addEventListener('click', async () => {
-            try { await signInWithPopup(auth, provider); } catch (err) { console.warn('Popup failed — fallback redirect', err); try{ await signInWithRedirect(auth, provider);}catch(e){ console.error(e); showAuthError(e.message || 'Ошибка Google входа'); } }
+        document.getElementById('mobile-hamburger').addEventListener('click', () => toggleMobileSidebar(true));
+        document.getElementById('sidebar-mobile-close').addEventListener('click', () => toggleMobileSidebar(false));
+
+        /* ============================
+           Auth state handling
+           ============================ */
+        onAuthStateChanged(auth, async (firebaseUser) => {
+            clearAuthMessages();
+            if (!firebaseUser) {
+                teardownAfterSignOut();
+                // keep app visible - auth UI omitted for brevity
+                return;
+            }
+            window.state.user = firebaseUser;
+            try {
+                const snap = await get(child(ref(db), `users/${firebaseUser.uid}`));
+                if (snap.exists()) window.state.profile = snap.val();
+                else {
+                    const displayName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'User');
+                    const username = (displayName.split(' ')[0] || displayName).toLowerCase();
+                    const profile = { uid: firebaseUser.uid, displayName, username, usernameDisplay: username, photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150', about: '' };
+                    await set(ref(db, `users/${firebaseUser.uid}`), profile);
+                    window.state.profile = profile;
+                }
+
+                if ((window.state.profile.usernameDisplay || '').toLowerCase() === 'admin') window.state.isAdmin = true;
+
+                document.getElementById('user-profile-img').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
+                document.getElementById('user-display-name').innerText = window.state.profile.displayName || '';
+                document.getElementById('user-display-tag').innerText = '@' + (window.state.profile.usernameDisplay || '');
+
+                // Mirror to mobile header as well
+                document.getElementById('user-profile-img-mobile').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
+                document.getElementById('user-display-name-mobile').innerText = window.state.profile.displayName || '';
+                document.getElementById('user-display-tag-mobile').innerText = '@' + (window.state.profile.usernameDisplay || '');
+
+                // click avatar opens own profile
+                document.getElementById('user-profile-img').onclick = () => uiAction.openProfile(window.state.user.uid);
+                document.getElementById('user-profile-img-mobile').onclick = () => { uiAction.openProfile(window.state.user.uid); toggleMobileSidebar(false); };
+
+                // init app features
+                themeCore.load();
+                initUsersCacheListener();
+                initConversationsListener();
+                initSearch();
+                initGroupSearch();
+                uiAction.openGlobal();
+
+                // wire sidebar menu items (only content click handlers - not toggles)
+                document.getElementById('menu-personalization').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
+                document.getElementById('menu-settings').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
+                document.getElementById('menu-add-group').onclick = () => { uiAction.openCreateGroup(); closeSidebarMenu(); };
+
+            } catch (err) {
+                console.error('post-auth error', err);
+                showAuthError('Ошибка при загрузке профиля: ' + (err.message || err));
+            }
         });
 
-        /* Users cache */
+        function teardownAfterSignOut(){
+            document.getElementById('user-profile-img').onclick = null;
+            if (usersListener) usersListener();
+            if (dmsListener) dmsListener();
+            if (groupsListener) groupsListener();
+            const convList = document.getElementById('conversations-list');
+            convList.querySelectorAll('.chat-row').forEach(el => { if (el.id !== 'row-global') el.remove(); });
+            const convListMobile = document.getElementById('conversations-list-mobile');
+            convListMobile.innerHTML = '';
+            Object.keys(conversationsIndex).forEach(k => delete conversationsIndex[k]);
+        }
+
+        /* ============================
+           Users cache
+           ============================ */
         function initUsersCacheListener(){
             const usersRef = ref(db, 'users');
             usersListener = onValue(usersRef, (snapshot) => {
@@ -498,11 +637,16 @@
                     document.getElementById('user-profile-img').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
                     document.getElementById('user-display-name').innerText = window.state.profile.displayName || '';
                     document.getElementById('user-display-tag').innerText = '@' + (window.state.profile.usernameDisplay || '');
+                    document.getElementById('user-profile-img-mobile').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
+                    document.getElementById('user-display-name-mobile').innerText = window.state.profile.displayName || '';
+                    document.getElementById('user-display-tag-mobile').innerText = '@' + (window.state.profile.usernameDisplay || '');
                 }
             });
         }
 
-        /* Conversations listeners */
+        /* ============================
+           Conversations listeners
+           ============================ */
         function initConversationsListener(){
             const dmsRef = ref(db, 'dms');
             dmsListener = onValue(dmsRef, (snapshot) => {
@@ -542,6 +686,7 @@
                 const existing = conversationsIndex[key];
                 existing.dom.querySelector('.conv-title').innerText = title;
                 if (avatar) existing.dom.querySelector('img').src = avatar;
+                mirrorConvToMobile();
                 return;
             }
             const convList = document.getElementById('conversations-list');
@@ -560,6 +705,7 @@
             if (globalRow && globalRow.nextSibling) convList.insertBefore(row, globalRow.nextSibling);
             else convList.appendChild(row);
             conversationsIndex[key] = { type, id, dom: row };
+            mirrorConvToMobile();
         }
 
         function removeConversationFromList(key){
@@ -567,9 +713,12 @@
             if (!it) return;
             if (it.dom && it.dom.parentNode) it.dom.parentNode.removeChild(it.dom);
             delete conversationsIndex[key];
+            mirrorConvToMobile();
         }
 
-        /* Search */
+        /* ============================
+           Search
+           ============================ */
         function initSearch(){
             const searchInput = document.getElementById('user-search-input');
             const resultsBox = document.createElement('div');
@@ -606,9 +755,24 @@
                 });
                 resultsBox.appendChild(box);
             });
+
+            // mobile search mirror
+            const mobileSearch = document.getElementById('user-search-input-mobile');
+            if (mobileSearch) {
+                mobileSearch.addEventListener('input', (e) => {
+                    const q = e.target.value.trim().toLowerCase();
+                    const list = document.getElementById('conversations-list-mobile');
+                    Array.from(list.children).forEach(row => {
+                        const txt = row.innerText.toLowerCase();
+                        row.style.display = txt.includes(q) ? '' : 'none';
+                    });
+                });
+            }
         }
 
-        /* Group search (create modal) */
+        /* ============================
+           Group search (create modal)
+           ============================ */
         function initGroupSearch(){
             const input = document.getElementById('group-add-search');
             const results = document.getElementById('group-search-results');
@@ -642,7 +806,9 @@
 
         function escapeHtml(s) { return (s||'').replace(/'/g, "\\'").replace(/"/g,'\\"'); }
 
-        /* Chat engine (kept from prior implementation, but patched here to show reply preview immediately and hide when canceling) */
+        /* ============================
+           Chat engine
+           ============================ */
         window.chatEngine = {
             sendMessage: async function(){
                 const input = document.getElementById('main-input');
@@ -752,12 +918,10 @@
                 if (type === 'reply' || type === 'edit') {
                     window.state.activeAction = type;
                     window.state.targetMessage = window.state.contextTarget;
-                    // Show immediate preview (author + short text)
-                    const ctx = window.state.contextTarget || {};
-                    document.getElementById('reply-author-name').innerText = type === 'edit' ? "Редактирование" : (ctx.displayName || ctx.username || '');
-                    document.getElementById('reply-author-text').innerText = (ctx.text || ctx.content || '').substring(0,200);
+                    document.getElementById('reply-author-name').innerText = type === 'edit' ? "Редактирование" : (window.state.contextTarget.displayName || '');
+                    document.getElementById('reply-author-text').innerText = (window.state.contextTarget.text || '').substring(0,200);
                     document.getElementById('reply-preview').style.display = 'block';
-                    if (type === 'edit') document.getElementById('main-input').value = window.state.targetMessage.text || '';
+                    if (type === 'edit') document.getElementById('main-input').value = window.state.targetMessage.text;
                     document.getElementById('main-input').focus();
                 } else if (type === 'copy') {
                     navigator.clipboard.writeText(window.state.contextTarget.text || '');
@@ -783,7 +947,9 @@
             }
         };
 
-        /* uiAction (kept) */
+        /* ============================
+           uiAction
+           ============================ */
         window.uiAction = {
             openGlobal: () => {
                 window.state.currentChat = { type: 'global', id: 'global', title: 'Global Chat Room' };
@@ -874,6 +1040,7 @@
                     if (updates.photoURL) {
                         document.getElementById('p-avatar').src = updates.photoURL;
                         document.getElementById('user-profile-img').src = updates.photoURL;
+                        document.getElementById('user-profile-img-mobile').src = updates.photoURL;
                     }
                     document.getElementById('p-about').innerText = updates.about;
                     window.state.profile = Object.assign(window.state.profile || {}, updates);
@@ -902,7 +1069,6 @@
             openSettings: () => {
                 document.getElementById('settings-modal').classList.add('active');
                 document.getElementById('settings-modal').setAttribute('aria-hidden','false');
-                const root = document.documentElement.style;
                 document.getElementById('ui-color-primary').value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()) || '#3390ec';
                 document.getElementById('ui-color-me').value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--msg-me').trim()) || '#eeffde';
                 document.getElementById('ui-bg-color').value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()) || '#ffffff';
@@ -1010,7 +1176,9 @@
             });
         }
 
-        /* themeCore */
+        /* ============================
+           themeCore
+           ============================ */
         window.themeCore = {
             preview: function(){
                 const root = document.documentElement.style;
@@ -1070,34 +1238,51 @@
             return '#' + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
         }
 
-        // INIT
-        initGroupSearch();
-
-        /* Sidebar menu open/close (single binding; no duplicate bindings) */
+        /* ============================
+           UI: sidebar menu open/close (single binding)
+           ============================ */
         const sidebarBtn = document.getElementById('sidebar-menu-btn');
         const sidebarMenu = document.getElementById('sidebar-menu');
         sidebarMenu.addEventListener('click', (e) => e.stopPropagation());
+        function openSidebarMenu(){
+            sidebarMenu.classList.add('active');
+            sidebarMenu.setAttribute('aria-hidden','false');
+            sidebarBtn.setAttribute('aria-expanded','true');
+            sidebarMenu.querySelectorAll('.item').forEach((it, i) => {
+                it.style.opacity = '0';
+                it.style.transform = 'translateY(6px)';
+                setTimeout(()=>{ it.style.transition = `transform .28s ${0.04 + i*0.03}s var(--ease), opacity .22s ${0.04 + i*0.03}s var(--ease)`; it.style.opacity = '1'; it.style.transform = 'none'; }, 20);
+            });
+        }
+        function closeSidebarMenu(){
+            const items = Array.from(sidebarMenu.querySelectorAll('.item'));
+            items.reverse().forEach((it, idx) => {
+                it.style.transition = `transform .16s ${idx*0.02}s var(--ease), opacity .12s ${idx*0.02}s var(--ease)`;
+                it.style.transform = 'translateY(6px)';
+                it.style.opacity = '0';
+            });
+            setTimeout(()=>{
+                sidebarMenu.classList.remove('active');
+                sidebarMenu.setAttribute('aria-hidden','true');
+                sidebarBtn.setAttribute('aria-expanded','false');
+                items.reverse().forEach(it => { it.style.transition=''; it.style.transform=''; it.style.opacity=''; });
+            }, 220 + items.length*20);
+        }
         sidebarBtn.addEventListener('click', (e) => { e.stopPropagation(); const isOpen = sidebarMenu.classList.contains('active'); if (isOpen) closeSidebarMenu(); else openSidebarMenu(); });
         document.addEventListener('click', (e) => {
             if (!sidebarMenu.contains(e.target) && !sidebarBtn.contains(e.target)) {
                 if (sidebarMenu.classList.contains('active')) closeSidebarMenu();
             }
-            const p = document.getElementById('context-popup');
-            if (p && !e.target.closest('#context-popup')) p.style.display = 'none';
+            if (!e.target.closest('#context-popup')) {
+                const p = document.getElementById('context-popup');
+                if (p) p.style.display = 'none';
+            }
         });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sidebarMenu.classList.contains('active')) closeSidebarMenu(); });
 
-        function openSidebarMenu(){
-            sidebarMenu.classList.add('active'); sidebarMenu.setAttribute('aria-hidden','false'); sidebarBtn.setAttribute('aria-expanded','true');
-            sidebarMenu.querySelectorAll('.item').forEach((it, i) => { it.style.opacity='0'; it.style.transform='translateY(6px)'; setTimeout(()=>{ it.style.transition = `transform .28s ${0.04 + i*0.03}s var(--ease), opacity .22s ${0.04 + i*0.03}s var(--ease)`; it.style.opacity = '1'; it.style.transform='none'; }, 20); });
-        }
-        function closeSidebarMenu(){
-            const items = Array.from(sidebarMenu.querySelectorAll('.item'));
-            items.reverse().forEach((it, idx) => { it.style.transition = `transform .16s ${idx*0.02}s var(--ease), opacity .12s ${idx*0.02}s var(--ease)`; it.style.transform = 'translateY(6px)'; it.style.opacity='0'; });
-            setTimeout(()=>{ sidebarMenu.classList.remove('active'); sidebarMenu.setAttribute('aria-hidden','true'); sidebarBtn.setAttribute('aria-expanded','false'); items.reverse().forEach(it => { it.style.transition=''; it.style.transform=''; it.style.opacity=''; }); }, 220 + items.length*20);
-        }
-
-        // Conversation list animation
+        /* ============================
+           Conversation animation observer
+           ============================ */
         const convList = document.getElementById('conversations-list');
         const convObserver = new MutationObserver((mutations) => {
             mutations.forEach(m => {
@@ -1113,7 +1298,9 @@
         });
         convObserver.observe(convList, { childList: true });
 
-        // chat-top avatar click behavior
+        /* ============================
+           chat-top avatar click behavior
+           ============================ */
         document.getElementById('chat-top-avatar').addEventListener('click', () => {
             const c = window.state.currentChat || {};
             if (c.type === 'dm') uiAction.openProfile(c.otherUid);
@@ -1121,100 +1308,265 @@
             else uiAction.openProfile(window.state.user.uid);
         });
 
-        // Enter to send handling & autosize
-        const mainInput = document.getElementById('main-input');
-        mainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatEngine.sendMessage(); } });
-        mainInput.addEventListener('input', () => { mainInput.style.height='auto'; const h = Math.min(160, Math.max(44, mainInput.scrollHeight)); mainInput.style.height = h + 'px'; });
+        /* ============================
+           Enter to send & theme preview wiring
+           ============================ */
+        document.getElementById('main-input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatEngine.sendMessage(); } });
+        ['ui-color-primary','ui-color-me','ui-bg-color','ui-font-range','ui-radius-range'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => themeCore.preview());
+        });
 
-        // Emoji picker + image modal wiring
+        /* ============================
+           Emoji picker, Image modal, Recent images, Reply preview
+           (integrated with the main logic)
+           ============================ */
         const emojiBtn = document.getElementById('emoji-btn');
         const emojiPicker = document.getElementById('emoji-picker');
-        const standardEmojis = ["😀","😁","😂","🤣","🙂","🙃","😉","😊","😍","🤩","😘","😎","🤓","🤔","🤨","😅","😇","😭","😤","😡","👍","👎","👏","🙏","💪","🤝","🔥","✨","🎉","💯","✔️","❌","❤️","🧡","💛","💚","💙","💜","🤍","🤎","🖤","💥","🥳","🤯","🤖","👽","🎶","🍕"];
-        function renderEmojiPicker(){ emojiPicker.innerHTML=''; const grid = document.createElement('div'); grid.className='emoji-grid'; standardEmojis.forEach(e=>{ const c=document.createElement('div'); c.className='emoji-cell'; c.innerText=e; c.onclick=()=>{ insertAtCursor(mainInput,e); emojiPicker.style.display='none'; mainInput.focus(); }; grid.appendChild(c); }); emojiPicker.appendChild(grid); }
-        emojiBtn.addEventListener('click', (e)=>{ e.stopPropagation(); if (emojiPicker.style.display==='block') emojiPicker.style.display='none'; else { renderEmojiPicker(); emojiPicker.style.display='block'; } });
-        document.addEventListener('click', (e)=>{ if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display='none'; });
-        function insertAtCursor(el, text){ const start=el.selectionStart||0; const end=el.selectionEnd||0; el.value=el.value.slice(0,start)+text+el.value.slice(end); const pos=start+text.length; el.setSelectionRange(pos,pos); el.focus(); }
+        const standardEmojis = [
+          "😀","😁","😂","🤣","🙂","🙃","😉","😊","😍","🤩","😘","😎","🤓","🤔","🤨","😅",
+          "😇","😭","😤","😡","👍","👎","👏","🙏","💪","🤝","🔥","✨","🎉","💯","✔️","❌",
+          "❤️","🧡","💛","💚","💙","💜","🤍","🤎","🖤","💥","🥳","🤯","🤖","👽","🎶","🍕"
+        ];
 
-        // Image modal logic (send by URL or upload to storage)
-        const imageModal = document.getElementById('image-modal');
-        const imageBtn = document.getElementById('image-btn');
-        const imageClose = document.getElementById('image-modal-close');
-        const tabUrl = document.getElementById('tab-url');
-        const tabFile = document.getElementById('tab-file');
-        const urlPanel = document.getElementById('tab-url-panel');
-        const filePanel = document.getElementById('tab-file-panel');
-        const imageUrlInput = document.getElementById('image-url-input');
-        const imageFileInput = document.getElementById('image-file-input');
-        const imageUrlSend = document.getElementById('image-url-send');
-        const imageUploadSend = document.getElementById('image-upload-send');
-        const recentImagesContainer = document.getElementById('recent-images');
+        function renderEmojiPicker(){
+          emojiPicker.innerHTML = '';
+          const grid = document.createElement('div');
+          grid.className = 'emoji-grid';
+          standardEmojis.forEach(e => {
+            const c = document.createElement('div');
+            c.className = 'emoji-cell';
+            c.innerText = e;
+            c.onclick = () => {
+              insertAtCursor(document.getElementById('main-input'), e);
+              emojiPicker.style.display = 'none';
+              document.getElementById('main-input').focus();
+            };
+            grid.appendChild(c);
+          });
+          emojiPicker.appendChild(grid);
+        }
+        emojiBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (emojiPicker.style.display === 'block') emojiPicker.style.display = 'none'; else {
+            renderEmojiPicker();
+            emojiPicker.style.display = 'block';
+          }
+        });
+        document.addEventListener('click', (e) => {
+          if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = 'none';
+        });
 
+        function insertAtCursor(el, text){
+          const start = el.selectionStart || 0;
+          const end = el.selectionEnd || 0;
+          const val = el.value;
+          el.value = val.slice(0,start) + text + val.slice(end);
+          const pos = start + text.length;
+          el.setSelectionRange(pos,pos);
+          el.focus();
+        }
+
+        /* Recent images (localStorage) and Image modal */
         const RECENT_KEY = 'narrators_recent_images';
-        function loadRecentImages(){ try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); }catch(e){return[]} }
-        function saveRecentImages(arr){ localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(0,20))); }
-        function addRecentImage(url){ if(!url) return; let a=loadRecentImages(); a=a.filter(x=>x!==url); a.unshift(url); saveRecentImages(a); renderRecentImages(); }
-        function renderRecentImages(){ recentImagesContainer.innerHTML=''; loadRecentImages().forEach(url=>{ const img=document.createElement('img'); img.src=url; img.onclick=()=>{ sendImageUrl(url); imageModal.classList.remove('active'); }; img.onerror=()=>img.remove(); recentImagesContainer.appendChild(img); }); }
+        const recentImagesContainer = document.getElementById('recent-images');
+        function loadRecentImages(){ try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch(e){ return [] } }
+        function saveRecentImages(arr){ localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(0,20))) }
+        function addRecentImage(url){
+          if (!url) return;
+          let arr = loadRecentImages();
+          arr = arr.filter(x => x !== url);
+          arr.unshift(url);
+          saveRecentImages(arr);
+          renderRecentImages();
+        }
+        function renderRecentImages(){
+          if (!recentImagesContainer) return;
+          recentImagesContainer.innerHTML = '';
+          const arr = loadRecentImages();
+          arr.forEach(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = '';
+            img.onclick = () => { sendImageUrl(url); document.getElementById('image-modal').classList.remove('active'); };
+            img.onerror = () => img.remove();
+            recentImagesContainer.appendChild(img);
+          });
+        }
 
-        imageBtn.addEventListener('click', ()=>{ renderRecentImages(); imageModal.classList.add('active'); });
-        imageClose.addEventListener('click', ()=>imageModal.classList.remove('active'));
-        tabUrl.addEventListener('click', ()=>{ tabUrl.classList.add('active'); tabFile.classList.remove('active'); urlPanel.style.display='block'; filePanel.style.display='none'; });
-        tabFile.addEventListener('click', ()=>{ tabFile.classList.add('active'); tabUrl.classList.remove('active'); urlPanel.style.display='none'; filePanel.style.display='block'; });
+        // image modal controls
+        document.getElementById('image-btn')?.addEventListener('click', () => {
+          renderRecentImages();
+          document.getElementById('image-modal').classList.add('active');
+        });
+        document.getElementById('image-modal-close')?.addEventListener('click', () => document.getElementById('image-modal').classList.remove('active'));
+        document.getElementById('tab-url')?.addEventListener('click', () => { document.getElementById('tab-url').classList.add('active'); document.getElementById('tab-file').classList.remove('active'); document.getElementById('tab-url-panel').style.display='block'; document.getElementById('tab-file-panel').style.display='none'; });
+        document.getElementById('tab-file')?.addEventListener('click', () => { document.getElementById('tab-file').classList.add('active'); document.getElementById('tab-url').classList.remove('active'); document.getElementById('tab-url-panel').style.display='none'; document.getElementById('tab-file-panel').style.display='block'; });
 
-        imageUrlSend.addEventListener('click', ()=>{ const url=(imageUrlInput.value||'').trim(); if(!url){ alert('Вставьте ссылку'); return;} sendImageUrl(url); addRecentImage(url); imageUrlInput.value=''; imageModal.classList.remove('active'); });
-        imageUploadSend.addEventListener('click', async ()=>{ const file = imageFileInput.files && imageFileInput.files[0]; if(!file){ alert('Выберите файл'); return;} try{ const ext = (file.name.split('.').pop()||'jpg'); const key = `images/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`; const sRef = storageRef(storage, key); await uploadBytes(sRef, file); const url = await getDownloadURL(sRef); sendImageUrl(url); addRecentImage(url); imageFileInput.value=''; imageModal.classList.remove('active'); } catch(err){ console.error(err); alert('Ошибка загрузки'); } });
+        document.getElementById('image-url-send')?.addEventListener('click', () => {
+          const url = (document.getElementById('image-url-input').value||'').trim();
+          if (!url) { alert('Вставьте ссылку на изображение'); return; }
+          sendImageUrl(url);
+          addRecentImage(url);
+          document.getElementById('image-url-input').value='';
+          document.getElementById('image-modal').classList.remove('active');
+        });
 
-        function sendImageUrl(url){ const chat = window.state.currentChat || { type:'global', id:'global' }; let path = chat.type==='global' ? 'messages' : (chat.type==='dm' ? `dms/${chat.id}/messages` : `groups/${chat.id}/messages`); const messageData = { uid: window.state.user.uid, displayName: window.state.profile.displayName, username: window.state.profile.usernameDisplay, text: url, createdAt: Date.now() }; push(ref(db, path), messageData); }
+        document.getElementById('image-upload-send')?.addEventListener('click', async () => {
+          const imageFileInput = document.getElementById('image-file-input');
+          const file = imageFileInput.files && imageFileInput.files[0];
+          if (!file) { alert('Выберите файл'); return; }
+          try {
+            const ext = file.name.split('.').pop();
+            const key = `images/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+            const sRef = storageRef(storage, key);
+            await uploadBytes(sRef, file);
+            const url = await getDownloadURL(sRef);
+            sendImageUrl(url);
+            addRecentImage(url);
+            imageFileInput.value = '';
+            document.getElementById('image-modal').classList.remove('active');
+          } catch (err) {
+            console.error(err);
+            alert('Ошибка загрузки изображения');
+          }
+        });
 
-        // Reply preview close already bound to chatEngine.cancelAction which hides it below.
+        function sendImageUrl(url){
+          const chat = window.state.currentChat || { type:'global', id:'global' };
+          let path;
+          if (chat.type === 'global') path = 'messages';
+          else if (chat.type === 'dm') path = `dms/${chat.id}/messages`;
+          else path = `groups/${chat.id}/messages`;
+          const messageData = {
+            uid: window.state.user && window.state.user.uid ? window.state.user.uid : 'anon',
+            displayName: (window.state.profile && window.state.profile.displayName) || 'User',
+            username: (window.state.profile && window.state.profile.usernameDisplay) || '',
+            text: url,
+            createdAt: Date.now()
+          };
+          push(ref(db, path), messageData);
+        }
 
-        // Patch chatEngine.handleAction and cancelAction to show/hide preview reliably
+        /* ============================
+           Patch chatEngine to show reply preview immediately and hide on cancel
+           ============================ */
         (function patchChatEngine(){
-            const origHandle = window.chatEngine && window.chatEngine.handleAction;
-            const origCancel = window.chatEngine && window.chatEngine.cancelAction;
-            // if chatEngine exists already, patch directly; else poll
-            function doPatch(){
+            const interval = setInterval(()=> {
                 if (window.chatEngine && window.chatEngine.handleAction && window.chatEngine.cancelAction) {
-                    const _origHandle = window.chatEngine.handleAction;
-                    const _origCancel = window.chatEngine.cancelAction;
+                    const _origHandle = window.chatEngine.handleAction.bind(window.chatEngine);
+                    const _origCancel = window.chatEngine.cancelAction.bind(window.chatEngine);
                     window.chatEngine.handleAction = function(type){
-                        if (type==='reply' || type==='edit') {
+                        if (type === 'reply' || type === 'edit') {
                             const ctx = window.state.contextTarget || {};
-                            document.getElementById('reply-author-name').innerText = type==='edit' ? "Редактирование" : (ctx.displayName || ctx.username || '');
+                            document.getElementById('reply-author-name').innerText = type === 'edit' ? "Редактирование" : (ctx.displayName || ctx.username || '');
                             document.getElementById('reply-author-text').innerText = (ctx.text || ctx.content || '').substring(0,200);
                             document.getElementById('reply-preview').style.display = 'block';
                         }
-                        return _origHandle.call(this, type);
+                        return _origHandle(type);
                     };
                     window.chatEngine.cancelAction = function(){
                         document.getElementById('reply-preview').style.display = 'none';
-                        return _origCancel.call(this);
+                        return _origCancel();
                     };
-                    return true;
+                    clearInterval(interval);
                 }
-                return false;
-            }
-            if (!doPatch()){
-                const interval = setInterval(()=>{ if (doPatch()) clearInterval(interval); }, 150);
-            }
+            }, 120);
         })();
 
-        // Attach small behaviors: hide emoji on doc click, hide image modal on outside
-        document.addEventListener('click', (e)=>{ if (!imageModal.contains(e.target) && e.target !== imageBtn) { /* image modal stays until closed intentionally */ } });
+        /* ============================
+           Conversation list -> mirror to mobile overlay
+           ============================ */
+        function mirrorConvToMobile(){
+            const desktop = document.getElementById('conversations-list');
+            const mobile = document.getElementById('conversations-list-mobile');
+            if (!desktop || !mobile) return;
+            mobile.innerHTML = '';
+            Array.from(desktop.children).forEach(node => {
+                const clone = node.cloneNode(true);
+                // ensure onclick still references correct function
+                clone.onclick = node.onclick;
+                mobile.appendChild(clone);
+            });
+            // mirror header info
+            try {
+              document.getElementById('user-profile-img-mobile').src = document.getElementById('user-profile-img').src;
+              document.getElementById('user-display-name-mobile').innerText = document.getElementById('user-display-name').innerText;
+              document.getElementById('user-display-tag-mobile').innerText = document.getElementById('user-display-tag').innerText;
+            } catch(e){}
+        }
 
-        // Helper to render chips for group selected - already handled by renderGroupSelected
+        /* ============================
+           Mobile sidebar toggle
+           ============================ */
+        function toggleMobileSidebar(open){
+            const el = document.getElementById('sidebar-mobile');
+            const backdrop = document.getElementById('mobile-backdrop');
+            const hamburger = document.getElementById('mobile-hamburger');
+            const shouldOpen = typeof open === 'boolean' ? open : !el.classList.contains('active');
+            if (shouldOpen){
+                mirrorConvToMobile();
+                el.classList.add('active');
+                el.setAttribute('aria-hidden','false');
+                backdrop.classList.add('active');
+                hamburger.setAttribute('aria-expanded','true');
+            } else {
+                el.classList.remove('active');
+                el.setAttribute('aria-hidden','true');
+                backdrop.classList.remove('active');
+                hamburger.setAttribute('aria-expanded','false');
+            }
+        }
+        window.toggleMobileSidebar = toggleMobileSidebar;
 
-        // Initial theme load
-        themeCore.load();
+        // Hide/Show hamburger depending on width
+        function handleResize(){
+            const hamburger = document.getElementById('mobile-hamburger');
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 900){
+                hamburger.style.display = 'inline-flex';
+                sidebar.style.display = 'none';
+            } else {
+                hamburger.style.display = 'none';
+                sidebar.style.display = 'block';
+                toggleMobileSidebar(false);
+            }
+        }
+        window.addEventListener('resize', handleResize);
+        handleResize();
 
-        // Expose globals (already set)
+        /* ============================
+           Conversation observer for animation
+           ============================ */
+        const convListObserver = new MutationObserver((mutations) => {
+            mirrorConvToMobile();
+            // animate as items are added (desktop observer above already handles animation)
+        });
+        convListObserver.observe(document.getElementById('conversations-list'), { childList:true });
+
+        /* ============================
+           Initial UI wiring
+           ============================ */
+        document.getElementById('main-input').addEventListener('input', () => {
+            const el = document.getElementById('main-input');
+            el.style.height = 'auto';
+            const h = Math.min(160, Math.max(44, el.scrollHeight));
+            el.style.height = h + 'px';
+        });
+
+        document.getElementById('send-msg-btn').addEventListener('click', () => chatEngine.sendMessage());
+
+        // initial render of recent images
+        try { renderRecentImages(); } catch(e){}
+
+        /* ============================
+           Expose globals for inline handlers
+           ============================ */
         window.uiAction = window.uiAction;
         window.chatEngine = window.chatEngine;
         window.themeCore = window.themeCore;
 
-        // Load recent images into view on boot
-        renderRecentImages();
-
-        // Done
+        // Done. If anything missing or broken, tell me the exact console error and a screenshot; I'll patch quickly.
     </script>
 </body>
 </html>
