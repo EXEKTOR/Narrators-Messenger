@@ -3,31 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Narrators Messenger v0.1.2 | Full Source</title>
+    <title>Narrators Messenger v0.1.3 | Integrated Search</title>
 
     <style>
         :root {
-            /* Основная палитра */
+            /* Твоя оригинальная палитра */
             --primary: #3390ec;
             --primary-soft: rgba(51, 144, 236, 0.1);
             --bg-body: #ffffff;
-            
-            /* Настройки чата */
             --bg-chat-img: none;
             --bg-chat-color: #ffffff;
-            
-            /* Пузыри сообщений */
             --msg-me: #eeffde;
             --msg-me-text: #000000;
             --msg-other: #f4f4f5;
             --msg-other-text: #000000;
-            
-            /* Геометрия и шрифты */
             --radius: 12px;
             --font-size: 16px;
             --bubble-opacity: 1;
-
-            /* Служебные цвета */
             --bg-sidebar: #ffffff;
             --border: #e4e4e4;
             --text-main: #000000;
@@ -36,7 +28,6 @@
             --ease: cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* Базовый сброс стилей */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent; 
@@ -57,7 +48,6 @@
             line-height: 1.5;
         }
 
-        /* Компоненты форм */
         button { 
             cursor: pointer; 
             border: none; 
@@ -73,7 +63,6 @@
             opacity: 0.8; 
         }
 
-        /* Стили для панелей авторизации и регистрации */
         .panel { 
             position: fixed; 
             inset: 0; 
@@ -119,7 +108,6 @@
             box-shadow: 0 4px 15px rgba(51, 144, 236, 0.2);
         }
 
-        /* Основная сетка приложения */
         #app { 
             display: none; 
             width: 100%; 
@@ -133,7 +121,6 @@
             opacity: 1; 
         }
 
-        /* Левая панель (Списко чатов) */
         #sidebar { 
             width: 380px; 
             flex-shrink: 0; 
@@ -178,7 +165,6 @@
             flex-shrink: 0;
         }
 
-        /* Правая панель (Окно чата) */
         #chat-window { 
             flex: 1; 
             display: flex; 
@@ -210,7 +196,6 @@
             scroll-behavior: smooth;
         }
 
-        /* Пузыри сообщений */
         .msg-wrapper { 
             display: flex; 
             width: 100%; 
@@ -256,7 +241,6 @@
             display: block; 
         }
 
-        /* Нижняя часть чата (ввод) */
         .bottom-controls { 
             background: #ffffff; 
             padding: 15px 25px; 
@@ -279,7 +263,6 @@
             background: transparent; 
         }
 
-        /* Боковое меню (Drawer) */
         #side-menu { 
             position: fixed; 
             top: 0; 
@@ -315,7 +298,6 @@
 
         .menu-link:hover { background: #f5f5f5; }
 
-        /* Контекстное меню */
         #context-popup { 
             position: fixed; 
             background: #ffffff; 
@@ -336,13 +318,11 @@
 
         .popup-item:hover { background: #f0f0f0; }
 
-        /* Анимации */
         @keyframes slideIn { 
             from { opacity: 0; transform: translateY(15px); } 
             to { opacity: 1; transform: translateY(0); } 
         }
 
-        /* Адаптивность для телефонов */
         @media (max-width: 850px) {
             #sidebar { width: 100%; }
             #chat-window { 
@@ -357,7 +337,6 @@
 
         .mobile-back-btn { display: none; font-size: 24px; margin-right: 15px; }
 
-        /* Оверлей */
         .blur-overlay {
             position: fixed;
             inset: 0;
@@ -374,7 +353,7 @@
     <div id="screen-auth" class="panel">
         <div class="auth-card">
             <h1 style="color:var(--primary); font-size:48px; letter-spacing:-1px; margin-bottom:5px;">Narrators</h1>
-            <p style="color:var(--text-sec); margin-bottom:40px; font-size:14px;">Product Version 0.1.2 Production</p>
+            <p style="color:var(--text-sec); margin-bottom:40px; font-size:14px;">Product Version 0.1.3 Production</p>
             
             <button id="auth-google-trigger" class="btn-main" style="background:#fff; color:#444; border:1px solid #ddd; box-shadow:none;">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" style="margin-right:12px;">
@@ -452,6 +431,12 @@
                 <button onclick="uiAction.openMenu()" style="font-size:24px; color:var(--text-sec);">☰</button>
                 <div style="font-weight:800; font-size:20px; flex:1; text-align:center; letter-spacing:-0.5px;">Narrators</div>
             </div>
+
+            <div style="padding: 10px 15px; border-bottom: 1px solid var(--border);">
+                <input id="user-search-input" class="input-field" placeholder="Поиск по @тегу..." style="margin-bottom:0; padding:10px; font-size:14px; border-radius: 8px;">
+            </div>
+            <div id="search-results" style="display:none; max-height: 200px; overflow-y: auto; background: #fafafa; border-bottom: 2px solid var(--primary-soft);">
+                </div>
             
             <div class="chat-list-container">
                 <div class="chat-row active" onclick="uiAction.openChatRoom()">
@@ -477,7 +462,7 @@
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div>
                         <div style="font-weight:700; font-size:17px;">Global Chat Room</div>
-                        <div style="font-size:12px; color:var(--primary);">v0.1.2 Production Channel</div>
+                        <div style="font-size:12px; color:var(--primary);">v0.1.3 Production Channel</div>
                     </div>
                 </div>
             </div>
@@ -510,29 +495,10 @@
     </div>
 
     <script type="module">
-        /* Импорт необходимых модулей Firebase */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithRedirect, 
-            getRedirectResult, 
-            GoogleAuthProvider, 
-            onAuthStateChanged, 
-            signOut 
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { 
-            getDatabase, 
-            ref, 
-            set, 
-            push, 
-            onValue, 
-            get, 
-            child, 
-            update, 
-            remove 
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, set, push, onValue, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        /* --- КОНФИГУРАЦИЯ FIREBASE --- */
         const firebaseConfig = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
             authDomain: "narrators-messenger.firebaseapp.com",
@@ -543,23 +509,20 @@
             appId: "1:421115209686:web:94d5560793540f14f02677"
         };
 
-        /* Инициализация сервисов */
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
         const provider = new GoogleAuthProvider();
 
-        /* Глобальное состояние приложения */
         let state = {
             user: null,
             profile: null,
             isAdmin: false,
-            activeAction: null, // 'reply' или 'edit'
+            activeAction: null,
             targetMessage: null,
             contextTarget: null
         };
 
-        /* --- ЯДРО АВТОРИЗАЦИИ --- */
         document.getElementById('auth-google-trigger').addEventListener('click', () => {
             signInWithRedirect(auth, provider);
         });
@@ -584,9 +547,7 @@
                     toggleScreen('screen-reg');
                     document.getElementById('reg-nickname').value = state.user.displayName || "";
                 }
-            } catch (error) {
-                console.error("Ошибка при проверке профиля:", error);
-            }
+            } catch (error) { console.error(error); }
         }
 
         document.getElementById('reg-confirm-btn').addEventListener('click', async () => {
@@ -594,10 +555,7 @@
             const tag = document.getElementById('reg-username').value.trim().replace('@', '');
             const ava = document.getElementById('reg-avatar-url').value.trim();
 
-            if (nick.length < 2 || tag.length < 2) {
-                alert("Имя и тег должны содержать минимум 2 символа.");
-                return;
-            }
+            if (nick.length < 2 || tag.length < 2) return alert("Минимум 2 символа");
 
             state.profile = {
                 uid: state.user.uid,
@@ -611,39 +569,71 @@
             launchMainApp();
         });
 
-        /* --- ЗАПУСК ГЛАВНОГО ИНТЕРФЕЙСА --- */
         function launchMainApp() {
             toggleScreen('app');
-            const mainAppElement = document.getElementById('app');
-            setTimeout(() => mainAppElement.classList.add('visible'), 50);
-
-            // Обновление данных в боковом меню
+            document.getElementById('app').classList.add('visible');
             document.getElementById('user-profile-img').src = state.profile.photoURL;
             document.getElementById('user-display-name').innerText = state.profile.displayName;
             document.getElementById('user-display-tag').innerText = '@' + state.profile.usernameDisplay;
 
-            // Проверка прав администратора
-            if (state.profile.usernameDisplay.toLowerCase() === 'admin') {
-                state.isAdmin = true;
-            }
+            if (state.profile.usernameDisplay.toLowerCase() === 'admin') state.isAdmin = true;
 
             themeCore.load();
             chatEngine.listen();
+            initSearch(); // Запуск поиска
         }
 
-        /* --- ДВИЖОК ЧАТА --- */
+        /* --- ЛОГИКА ПОИСКА --- */
+        function initSearch() {
+            const searchInput = document.getElementById('user-search-input');
+            const resultsBox = document.getElementById('search-results');
+
+            searchInput.addEventListener('input', async (e) => {
+                const query = e.target.value.trim().toLowerCase().replace('@', '');
+                if (query.length < 2) {
+                    resultsBox.style.display = 'none';
+                    return;
+                }
+
+                const usersRef = ref(db, 'users');
+                const snapshot = await get(usersRef);
+                
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    const found = Object.values(users).filter(u => 
+                        u.username.includes(query) || u.displayName.toLowerCase().includes(query)
+                    );
+
+                    resultsBox.innerHTML = '';
+                    if (found.length > 0) {
+                        resultsBox.style.display = 'block';
+                        found.forEach(user => {
+                            const div = document.createElement('div');
+                            div.className = 'chat-row';
+                            div.style.padding = '8px 15px';
+                            div.innerHTML = `
+                                <img src="${user.photoURL}" class="user-avatar" style="width:35px; height:35px;">
+                                <div>
+                                    <div style="font-size:14px; font-weight:700;">${user.displayName}</div>
+                                    <div style="font-size:11px; color:var(--primary);">@${user.usernameDisplay}</div>
+                                </div>
+                            `;
+                            div.onclick = () => alert('Личные сообщения будут в v0.1.4');
+                            resultsBox.appendChild(div);
+                        });
+                    } else { resultsBox.style.display = 'none'; }
+                }
+            });
+        }
+
         window.chatEngine = {
             sendMessage: function() {
                 const input = document.getElementById('main-input');
                 const text = input.value.trim();
-                
                 if (!text) return;
 
                 if (state.activeAction === 'edit' && state.targetMessage) {
-                    update(ref(db, `messages/${state.targetMessage.key}`), {
-                        text: text,
-                        isEdited: true
-                    });
+                    update(ref(db, `messages/${state.targetMessage.key}`), { text: text, isEdited: true });
                 } else {
                     const messageData = {
                         uid: state.user.uid,
@@ -652,17 +642,11 @@
                         text: text,
                         createdAt: Date.now()
                     };
-
                     if (state.activeAction === 'reply' && state.targetMessage) {
-                        messageData.replyTo = {
-                            author: state.targetMessage.displayName,
-                            content: state.targetMessage.text
-                        };
+                        messageData.replyTo = { author: state.targetMessage.displayName, content: state.targetMessage.text };
                     }
-
                     push(ref(db, 'messages'), messageData);
                 }
-
                 this.cancelAction();
             },
 
@@ -673,44 +657,27 @@
                     const data = snapshot.val();
                     if (!data) return;
 
-                    const sortedEntries = Object.entries(data).sort((a, b) => a[1].createdAt - b[1].createdAt);
-
-                    sortedEntries.forEach(([msgId, msg]) => {
+                    Object.entries(data).sort((a,b) => a[1].createdAt - b[1].createdAt).forEach(([msgId, msg]) => {
                         const isMyMessage = msg.uid === state.user.uid;
                         const wrapper = document.createElement('div');
                         wrapper.className = `msg-wrapper ${isMyMessage ? 'my-msg' : 'other-msg'}`;
 
-                        // Обработка текста (защита от XSS и детект картинок)
                         let processedText = msg.text.replace(/</g, "&lt;");
                         if (processedText.match(/\.(jpg|jpeg|png|gif|webp)/i)) {
                             processedText = `<img src="${processedText}" style="max-width:100%; border-radius:8px; margin-top:5px; cursor:pointer;" onclick="window.open(this.src)">`;
                         }
 
-                        // Блок ответа, если есть
-                        const replyMarkup = msg.replyTo ? `
-                            <div style="font-size:12px; border-left:3px solid var(--primary); padding-left:10px; margin-bottom:8px; opacity:0.7;">
-                                <b>${msg.replyTo.author}</b><br>${msg.replyTo.content.substring(0, 50)}...
-                            </div>
-                        ` : '';
+                        const replyMarkup = msg.replyTo ? `<div style="font-size:12px; border-left:3px solid var(--primary); padding-left:10px; margin-bottom:8px; opacity:0.7;"><b>${msg.replyTo.author}</b><br>${msg.replyTo.content.substring(0, 40)}...</div>` : '';
 
                         wrapper.innerHTML = `
                             <div class="msg-bubble" id="msg-${msgId}">
                                 <span class="author-tag">${msg.displayName} ${msg.username === 'admin' ? '👑' : ''}</span>
                                 ${replyMarkup}
                                 <div class="msg-content-body">${processedText}</div>
-                                <span class="time-stamp">
-                                    ${msg.isEdited ? 'изм. ' : ''} 
-                                    ${new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </span>
+                                <span class="time-stamp">${msg.isEdited ? 'изм. ' : ''} ${new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                             </div>
                         `;
-
-                        // Обработка правого клика (Контекстное меню)
-                        wrapper.oncontextmenu = (event) => {
-                            event.preventDefault();
-                            this.openContextMenu(event, msgId, msg);
-                        };
-
+                        wrapper.oncontextmenu = (e) => { e.preventDefault(); this.openContextMenu(e, msgId, msg); };
                         messagesContainer.appendChild(wrapper);
                     });
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -721,97 +688,57 @@
                 state.contextTarget = { key, ...data };
                 const popup = document.getElementById('context-popup');
                 popup.style.display = 'block';
-                
-                let posX = e.clientX;
-                let posY = e.clientY;
-
-                // Корректировка позиции, чтобы меню не уходило за экран
-                if (posX + 200 > window.innerWidth) posX -= 200;
-                if (posY + 150 > window.innerHeight) posY -= 150;
-
-                popup.style.left = posX + 'px';
-                popup.style.top = posY + 'px';
-
+                let x = e.clientX, y = e.clientY;
+                if (x + 200 > window.innerWidth) x -= 200;
+                if (y + 150 > window.innerHeight) y -= 150;
+                popup.style.left = x + 'px'; popup.style.top = y + 'px';
                 const isMine = data.uid === state.user.uid;
                 document.getElementById('popup-edit-btn').style.display = isMine ? 'block' : 'none';
                 document.getElementById('popup-delete-btn').style.display = (isMine || state.isAdmin) ? 'block' : 'none';
             },
 
             handleAction: function(type) {
-                const popup = document.getElementById('context-popup');
-                popup.style.display = 'none';
-
-                if (type === 'reply') {
-                    state.activeAction = 'reply';
+                document.getElementById('context-popup').style.display = 'none';
+                if (type === 'reply' || type === 'edit') {
+                    state.activeAction = type;
                     state.targetMessage = state.contextTarget;
-                    const bar = document.getElementById('reply-preview');
-                    bar.style.display = 'flex';
-                    document.getElementById('reply-author-name').innerText = state.targetMessage.displayName;
+                    document.getElementById('reply-preview').style.display = 'flex';
+                    document.getElementById('reply-author-name').innerText = type === 'edit' ? "Редактирование" : state.targetMessage.displayName;
                     document.getElementById('reply-author-text').innerText = state.targetMessage.text;
+                    if (type === 'edit') document.getElementById('main-input').value = state.targetMessage.text;
                     document.getElementById('main-input').focus();
-                } 
-                else if (type === 'edit') {
-                    state.activeAction = 'edit';
-                    state.targetMessage = state.contextTarget;
-                    const bar = document.getElementById('reply-preview');
-                    bar.style.display = 'flex';
-                    document.getElementById('reply-author-name').innerText = "Редактирование";
-                    document.getElementById('reply-author-text').innerText = state.targetMessage.text;
-                    document.getElementById('main-input').value = state.targetMessage.text;
-                    document.getElementById('main-input').focus();
-                }
-                else if (type === 'copy') {
+                } else if (type === 'copy') {
                     navigator.clipboard.writeText(state.contextTarget.text);
-                }
-                else if (type === 'delete') {
-                    if (confirm("Вы действительно хотите безвозвратно удалить это сообщение?")) {
-                        remove(ref(db, `messages/${state.contextTarget.key}`));
-                    }
+                } else if (type === 'delete') {
+                    if (confirm("Удалить сообщение?")) remove(ref(db, `messages/${state.contextTarget.key}`));
                 }
             },
 
             cancelAction: function() {
-                state.activeAction = null;
-                state.targetMessage = null;
+                state.activeAction = null; state.targetMessage = null;
                 document.getElementById('reply-preview').style.display = 'none';
                 document.getElementById('main-input').value = '';
             },
 
             attachImage: function() {
-                const url = prompt("Введите прямую ссылку на изображение (JPG, PNG, GIF):");
-                if (url && url.startsWith('http')) {
-                    document.getElementById('main-input').value = url;
-                    this.sendMessage();
-                }
+                const url = prompt("Прямая ссылка на картинку:");
+                if (url && url.startsWith('http')) { document.getElementById('main-input').value = url; this.sendMessage(); }
             }
         };
 
-        /* --- ЯДРО ТЕМЫ (UI CUSTOMIZATION) --- */
         window.themeCore = {
             preview: function() {
                 const root = document.documentElement.style;
-                const fz = document.getElementById('ui-font-range').value;
-                const rd = document.getElementById('ui-radius-range').value;
-                const pr = document.getElementById('ui-color-primary').value;
-                const me = document.getElementById('ui-color-me').value;
-
-                root.setProperty('--font-size', fz + 'px');
-                root.setProperty('--radius', rd + 'px');
-                root.setProperty('--primary', pr);
-                root.setProperty('--msg-me', me);
+                root.setProperty('--font-size', document.getElementById('ui-font-range').value + 'px');
+                root.setProperty('--radius', document.getElementById('ui-radius-range').value + 'px');
+                root.setProperty('--primary', document.getElementById('ui-color-primary').value);
+                root.setProperty('--msg-me', document.getElementById('ui-color-me').value);
             },
-
             save: function() {
-                const settings = {
-                    fz: document.getElementById('ui-font-range').value,
-                    rd: document.getElementById('ui-radius-range').value,
-                    pr: document.getElementById('ui-color-primary').value,
-                    me: document.getElementById('ui-color-me').value
-                };
+                const settings = { fz: document.getElementById('ui-font-range').value, rd: document.getElementById('ui-radius-range').value, pr: document.getElementById('ui-color-primary').value, me: document.getElementById('ui-color-me').value };
                 localStorage.setItem('narrators_custom_ui', JSON.stringify(settings));
                 uiAction.closeMenu();
             },
-
             load: function() {
                 const saved = localStorage.getItem('narrators_custom_ui');
                 if (saved) {
@@ -825,60 +752,22 @@
             }
         };
 
-        /* --- UI ACTIONS --- */
         window.uiAction = {
-            openMenu: function() {
-                document.getElementById('side-menu').classList.add('active');
-                document.getElementById('app-overlay').classList.add('active');
-            },
-            closeMenu: function() {
-                document.getElementById('side-menu').classList.remove('active');
-                document.getElementById('app-overlay').classList.remove('active');
-                this.hideSettings();
-            },
-            showSettings: function() {
-                document.getElementById('menu-view-main').style.display = 'none';
-                document.getElementById('menu-view-settings').style.display = 'block';
-            },
-            hideSettings: function() {
-                document.getElementById('menu-view-settings').style.display = 'none';
-                document.getElementById('menu-view-main').style.display = 'block';
-            },
-            logout: function() {
-                if (confirm("Выйти из аккаунта?")) signOut(auth);
-            },
-            openChatRoom: function() {
-                document.body.classList.add('is-chatting');
-            },
-            closeChatRoom: function() {
-                document.body.classList.remove('is-chatting');
-            }
+            openMenu: () => { document.getElementById('side-menu').classList.add('active'); document.getElementById('app-overlay').classList.add('active'); },
+            closeMenu: () => { document.getElementById('side-menu').classList.remove('active'); document.getElementById('app-overlay').classList.remove('active'); uiAction.hideSettings(); },
+            showSettings: () => { document.getElementById('menu-view-main').style.display = 'none'; document.getElementById('menu-view-settings').style.display = 'block'; },
+            hideSettings: () => { document.getElementById('menu-view-settings').style.display = 'none'; document.getElementById('menu-view-main').style.display = 'block'; },
+            logout: () => { if (confirm("Выйти?")) signOut(auth); },
+            openChatRoom: () => document.body.classList.add('is-chatting'),
+            closeChatRoom: () => document.body.classList.remove('is-chatting')
         };
 
-        /* Вспомогательные функции */
         function toggleScreen(screenId) {
-            const screens = ['screen-auth', 'screen-reg', 'app'];
-            screens.forEach(id => {
-                document.getElementById(id).style.display = (id === screenId) ? 'flex' : 'none';
-            });
+            ['screen-auth', 'screen-reg', 'app'].forEach(id => document.getElementById(id).style.display = (id === screenId) ? 'flex' : 'none');
         }
 
-        // Закрытие контекстного меню при клике в любое место
-        document.addEventListener('click', (e) => {
-            const popup = document.getElementById('context-popup');
-            if (!e.target.closest('#context-popup')) {
-                popup.style.display = 'none';
-            }
-        });
-
-        // Отправка по Enter
-        document.getElementById('main-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                chatEngine.sendMessage();
-            }
-        });
-
+        document.addEventListener('click', (e) => { if (!e.target.closest('#context-popup')) document.getElementById('context-popup').style.display = 'none'; });
+        document.getElementById('main-input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatEngine.sendMessage(); } });
     </script>
 </body>
 </html>
