@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Narrators Messenger v0.1.6</title>
+    
+    <!-- Иконка для уведомлений -->
+    <link rel="icon" href="https://via.placeholder.com/64" type="image/x-icon">
+    
+    <!-- Манифест для PWA и уведомлений -->
+    <link rel="manifest" id="manifest" href="data:application/json,{}">
 
     <style>
         :root{
@@ -240,6 +246,36 @@
             text-decoration: underline;
         }
 
+        /* Уведомление о запросе разрешений */
+        .notification-permission-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 10005;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .notification-permission-banner button {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
         @media (max-width:900px){
             #sidebar{ 
                 width:320px; 
@@ -258,10 +294,23 @@
             .chat-top-bar {
                 padding: 12px;
             }
+            
+            .notification-permission-banner {
+                width: 90%;
+                left: 5%;
+                transform: none;
+            }
         }
     </style>
 </head>
 <body>
+
+    <!-- Баннер запроса разрешений на уведомления -->
+    <div id="notification-permission-banner" class="notification-permission-banner">
+        <div>🔔 Получать уведомления о новых сообщениях?</div>
+        <button onclick="notificationManager.requestPermission()">Включить</button>
+        <button onclick="notificationManager.hideBanner()" style="background: transparent; color: white; padding: 0; margin-left: 4px;">✕</button>
+    </div>
 
     <!-- AUTH screens (same as before) -->
     <div id="screen-auth" class="panel" style="display:none;">
@@ -282,8 +331,8 @@
 
             <div id="sidebar-menu" class="sidebar-menu" aria-hidden="true">
                 <div class="item" id="menu-personalization">🎨 Персонализация</div>
-                <div class="item" id="menu-settings">⚙️ Настройки</div>
                 <div class="item" id="menu-add-group">➕ Добавить группу</div>
+                <div class="item" id="menu-notifications">🔔 Уведомления</div>
                 <div class="divider"></div>
                 <div style="padding:10px;">
                     <input id="sidebar-search" class="input-field" placeholder="Поиск по @тегу или имени...">
@@ -394,10 +443,14 @@
             </div>
 
             <div style="width:260px;">
-                <div style="font-weight:700; margin-bottom:6px;">Настройки</div>
+                <div style="font-weight:700; margin-bottom:6px;">Настройки уведомлений</div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button class="btn btn-ghost" onclick="notificationManager.requestPermission()" id="enable-notifications-btn">Включить уведомления</button>
+                    <button class="btn btn-ghost" onclick="notificationManager.testNotification()">Тестовое уведомление</button>
                     <button class="btn btn-ghost" onclick="uiAction.openCreateGroup()">Создать группу</button>
-                    <button class="btn btn-ghost" onclick="uiAction.showRules()">Правила сообщества</button>
+                    <div id="notification-status" class="muted-xs" style="margin-top:8px; padding:8px; background:var(--primary-soft); border-radius:8px;">
+                        Статус уведомлений: <span id="notification-status-text">Проверка...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -479,7 +532,9 @@
             activeAction: null,
             targetMessage: null,
             contextTarget: null,
-            currentChat: { type: 'global', id: 'global', title: 'Global Chat Room' }
+            currentChat: { type: 'global', id: 'global', title: 'Global Chat Room' },
+            notificationPermission: null,
+            serviceWorkerRegistration: null
         };
 
         const usersCache = {};
@@ -489,11 +544,10 @@
         let usersListener = null;
         let currentMessagesUnsub = null;
 
-        /* UI helpers */
-        const authErrorEl = document.getElementById('auth-error');
-        const authInfoEl = document.getElementById('auth-info');
-        function showAuthError(msg){ if(authErrorEl){ authErrorEl.style.display='block'; authErrorEl.innerText=msg;} }
-        function clearAuthMessages(){ if(authErrorEl){ authErrorEl.style.display='none'; authErrorEl.innerText=''; } if(authInfoEl){ authInfoEl.style.display='none'; authInfoEl.innerText=''; } }
+        // Для хранения последнего уведомления (чтобы избежать дублирования)
+        let lastNotificationMessageId = null;
+        let lastNotificationTime = 0;
+        const NOTIFICATION_COOLDOWN = 3000; // 3 секунды между уведомлениями
 
         /* Вспомогательные функции */
         function escapeHtml(text) {
@@ -527,8 +581,318 @@
             return '#3390ec';
         }
 
-        /* AUTH wiring (registration/login flows remain available on earlier screens if used) */
-        // For brevity, only sign out and google are wired here as in previous versions:
+        /* Менеджер уведомлений */
+        window.notificationManager = {
+            // Инициализация Service Worker
+            initServiceWorker: async function() {
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    try {
+                        // Регистрируем Service Worker
+                        const registration = await navigator.serviceWorker.register('/sw.js', {
+                            scope: './'
+                        });
+                        
+                        window.state.serviceWorkerRegistration = registration;
+                        console.log('Service Worker зарегистрирован:', registration);
+                        
+                        // Обновляем статус уведомлений
+                        this.updateNotificationStatus();
+                        
+                        // Проверяем подписку на пуши
+                        const subscription = await registration.pushManager.getSubscription();
+                        if (subscription) {
+                            console.log('Пользователь подписан на push:', subscription);
+                            // Здесь можно отправить subscription на ваш сервер
+                        }
+                        
+                        return registration;
+                    } catch (error) {
+                        console.error('Ошибка регистрации Service Worker:', error);
+                        return null;
+                    }
+                }
+                return null;
+            },
+
+            // Запрос разрешения на уведомления
+            requestPermission: async function() {
+                if (!('Notification' in window)) {
+                    alert('Ваш браузер не поддерживает уведомления');
+                    return;
+                }
+                
+                try {
+                    const permission = await Notification.requestPermission();
+                    window.state.notificationPermission = permission;
+                    
+                    this.updateNotificationStatus();
+                    
+                    if (permission === 'granted') {
+                        // Показываем подтверждение
+                        this.showNotification('Уведомления включены', 'Вы будете получать уведомления о новых сообщениях');
+                        
+                        // Скрываем баннер
+                        this.hideBanner();
+                        
+                        // Инициализируем Service Worker для push-уведомлений
+                        await this.initServiceWorker();
+                        
+                        // Сохраняем настройку в локальное хранилище
+                        localStorage.setItem('notifications_enabled', 'true');
+                    } else if (permission === 'denied') {
+                        alert('Уведомления заблокированы. Вы можете включить их в настройках браузера.');
+                        localStorage.setItem('notifications_enabled', 'false');
+                    }
+                } catch (error) {
+                    console.error('Ошибка запроса разрешения:', error);
+                }
+            },
+
+            // Проверка текущего статуса уведомлений
+            checkPermission: function() {
+                if (!('Notification' in window)) {
+                    return 'unsupported';
+                }
+                
+                window.state.notificationPermission = Notification.permission;
+                return Notification.permission;
+            },
+
+            // Обновление отображения статуса уведомлений
+            updateNotificationStatus: function() {
+                const statusElement = document.getElementById('notification-status-text');
+                const banner = document.getElementById('notification-permission-banner');
+                const enableBtn = document.getElementById('enable-notifications-btn');
+                
+                if (!statusElement) return;
+                
+                const permission = this.checkPermission();
+                let statusText = '';
+                let bannerVisible = false;
+                
+                switch(permission) {
+                    case 'granted':
+                        statusText = '✅ Включены';
+                        if (enableBtn) enableBtn.style.display = 'none';
+                        bannerVisible = false;
+                        break;
+                    case 'denied':
+                        statusText = '❌ Заблокированы';
+                        if (enableBtn) enableBtn.innerText = 'Разблокировать в настройках браузера';
+                        bannerVisible = false;
+                        break;
+                    case 'default':
+                        statusText = '⚠️ Не запрошены';
+                        if (enableBtn) enableBtn.innerText = 'Включить уведомления';
+                        bannerVisible = true;
+                        break;
+                    case 'unsupported':
+                        statusText = '🚫 Не поддерживается';
+                        if (enableBtn) enableBtn.style.display = 'none';
+                        bannerVisible = false;
+                        break;
+                }
+                
+                statusElement.textContent = statusText;
+                
+                // Показываем/скрываем баннер
+                if (banner) {
+                    if (bannerVisible && localStorage.getItem('notification_banner_hidden') !== 'true') {
+                        banner.style.display = 'flex';
+                    } else {
+                        banner.style.display = 'none';
+                    }
+                }
+            },
+
+            // Показать уведомление
+            showNotification: function(title, body, tag = 'new-message') {
+                // Проверяем разрешение
+                if (window.state.notificationPermission !== 'granted') {
+                    return;
+                }
+                
+                // Проверяем кулдаун и фокус окна
+                const now = Date.now();
+                if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
+                    return; // Слишком рано после предыдущего уведомления
+                }
+                
+                // Не показываем уведомления если вкладка активна
+                if (document.hasFocus()) {
+                    return;
+                }
+                
+                try {
+                    // Создаем опции уведомления
+                    const options = {
+                        body: body,
+                        icon: 'https://via.placeholder.com/192',
+                        badge: 'https://via.placeholder.com/96',
+                        tag: tag, // Тег для группировки уведомлений
+                        renotify: true,
+                        requireInteraction: false,
+                        silent: false,
+                        vibrate: [200, 100, 200],
+                        data: {
+                            url: window.location.href,
+                            timestamp: Date.now()
+                        },
+                        actions: [
+                            {
+                                action: 'open',
+                                title: 'Открыть чат'
+                            },
+                            {
+                                action: 'close',
+                                title: 'Закрыть'
+                            }
+                        ]
+                    };
+                    
+                    // Показываем уведомление
+                    const notification = new Notification(title, options);
+                    
+                    // Обработчик клика по уведомлению
+                    notification.onclick = function(event) {
+                        event.preventDefault();
+                        window.focus();
+                        notification.close();
+                    };
+                    
+                    // Обработчик действий
+                    notification.onaction = function(event) {
+                        if (event.action === 'open') {
+                            window.focus();
+                        }
+                        notification.close();
+                    };
+                    
+                    // Обновляем время последнего уведомления
+                    lastNotificationTime = now;
+                    
+                    // Автоматическое закрытие через 7 секунд
+                    setTimeout(() => {
+                        notification.close();
+                    }, 7000);
+                    
+                    return notification;
+                } catch (error) {
+                    console.error('Ошибка показа уведомления:', error);
+                    // Fallback для старых браузеров
+                    if (document.hasFocus()) return;
+                    const fallbackOptions = {
+                        body: body,
+                        icon: 'https://via.placeholder.com/192'
+                    };
+                    return new Notification(title, fallbackOptions);
+                }
+            },
+
+            // Тестовое уведомление
+            testNotification: function() {
+                const permission = this.checkPermission();
+                
+                if (permission === 'granted') {
+                    this.showNotification(
+                        'Тестовое уведомление',
+                        'Это тестовое уведомление от Narrators Messenger',
+                        'test-notification'
+                    );
+                } else {
+                    alert('Сначала включите уведомления');
+                    this.requestPermission();
+                }
+            },
+
+            // Уведомление о новом сообщении
+            notifyNewMessage: function(message, chatInfo = null) {
+                // Проверяем разрешение
+                if (window.state.notificationPermission !== 'granted') {
+                    return;
+                }
+                
+                // Не уведомляем о своих сообщениях
+                if (message.uid === window.state.user?.uid) {
+                    return;
+                }
+                
+                // Проверяем кулдаун
+                const now = Date.now();
+                if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
+                    return;
+                }
+                
+                // Получаем информацию об отправителе
+                const sender = usersCache[message.uid] || {};
+                const senderName = sender.displayName || message.displayName || 'Пользователь';
+                const chatName = chatInfo?.title || 'Чат';
+                
+                // Формируем текст сообщения
+                const messageText = message.text || '';
+                const truncatedText = messageText.length > 100 
+                    ? messageText.substring(0, 100) + '...' 
+                    : messageText;
+                
+                // Создаем уведомление
+                const title = `💬 ${senderName}`;
+                const body = `${truncatedText}\n\nв ${chatName}`;
+                
+                this.showNotification(title, body, `message-${message.uid}`);
+            },
+
+            // Скрыть баннер
+            hideBanner: function() {
+                const banner = document.getElementById('notification-permission-banner');
+                if (banner) {
+                    banner.style.display = 'none';
+                }
+                localStorage.setItem('notification_banner_hidden', 'true');
+            },
+
+            // Инициализация уведомлений при загрузке
+            init: function() {
+                // Проверяем статус уведомлений
+                this.updateNotificationStatus();
+                
+                // Инициализируем Service Worker
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        this.initServiceWorker();
+                    });
+                }
+                
+                // Слушаем видимость страницы
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        // Страница скрыта - можно показывать уведомления
+                        console.log('Страница скрыта, уведомления активны');
+                    } else {
+                        // Страница видна - очищаем уведомления
+                        console.log('Страница видна');
+                    }
+                });
+                
+                // Сохраняем настройки уведомлений
+                const notificationsEnabled = localStorage.getItem('notifications_enabled');
+                if (notificationsEnabled === 'true') {
+                    // Автоматически запрашиваем разрешение если ранее было включено
+                    setTimeout(() => {
+                        if (this.checkPermission() === 'default') {
+                            this.requestPermission();
+                        }
+                    }, 2000);
+                }
+            }
+        };
+
+        /* UI helpers */
+        const authErrorEl = document.getElementById('auth-error');
+        const authInfoEl = document.getElementById('auth-info');
+        function showAuthError(msg){ if(authErrorEl){ authErrorEl.style.display='block'; authErrorEl.innerText=msg;} }
+        function clearAuthMessages(){ if(authErrorEl){ authErrorEl.style.display='none'; authErrorEl.innerText=''; } if(authInfoEl){ authInfoEl.style.display='none'; authInfoEl.innerText=''; } }
+
+        /* AUTH wiring */
         document.getElementById('signout-btn').addEventListener('click', async () => {
             try { await signOut(auth); } catch (err) { console.error(err); alert('Ошибка выхода: ' + (err.message || err)); }
         });
@@ -554,7 +918,6 @@
             if (!firebaseUser) {
                 teardownAfterSignOut();
                 document.getElementById('app').style.display = 'flex';
-                // show auth screen logic omitted for brevity
                 return;
             }
             window.state.user = firebaseUser;
@@ -584,9 +947,13 @@
                 initConversationsListener();
                 initSearch();
                 initGroupSearch();
+                
+                // Инициализация уведомлений
+                notificationManager.init();
+                
                 uiAction.openGlobal();
 
-                // sidebar menu wiring
+                // sidebar menu wiring - ИСПРАВЛЕНО: убрана анимация закрытия через время
                 const sidebarBtn = document.getElementById('sidebar-menu-btn');
                 const sidebarMenu = document.getElementById('sidebar-menu');
                 sidebarBtn.onclick = (e) => {
@@ -594,9 +961,19 @@
                     if (expanded) closeSidebarMenu();
                     else openSidebarMenu();
                 };
-                document.getElementById('menu-personalization').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
-                document.getElementById('menu-settings').onclick = () => { uiAction.openSettings(); closeSidebarMenu(); };
-                document.getElementById('menu-add-group').onclick = () => { uiAction.openCreateGroup(); closeSidebarMenu(); };
+                
+                document.getElementById('menu-personalization').onclick = () => { 
+                    uiAction.openSettings(); 
+                    closeSidebarMenu(); 
+                };
+                document.getElementById('menu-add-group').onclick = () => { 
+                    uiAction.openCreateGroup(); 
+                    closeSidebarMenu(); 
+                };
+                document.getElementById('menu-notifications').onclick = () => {
+                    uiAction.openSettings();
+                    closeSidebarMenu();
+                };
 
             } catch (err) {
                 console.error('post-auth error', err);
@@ -646,7 +1023,7 @@
             }, { onlyOnce: false });
         }
 
-        /* Conversations listeners */
+        /* Conversations listeners с уведомлениями */
         function initConversationsListener(){
             const dmsRef = ref(db, 'dms');
             dmsListener = onValue(dmsRef, (snapshot) => {
@@ -658,6 +1035,9 @@
                         const title = otherUid ? (usersCache[otherUid] ? usersCache[otherUid].displayName : 'Личный чат') : 'Чат';
                         const avatar = otherUid ? (usersCache[otherUid] ? usersCache[otherUid].photoURL : '') : '';
                         addConversationToList({ type: 'dm', id: dmId, title, avatar, otherUid });
+                        
+                        // Слушаем новые сообщения в чате для уведомлений
+                        listenForNewMessages(`dms/${dmId}/messages`, { type: 'dm', id: dmId, title });
                     } else {
                         const key = 'dm:' + dmId;
                         if (conversationsIndex[key]) removeConversationFromList(key);
@@ -672,11 +1052,46 @@
                     const members = group.members || {};
                     if (window.state.user && members[window.state.user.uid]) {
                         addConversationToList({ type: 'group', id: groupId, title: group.name || 'Группа', avatar: group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png' });
+                        
+                        // Слушаем новые сообщения в группе для уведомлений
+                        listenForNewMessages(`groups/${groupId}/messages`, { type: 'group', id: groupId, title: group.name || 'Группа' });
                     } else {
                         const key = 'group:' + groupId;
                         if (conversationsIndex[key]) removeConversationFromList(key);
                     }
                 });
+            });
+            
+            // Слушаем глобальные сообщения для уведомлений
+            listenForNewMessages('messages', { type: 'global', id: 'global', title: 'Global Chat' });
+        }
+        
+        // Функция для прослушивания новых сообщений с уведомлениями
+        function listenForNewMessages(path, chatInfo) {
+            const messagesRef = ref(db, path);
+            let lastMessageTime = 0;
+            
+            onValue(messagesRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+                
+                // Находим последнее сообщение
+                const messages = Object.values(data);
+                const lastMessage = messages.reduce((latest, msg) => {
+                    return (msg.createdAt > latest.createdAt) ? msg : latest;
+                }, { createdAt: 0 });
+                
+                // Проверяем, новое ли это сообщение
+                if (lastMessage.createdAt > lastMessageTime && 
+                    lastMessage.uid !== window.state.user?.uid) {
+                    lastMessageTime = lastMessage.createdAt;
+                    
+                    // Показываем уведомление если это не текущий открытый чат
+                    if (window.state.currentChat.id !== chatInfo.id || 
+                        window.state.currentChat.type !== chatInfo.type) {
+                        notificationManager.notifyNewMessage(lastMessage, chatInfo);
+                    }
+                }
             });
         }
 
@@ -832,7 +1247,6 @@
                         return; 
                     }
                     
-                    // Исправленная сортировка
                     Object.entries(data)
                         .map(([msgId, msg]) => ({ msgId, ...msg }))
                         .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
@@ -1175,6 +1589,9 @@
                     settingsModal.classList.add('active');
                     settingsModal.setAttribute('aria-hidden','false');
                     
+                    // Обновляем статус уведомлений
+                    notificationManager.updateNotificationStatus();
+                    
                     const root = document.documentElement.style;
                     const uiColorPrimary = document.getElementById('ui-color-primary');
                     const uiColorMe = document.getElementById('ui-color-me');
@@ -1473,7 +1890,7 @@
 
         initGroupSearch();
 
-        /* Polish: sidebar menu open/close with animations */
+        /* Polish: sidebar menu open/close with animations - ИСПРАВЛЕНО */
         const sidebarBtn = document.getElementById('sidebar-menu-btn');
         const sidebarMenu = document.getElementById('sidebar-menu');
 
@@ -1486,12 +1903,14 @@
             items.forEach((it, i) => {
                 it.style.opacity = '0';
                 it.style.transform = 'translateY(6px)';
-                setTimeout(()=>{ 
+                setTimeout(() => { 
                     it.style.transition = `transform .28s ${0.04 + i*0.03}s var(--ease), opacity .22s ${0.04 + i*0.03}s var(--ease)`; 
                     it.style.opacity = '1'; 
                     it.style.transform = 'none'; 
                 }, 20);
             });
+            
+            // УБРАН setTimeout для закрытия - меню теперь закрывается только по клику вне меню
         }
 
         function closeSidebarMenu(){
@@ -1502,7 +1921,7 @@
                 it.style.transform = 'translateY(6px)';
                 it.style.opacity = '0';
             });
-            setTimeout(()=>{
+            setTimeout(() => {
                 sidebarMenu.classList.remove('active');
                 sidebarMenu.setAttribute('aria-hidden','true');
                 sidebarBtn.setAttribute('aria-expanded','false');
@@ -1511,7 +1930,7 @@
                     it.style.transform=''; 
                     it.style.opacity=''; 
                 });
-            }, 220 + items.length*20);
+            }, 220);
         }
 
         document.addEventListener('click', (e) => {
@@ -1532,6 +1951,7 @@
 
         if (sidebarBtn) {
             sidebarBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 if (!sidebarMenu) return;
                 const isOpen = sidebarMenu.classList.contains('active');
                 if (isOpen) closeSidebarMenu();
@@ -1548,12 +1968,12 @@
                         if (node.nodeType === 1 && node.classList.contains('chat-row')) {
                             node.style.opacity = '0';
                             node.style.transform = 'translateX(-6px)';
-                            setTimeout(()=>{ 
+                            setTimeout(() => { 
                                 node.style.transition = `transform .24s ${idx*0.02}s var(--ease), opacity .18s ${idx*0.02}s var(--ease)`; 
                                 node.style.opacity = '1'; 
                                 node.style.transform = 'none'; 
                             }, 20);
-                            setTimeout(()=>{ 
+                            setTimeout(() => { 
                                 node.style.transition=''; 
                             }, 600);
                         }
@@ -1567,12 +1987,87 @@
         window.uiAction = window.uiAction;
         window.chatEngine = window.chatEngine;
         window.themeCore = window.themeCore;
+        window.notificationManager = notificationManager;
         window.escapeHtml = escapeHtml;
         window.rgbToHex = rgbToHex;
 
         // load theme
         themeCore.load();
 
+    </script>
+    
+    <!-- Service Worker для push-уведомлений -->
+    <script>
+        // Регистрируем Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(error => {
+                console.log('Service Worker регистрация не удалась:', error);
+            });
+        }
+        
+        // Создаем простой Service Worker inline
+        const swContent = `
+        self.addEventListener('install', event => {
+            console.log('Service Worker установлен');
+            self.skipWaiting();
+        });
+        
+        self.addEventListener('activate', event => {
+            console.log('Service Worker активирован');
+            event.waitUntil(clients.claim());
+        });
+        
+        self.addEventListener('push', event => {
+            const data = event.data ? event.data.json() : {};
+            const title = data.title || 'Новое сообщение';
+            const options = {
+                body: data.body || 'У вас новое сообщение',
+                icon: data.icon || 'https://via.placeholder.com/192',
+                badge: 'https://via.placeholder.com/96',
+                tag: data.tag || 'new-message',
+                renotify: true,
+                data: data.data || {}
+            };
+            
+            event.waitUntil(
+                self.registration.showNotification(title, options)
+            );
+        });
+        
+        self.addEventListener('notificationclick', event => {
+            event.notification.close();
+            
+            const urlToOpen = event.notification.data.url || '/';
+            
+            event.waitUntil(
+                clients.matchAll({
+                    type: 'window',
+                    includeUncontrolled: true
+                }).then(windowClients => {
+                    for (let client of windowClients) {
+                        if (client.url === urlToOpen && 'focus' in client) {
+                            return client.focus();
+                        }
+                    }
+                    if (clients.openWindow) {
+                        return clients.openWindow(urlToOpen);
+                    }
+                })
+            );
+        });
+        `;
+        
+        // Создаем blob и регистрируем Service Worker
+        const blob = new Blob([swContent], { type: 'application/javascript' });
+        const swURL = URL.createObjectURL(blob);
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(swURL).then(registration => {
+                console.log('Service Worker зарегистрирован с scope:', registration.scope);
+            }).catch(error => {
+                console.log('Service Worker регистрация не удалась:', error);
+            });
+        }
     </script>
 </body>
 </html>
