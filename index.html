@@ -3,125 +3,212 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Narrators Test</title>
+    <title>Narrators Messenger - Локальная версия</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
-        input { padding: 10px; margin: 5px; width: 300px; }
+        :root {
+            --primary: #3390ec;
+            --bg-body: #ffffff;
+            --border: #e4e4e4;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: sans-serif; background:#f5f5f5; height:100vh; display:flex; align-items:center; justify-content:center; }
+        .card { background:white; border-radius:12px; padding:30px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:90%; max-width:400px; }
+        .logo { color:var(--primary); font-weight:800; font-size:28px; margin-bottom:10px; }
+        .input-field { width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; margin-bottom:10px; font-size:16px; }
+        .btn { width:100%; padding:12px; border:none; border-radius:8px; background:var(--primary); color:white; font-size:16px; cursor:pointer; margin:5px 0; }
+        .btn:hover { opacity:0.9; }
+        .error { color:#ff3b30; margin:10px 0; }
+        .success { color:#4caf50; margin:10px 0; }
     </style>
+    
+    <!-- Используем другой CDN для Firebase -->
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/app/dist/index.esm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/auth/dist/index.esm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/database/dist/index.esm.js"></script>
+    
+    <!-- Резервный CDN -->
+    <script>
+        // Проверяем загрузку Firebase
+        setTimeout(() => {
+            if (typeof firebase === 'undefined') {
+                console.log('Первый CDN не загрузился, пробуем альтернативный...');
+                // Загружаем из другого источника
+                const script1 = document.createElement('script');
+                script1.src = 'https://unpkg.com/firebase@10.7.1/dist/index.esm.js';
+                document.head.appendChild(script1);
+                
+                const script2 = document.createElement('script');
+                script2.src = 'https://unpkg.com/firebase@10.7.1/auth/dist/index.esm.js';
+                document.head.appendChild(script2);
+                
+                const script3 = document.createElement('script');
+                script3.src = 'https://unpkg.com/firebase@10.7.1/database/dist/index.esm.js';
+                document.head.appendChild(script3);
+            }
+        }, 2000);
+    </script>
 </head>
 <body>
-    <h1>Тест Firebase</h1>
-    
-    <div id="auth">
-        <input id="email" type="email" placeholder="Email">
-        <input id="password" type="password" placeholder="Пароль">
-        <br>
-        <button id="loginBtn">Войти</button>
-        <button id="registerBtn">Регистрация</button>
-        <button id="googleBtn">Google</button>
+    <div class="card">
+        <div class="logo">Narrators</div>
+        <div style="color:#666; margin-bottom:20px;">Тестовая версия</div>
+        
+        <div id="auth-error" class="error" style="display:none;"></div>
+        <div id="auth-success" class="success" style="display:none;"></div>
+        
+        <input id="email" class="input-field" type="email" placeholder="Email" value="test@test.com">
+        <input id="password" class="input-field" type="password" placeholder="Пароль" value="123456">
+        
+        <button id="loginBtn" class="btn">Войти</button>
+        <button id="registerBtn" class="btn" style="background:#666;">Регистрация</button>
+        <button id="googleBtn" class="btn" style="background:#db4437;">Войти через Google</button>
+        
+        <div id="status" style="margin-top:20px; font-size:14px; color:#666;">
+            Статус: <span id="statusText">Загрузка Firebase...</span>
+        </div>
     </div>
-    
-    <div id="app" style="display:none;">
-        <h2>Вы вошли!</h2>
-        <button id="logoutBtn">Выйти</button>
-    </div>
-    
-    <div id="error" style="color:red; margin-top:20px;"></div>
-    
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
     
     <script>
-        // Конфиг из вашего проекта
-        const firebaseConfig = {
-            apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
-            authDomain: "narrators-messenger.firebaseapp.com",
-            databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com",
-            projectId: "narrators-messenger",
-            storageBucket: "narrators-messenger.firebasestorage.app",
-            messagingSenderId: "421115209686",
-            appId: "1:421115209686:web:94d5560793540f14f02677"
-        };
-        
-        // Инициализация
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-        
-        console.log("Firebase инициализирован");
-        
-        // Кнопки
-        document.getElementById('loginBtn').onclick = async () => {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                showMessage("Вход успешен!");
-            } catch (error) {
-                showError("Ошибка входа: " + error.message);
-            }
-        };
-        
-        document.getElementById('registerBtn').onclick = async () => {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                const result = await auth.createUserWithEmailAndPassword(email, password);
-                
-                // Создаем профиль в базе
-                await db.ref('users/' + result.user.uid).set({
-                    email: email,
-                    createdAt: Date.now()
-                });
-                
-                showMessage("Регистрация успешна!");
-            } catch (error) {
-                showError("Ошибка регистрации: " + error.message);
-            }
-        };
-        
-        document.getElementById('googleBtn').onclick = async () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            
-            try {
-                await auth.signInWithPopup(provider);
-                showMessage("Google вход успешен!");
-            } catch (error) {
-                showError("Ошибка Google: " + error.message);
-            }
-        };
-        
-        document.getElementById('logoutBtn').onclick = () => {
-            auth.signOut();
-        };
-        
-        // Слушатель авторизации
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('auth').style.display = 'none';
-                document.getElementById('app').style.display = 'block';
-                console.log("Пользователь:", user.email);
+        // Проверяем доступность Firebase каждую секунду
+        const checkFirebaseInterval = setInterval(() => {
+            if (typeof firebase !== 'undefined') {
+                clearInterval(checkFirebaseInterval);
+                initFirebase();
             } else {
-                document.getElementById('auth').style.display = 'block';
-                document.getElementById('app').style.display = 'none';
-                console.log("Пользователь вышел");
+                document.getElementById('statusText').textContent = 'Ожидание Firebase...';
             }
-        });
+        }, 1000);
         
-        function showError(msg) {
-            document.getElementById('error').textContent = msg;
+        // Таймаут - если Firebase не загрузится за 10 секунд
+        setTimeout(() => {
+            if (typeof firebase === 'undefined') {
+                document.getElementById('statusText').textContent = 'Firebase не загружен. Проверьте интернет.';
+                document.getElementById('statusText').style.color = '#ff3b30';
+            }
+        }, 10000);
+        
+        function initFirebase() {
+            try {
+                document.getElementById('statusText').textContent = 'Инициализация Firebase...';
+                
+                // Ваш конфиг
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
+                    authDomain: "narrators-messenger.firebaseapp.com",
+                    databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com",
+                    projectId: "narrators-messenger",
+                    storageBucket: "narrators-messenger.firebasestorage.app",
+                    messagingSenderId: "421115209686",
+                    appId: "1:421115209686:web:94d5560793540f14f02677"
+                };
+                
+                // Инициализируем
+                const app = firebase.initializeApp(firebaseConfig);
+                const auth = firebase.auth();
+                const db = firebase.database();
+                
+                document.getElementById('statusText').textContent = 'Firebase готов!';
+                document.getElementById('statusText').style.color = '#4caf50';
+                
+                console.log('Firebase инициализирован:', app.name);
+                
+                // Назначаем обработчики кнопок
+                setupButtons(auth, db);
+                
+            } catch (error) {
+                document.getElementById('statusText').textContent = 'Ошибка инициализации: ' + error.message;
+                document.getElementById('statusText').style.color = '#ff3b30';
+                console.error('Firebase error:', error);
+            }
         }
         
-        function showMessage(msg) {
-            document.getElementById('error').style.color = 'green';
-            document.getElementById('error').textContent = msg;
+        function setupButtons(auth, db) {
+            // Кнопка входа
+            document.getElementById('loginBtn').onclick = async () => {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    showError('Введите email и пароль');
+                    return;
+                }
+                
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    showSuccess('Вход выполнен!');
+                } catch (error) {
+                    showError('Ошибка входа: ' + error.message);
+                }
+            };
+            
+            // Кнопка регистрации
+            document.getElementById('registerBtn').onclick = async () => {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    showError('Введите email и пароль');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showError('Пароль должен быть не менее 6 символов');
+                    return;
+                }
+                
+                try {
+                    const result = await auth.createUserWithEmailAndPassword(email, password);
+                    
+                    // Создаем профиль
+                    await db.ref('users/' + result.user.uid).set({
+                        email: email,
+                        displayName: email.split('@')[0],
+                        createdAt: Date.now()
+                    });
+                    
+                    showSuccess('Регистрация успешна!');
+                } catch (error) {
+                    showError('Ошибка регистрации: ' + error.message);
+                }
+            };
+            
+            // Кнопка Google
+            document.getElementById('googleBtn').onclick = async () => {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await auth.signInWithPopup(provider);
+                    showSuccess('Вход через Google выполнен!');
+                } catch (error) {
+                    if (error.code === 'auth/popup-blocked') {
+                        showError('Всплывающее окно заблокировано. Разрешите всплывающие окна.');
+                    } else if (error.code === 'auth/popup-closed-by-user') {
+                        showError('Окно авторизации было закрыто.');
+                    } else {
+                        showError('Ошибка Google: ' + error.message);
+                    }
+                }
+            };
+        }
+        
+        function showError(message) {
+            const el = document.getElementById('auth-error');
+            el.textContent = message;
+            el.style.display = 'block';
+            document.getElementById('auth-success').style.display = 'none';
+            
             setTimeout(() => {
-                document.getElementById('error').style.color = 'red';
-                document.getElementById('error').textContent = '';
+                el.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const el = document.getElementById('auth-success');
+            el.textContent = message;
+            el.style.display = 'block';
+            document.getElementById('auth-error').style.display = 'none';
+            
+            setTimeout(() => {
+                el.style.display = 'none';
             }, 3000);
         }
     </script>
