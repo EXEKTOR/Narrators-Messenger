@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Narrators Messenger v1.7</title>
+    <title>Narrators Messenger v1.7.1</title>
     
     <link rel="icon" href="https://via.placeholder.com/64" type="image/x-icon">
 
@@ -631,7 +631,7 @@
             border-bottom: none;
         }
 
-        /* Мобильная навигация */
+        /* Мобильная навигация - ПЕРЕПИСАНО */
         .mobile-nav {
             position: fixed;
             bottom: 0;
@@ -691,6 +691,83 @@
         }
 
         .mobile-back-btn:hover {
+            background: var(--primary-soft);
+        }
+
+        /* ТЕМНАЯ ТЕМА СТИЛИ */
+        body.dark-theme {
+            --bg:#0f0f0f;
+            --muted:#8a8a8a;
+            --border:#2a2a2a;
+            --primary-soft:rgba(51,144,236,0.15);
+            --msg-me:#1a3a1a;
+            --msg-me-text:#e0e0e0;
+            --msg-other:#2a2a2a;
+            --msg-other-text:#e0e0e0;
+            --shadow-sm: 0 6px 18px rgba(0,0,0,0.3);
+        }
+
+        body.dark-theme .profile-modal,
+        body.dark-theme .settings-modal,
+        body.dark-theme .group-modal,
+        body.dark-theme .notifications-modal,
+        body.dark-theme #sidebar-menu,
+        body.dark-theme .attach-menu {
+            background:#1a1a1a;
+            border-color:#3a3a3a;
+            color:#e0e0e0;
+        }
+
+        body.dark-theme .input-field {
+            background:#2a2a2a;
+            border-color:#3a3a3a;
+            color:#e0e0e0;
+        }
+
+        body.dark-theme .btn-ghost {
+            background:#2a2a2a;
+            border-color:#3a3a3a;
+            color:#e0e0e0;
+        }
+
+        body.dark-theme .chip {
+            background:#2a2a2a;
+            border-color:#3a3a3a;
+            color:#e0e0e0;
+        }
+
+        body.dark-theme .attach-option {
+            color:#e0e0e0;
+        }
+
+        body.dark-theme .notification-permission-banner {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+        }
+
+        /* Кнопка переключения темы в меню */
+        #theme-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background .12s var(--ease);
+            width: 100%;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            color: #123;
+        }
+
+        body.dark-theme #theme-toggle-btn {
+            color: #e0e0e0;
+        }
+
+        #theme-toggle-btn:hover {
             background: var(--primary-soft);
         }
 
@@ -897,60 +974,6 @@
             }
         }
 
-        /* Темная тема (автоматическая) */
-        @media (prefers-color-scheme: dark) {
-            :root{
-                --bg:#0f0f0f;
-                --muted:#8a8a8a;
-                --border:#2a2a2a;
-                --msg-me:#1a3a1a;
-                --msg-me-text:#e0e0e0;
-                --msg-other:#2a2a2a;
-                --msg-other-text:#e0e0e0;
-                --primary-soft:rgba(51,144,236,0.15);
-            }
-            
-            body{
-                background:var(--bg);
-                color:#e0e0e0;
-            }
-            
-            .profile-modal,
-            .settings-modal,
-            .group-modal,
-            .notifications-modal,
-            #sidebar-menu{
-                background:#1a1a1a;
-                color:#e0e0e0;
-            }
-            
-            .input-field{
-                background:#2a2a2a;
-                border-color:#3a3a3a;
-                color:#e0e0e0;
-            }
-            
-            .attach-menu{
-                background:#1a1a1a;
-                border-color:#3a3a3a;
-            }
-            
-            .attach-option{
-                color:#e0e0e0;
-            }
-            
-            .btn-ghost{
-                background:#2a2a2a;
-                border-color:#3a3a3a;
-                color:#e0e0e0;
-            }
-            
-            .chip{
-                background:#2a2a2a;
-                border-color:#3a3a3a;
-            }
-        }
-
         /* Анимации */
         .slide-in-right {
             animation: slideInRight 0.3s var(--ease);
@@ -981,6 +1004,79 @@
                 opacity: 1;
             }
         }
+
+        /* Для мобильной навигации - скрываем/показываем элементы */
+        .mobile-chat-list .chat-window-container {
+            display: none;
+        }
+
+        .mobile-chat-list .sidebar-container {
+            display: block;
+        }
+
+        .mobile-chat-open .sidebar-container {
+            display: none;
+        }
+
+        .mobile-chat-open .chat-window-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chat-window-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* На мобилке скрываем боковую панель как отдельный элемент */
+        @media (max-width: 768px) {
+            #sidebar {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 1000;
+                height: 100% !important;
+                background: var(--bg);
+            }
+            
+            #sidebar.mobile-visible {
+                display: flex;
+            }
+            
+            #chat-window {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 999;
+            }
+            
+            #chat-window.mobile-visible {
+                display: flex;
+            }
+            
+            .mobile-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1001;
+            }
+            
+            .mobile-back-btn {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
@@ -993,9 +1089,10 @@
 
     <!-- MAIN APP -->
     <div id="app" class="fade-in">
-        <div id="sidebar">
+        <!-- Сайдбар для мобильной версии -->
+        <div id="sidebar" class="mobile-visible">
             <div class="sidebar-top">
-                <button id="mobile-back-btn" class="mobile-back-btn" style="display:none;">←</button>
+                <button id="mobile-back-btn" class="mobile-back-btn" onclick="showChatWindow()">←</button>
                 <img id="user-profile-img" class="user-avatar" src="https://via.placeholder.com/150" title="Открыть профиль">
                 <div class="sidebar-meta">
                     <div class="name" id="user-display-name">Загрузка...</div>
@@ -1009,7 +1106,12 @@
                     <button class="item" onclick="uiAction.openNotifications(); toggleSidebarMenu()">🔔 Уведомления</button>
                     <div class="divider"></div>
                     <button class="item" onclick="toggleSidebarExpanded(); toggleSidebarMenu()">💬 Все чаты</button>
-                    <button class="item" onclick="uiAction.openGlobal(); toggleSidebarMenu()">🌍 Global чат</button>
+                    <button class="item" onclick="uiAction.openGlobal(); toggleSidebarMenu(); showChatWindow()">🌍 Global чат</button>
+                    <div class="divider"></div>
+                    <button id="theme-toggle-btn" onclick="toggleTheme(); toggleSidebarMenu()">
+                        <span id="theme-icon">🌙</span>
+                        <span id="theme-text">Темная тема</span>
+                    </button>
                 </div>
             </div>
 
@@ -1018,7 +1120,7 @@
             </div>
 
             <div class="chat-list-container" id="conversations-list">
-                <div class="chat-row" id="row-global" onclick="uiAction.openGlobal(); closeMobileSidebar();">
+                <div class="chat-row" id="row-global" onclick="uiAction.openGlobal(); showChatWindow();">
                     <img class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width:46px;height:46px;border-radius:8px;">
                     <div style="flex:1">
                         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -1031,9 +1133,10 @@
             </div>
         </div>
 
+        <!-- Окно чата -->
         <div id="chat-window">
             <div class="chat-top-bar">
-                <button id="mobile-chat-back" class="mobile-back-btn" style="display:none;" onclick="showMobileChatList()">←</button>
+                <button id="mobile-chat-back" class="mobile-back-btn" onclick="showSidebar()">←</button>
                 <img id="chat-top-avatar" src="https://via.placeholder.com/100" style="width:44px;height:44px;border-radius:10px;object-fit:cover">
                 <div style="flex:1; min-width:0;">
                     <div id="chat-top-title" style="font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Global Chat Room</div>
@@ -1062,19 +1165,19 @@
         
         <!-- Мобильная навигация -->
         <div class="mobile-nav">
-            <button class="nav-btn" onclick="showMobileChatList()">
+            <button class="nav-btn active" onclick="showSidebar()">
                 <i>💬</i>
                 <span>Чаты</span>
             </button>
-            <button class="nav-btn" onclick="uiAction.openGlobal(); hideMobileSidebar();">
+            <button class="nav-btn" onclick="uiAction.openGlobal(); showChatWindow();">
                 <i>🌍</i>
                 <span>Global</span>
             </button>
-            <button class="nav-btn" onclick="uiAction.openCreateGroup(); hideMobileSidebar();">
+            <button class="nav-btn" onclick="uiAction.openCreateGroup();">
                 <i>➕</i>
                 <span>Группа</span>
             </button>
-            <button class="nav-btn" onclick="uiAction.openSettings(); hideMobileSidebar();">
+            <button class="nav-btn" onclick="uiAction.openSettings();">
                 <i>⚙️</i>
                 <span>Настройки</span>
             </button>
@@ -1288,9 +1391,43 @@
         let lastNotificationTime = 0;
         const NOTIFICATION_COOLDOWN = 3000;
 
-        // Мобильные функции
+        // Мобильные функции - ПЕРЕПИСАНО
         function isMobile() {
             return window.innerWidth <= 768;
+        }
+
+        function showSidebar() {
+            if (isMobile()) {
+                document.getElementById('sidebar').classList.add('mobile-visible');
+                document.getElementById('chat-window').classList.remove('mobile-visible');
+                
+                // Обновляем активные кнопки навигации
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelectorAll('.nav-btn')[0].classList.add('active');
+            }
+        }
+
+        function showChatWindow() {
+            if (isMobile()) {
+                document.getElementById('sidebar').classList.remove('mobile-visible');
+                document.getElementById('chat-window').classList.add('mobile-visible');
+                
+                // Обновляем активные кнопки навигации
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Определяем какая кнопка должна быть активной
+                const currentChat = window.state.currentChat;
+                if (currentChat.type === 'global') {
+                    document.querySelectorAll('.nav-btn')[1].classList.add('active');
+                } else {
+                    // Для других чатов нет отдельной кнопки, так что активируем первую
+                    document.querySelectorAll('.nav-btn')[0].classList.add('active');
+                }
+            }
         }
 
         function toggleSidebarExpanded() {
@@ -1410,6 +1547,44 @@
                 if (attachMenu) attachMenu.style.display = 'none';
             }
         });
+
+        // Функция переключения темы
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.classList.contains('dark-theme');
+            
+            if (isDark) {
+                body.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+                document.getElementById('theme-icon').textContent = '🌙';
+                document.getElementById('theme-text').textContent = 'Темная тема';
+            } else {
+                body.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+                document.getElementById('theme-icon').textContent = '☀️';
+                document.getElementById('theme-text').textContent = 'Светлая тема';
+            }
+            
+            // Обновляем цвета в настройках если открыто окно настроек
+            if (typeof themeCore.preview === 'function') {
+                themeCore.preview();
+            }
+        }
+
+        // Загрузка темы из localStorage
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.body.classList.add('dark-theme');
+                document.getElementById('theme-icon').textContent = '☀️';
+                document.getElementById('theme-text').textContent = 'Светлая тема';
+            } else {
+                document.getElementById('theme-icon').textContent = '🌙';
+                document.getElementById('theme-text').textContent = 'Темная тема';
+            }
+        }
 
         /* Менеджер уведомлений */
         window.notificationManager = {
@@ -1720,6 +1895,7 @@
                 }
 
                 themeCore.load();
+                loadTheme();
                 initUsersCacheListener();
                 initConversationsListener();
                 initSearch();
@@ -1727,7 +1903,12 @@
                 
                 notificationManager.init();
                 
-                uiAction.openGlobal();
+                // На мобильных показываем список чатов по умолчанию
+                if (isMobile()) {
+                    showSidebar();
+                } else {
+                    uiAction.openGlobal();
+                }
 
             } catch (err) {
                 console.error('post-auth error', err);
@@ -1863,7 +2044,9 @@
                 } else if (type === 'group') {
                     uiAction.openGroupChat(id); 
                 }
-                closeMobileSidebar();
+                if (isMobile()) {
+                    showChatWindow();
+                }
             };
             const globalRow = document.getElementById('row-global');
             if (globalRow && globalRow.nextSibling) convList.insertBefore(row, globalRow.nextSibling);
@@ -2003,10 +2186,27 @@
             },
 
             attachFromURL: function() {
-                const url = prompt("Введите URL изображения:");
-                if (url && (url.startsWith('http') || url.startsWith('https'))) { 
-                    const mainInput = document.getElementById('main-input');
-                    if (mainInput) mainInput.value = url; 
+                const url = prompt("Введите URL изображения (начинается с http:// или https://):");
+                if (url) {
+                    // Автоматически добавляем http:// если не указан протокол
+                    let finalUrl = url.trim();
+                    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                        finalUrl = 'https://' + finalUrl;
+                    }
+                    
+                    // Проверяем, похоже ли на URL изображения
+                    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+                    const hasImageExtension = imageExtensions.some(ext => finalUrl.toLowerCase().includes(ext));
+                    
+                    if (hasImageExtension) {
+                        const mainInput = document.getElementById('main-input');
+                        if (mainInput) {
+                            mainInput.value = finalUrl;
+                            mainInput.focus();
+                        }
+                    } else {
+                        alert('Это не похоже на ссылку на изображение. Убедитесь, что URL содержит расширение изображения (.jpg, .png и т.д.)');
+                    }
                 }
                 document.getElementById('attach-menu').style.display = 'none';
             },
@@ -2130,7 +2330,8 @@
                 if (chatTopSub) chatTopSub.innerText = 'Общий чат';
                 if (chatTopAvatar) chatTopAvatar.src = 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
                 chatEngine.openChatListener('messages');
-                hideMobileSidebar();
+                if (!isMobile()) hideMobileSidebar();
+                if (isMobile()) showChatWindow();
             },
 
             createOrOpenDM: async (otherUid) => {
@@ -2165,7 +2366,8 @@
                     otherUid 
                 });
                 uiAction.openDMById(chatId, otherUid);
-                hideMobileSidebar();
+                if (!isMobile()) hideMobileSidebar();
+                if (isMobile()) showChatWindow();
             },
 
             openDMById: async (chatId, otherUid) => {
@@ -2184,7 +2386,8 @@
                 if (chatTopSub) chatTopSub.innerText = '@' + (other.usernameDisplay || other.username || '');
                 if (chatTopAvatar) chatTopAvatar.src = other.photoURL || 'https://via.placeholder.com/150';
                 chatEngine.openChatListener(`dms/${chatId}/messages`);
-                hideMobileSidebar();
+                if (!isMobile()) hideMobileSidebar();
+                if (isMobile()) showChatWindow();
             },
 
             openProfile: (uid) => {
@@ -2282,7 +2485,6 @@
                 const groupNameInput = document.getElementById('group-name-input');
                 const groupDescriptionInput = document.getElementById('group-description-input');
                 
-                // ФИКС: Убрал аватар пользователя по умолчанию
                 const groupImage = group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
                 if (pAvatar) pAvatar.src = groupImage;
                 if (pDisplayName) pDisplayName.innerText = group.name || 'Группа';
@@ -2329,7 +2531,6 @@
                         btnEditProfile.innerText = '✏ Редактировать группу';
                     }
                     
-                    // ФИКС: Очищаем поле аватара
                     const pAvatarInput = document.getElementById('p-avatar-input');
                     if (pAvatarInput) pAvatarInput.value = '';
                     
@@ -2368,7 +2569,7 @@
                 }
             },
 
-            // ФИКС: Сохранение группы без ошибок
+            // ФИКС: Сохранение группы без ошибок - УБРАЛИ ЖЕСТКУЮ ПРОВЕРКУ НА HTTPS
             saveProfile: async () => {
                 if (!window.state.user) return;
                 
@@ -2391,9 +2592,11 @@
                         return;
                     }
                     
-                    if (newImage && !/^https?:\/\//i.test(newImage)) {
-                        alert('Ссылка на аватар должна начинаться с http/https');
-                        return;
+                    // ФИКС: Убрали жесткую проверку на https://
+                    // Если пользователь ввел просто домен, добавляем https://
+                    let processedImage = newImage;
+                    if (newImage && !newImage.startsWith('http://') && !newImage.startsWith('https://') && newImage.includes('.')) {
+                        processedImage = 'https://' + newImage;
                     }
                     
                     const updates = {
@@ -2401,16 +2604,11 @@
                         description: newDescription
                     };
                     
-                    // ФИКС: Добавляем изображение только если введено
-                    if (newImage) {
-                        updates.image = newImage;
-                    } else {
-                        // Если поле пустое, оставляем текущее изображение
-                        updates.image = group.image || '';
+                    if (processedImage) {
+                        updates.image = processedImage;
                     }
                     
                     try {
-                        // ФИКС: Правильное обновление
                         await update(ref(db, `groups/${group.id}`), updates);
                         
                         // Обновляем локальные данные
@@ -2446,19 +2644,20 @@
                         alert('Изменения группы сохранены');
                     } catch (err) { 
                         console.error('Ошибка при сохранении группы:', err);
-                        // ФИКС: Убрал дублирующее сообщение об ошибке
-                        alert('Изменения группы сохранены');
+                        alert('Ошибка при сохранении: ' + (err.message || err));
                     }
                 } else {
                     const pAvatarInput = document.getElementById('p-avatar-input');
                     const pAboutInput = document.getElementById('p-about-input');
                     if (!pAvatarInput || !pAboutInput) return;
                     
-                    const newAva = pAvatarInput.value.trim();
+                    let newAva = pAvatarInput.value.trim();
                     const newAbout = pAboutInput.value.trim();
-                    if (newAva && !/^https?:\/\//i.test(newAva)) {
-                        alert('Ссылка на аватар должна начинаться с http/https');
-                        return;
+                    
+                    // ФИКС: Убрали жесткую проверку на https://
+                    // Если пользователь ввел просто домен, добавляем https://
+                    if (newAva && !newAva.startsWith('http://') && !newAva.startsWith('https://') && newAva.includes('.')) {
+                        newAva = 'https://' + newAva;
                     }
                     
                     const updates = {};
@@ -2512,7 +2711,6 @@
                 }
             },
 
-            // ФИКС: Предпросмотр не меняет основной интерфейс
             openSettings: () => {
                 const settingsModal = document.getElementById('settings-modal');
                 if (settingsModal) {
@@ -2631,7 +2829,13 @@
                     return;
                 }
                 
-                const image = (groupImageUrlInput.value || '').trim();
+                let image = (groupImageUrlInput.value || '').trim();
+                
+                // ФИКС: Если введен просто домен, добавляем https://
+                if (image && !image.startsWith('http://') && !image.startsWith('https://') && image.includes('.')) {
+                    image = 'https://' + image;
+                }
+                
                 const selected = uiAction._groupSelected || {};
                 const members = Object.keys(selected);
                 if (members.length < 2) {
@@ -2697,6 +2901,7 @@
                 
                 chatEngine.openChatListener(`groups/${groupId}/messages`);
                 hideMobileSidebar();
+                if (isMobile()) showChatWindow();
             }
         };
 
@@ -2727,7 +2932,6 @@
                 const fz = document.getElementById('ui-font-range')?.value;
                 const rd = document.getElementById('ui-radius-range')?.value;
                 
-                // ФИКС: Меняем только предпросмотр
                 if (pr) preview.style.setProperty('--primary', pr);
                 if (me) preview.style.setProperty('--msg-me', me);
                 if (bg) preview.style.backgroundColor = bg;
@@ -2849,20 +3053,28 @@
             function updateMobileUI() {
                 const isMobileView = isMobile();
                 const signoutBtn = document.getElementById('signout-btn');
-                const mobileBackBtn = document.getElementById('mobile-back-btn');
-                const mobileChatBack = document.getElementById('mobile-chat-back');
                 
                 if (isMobileView) {
                     if (signoutBtn) signoutBtn.style.display = 'none';
-                    if (mobileBackBtn) mobileBackBtn.style.display = 'none';
-                    if (mobileChatBack) mobileChatBack.style.display = 'none';
+                    // На мобильных по умолчанию показываем sidebar
+                    if (!window.state.user || !window.state.currentChat) {
+                        showSidebar();
+                    }
                 } else {
                     if (signoutBtn) signoutBtn.style.display = 'inline-flex';
+                    // На десктопе показываем обе панели
+                    document.getElementById('sidebar').style.display = 'flex';
+                    document.getElementById('chat-window').style.display = 'flex';
+                    document.getElementById('sidebar').classList.remove('mobile-visible');
+                    document.getElementById('chat-window').classList.remove('mobile-visible');
                 }
             }
             
             updateMobileUI();
             window.addEventListener('resize', updateMobileUI);
+            
+            // Загружаем тему
+            loadTheme();
         });
 
         function initGroupSearch(){
@@ -2973,11 +3185,15 @@
         window.notificationManager = notificationManager;
         window.escapeHtml = escapeHtml;
         window.rgbToHex = rgbToHex;
+        window.toggleTheme = toggleTheme;
         window.toggleSidebarMenu = toggleSidebarMenu;
         window.toggleSidebarExpanded = toggleSidebarExpanded;
         window.closeMobileSidebar = closeMobileSidebar;
         window.showMobileChatList = showMobileChatList;
         window.hideMobileSidebar = hideMobileSidebar;
+        window.showSidebar = showSidebar;
+        window.showChatWindow = showChatWindow;
+        window.isMobile = isMobile;
 
         themeCore.load();
 
