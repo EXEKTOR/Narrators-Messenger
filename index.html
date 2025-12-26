@@ -176,6 +176,22 @@
         }
         .notification-popup.active { display: block; }
 
+        /* Google button loader */
+        .google-loader {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-top-color: #4285F4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width:850px) {
             #sidebar { width:100%; }
             #chat-window { display:none; position:fixed; inset:0; z-index:600; }
@@ -227,8 +243,10 @@
 
             <hr style="margin:14px 0; border:none; border-top:1px solid #f0f0f0;">
 
-            <button id="google-btn" class="btn btn-ghost" style="width:100%; gap:12px;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google"> Войти через Google
+            <button id="google-btn" class="btn btn-ghost" style="width:100%; gap:12px; position:relative;">
+                <div id="google-loader" class="google-loader" style="position:absolute; left:20px;"></div>
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google" id="google-icon">
+                <span id="google-btn-text">Войти через Google</span>
             </button>
         </div>
     </div>
@@ -489,6 +507,10 @@
         const db = getDatabase(app);
         const provider = new GoogleAuthProvider();
 
+        // Добавим scope для получения email
+        provider.addScope('email');
+        provider.addScope('profile');
+
         window.state = {
             user: null,
             profile: null,
@@ -510,6 +532,340 @@
         let onlineStatusRef = null;
         let typingRef = null;
 
+        /* ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==================== */
+        function showAuthError(msg) { 
+            const authErrorEl = document.getElementById('auth-error');
+            authErrorEl.style.display = 'block'; 
+            authErrorEl.innerText = msg; 
+        }
+        
+        function showAuthInfo(msg) { 
+            const authInfoEl = document.getElementById('auth-info');
+            authInfoEl.style.display = 'block'; 
+            authInfoEl.innerText = msg; 
+        }
+        
+        function clearAuthMessages() { 
+            const authErrorEl = document.getElementById('auth-error');
+            const authInfoEl = document.getElementById('auth-info');
+            authErrorEl.style.display = 'none'; 
+            authErrorEl.innerText = ''; 
+            authInfoEl.style.display = 'none'; 
+            authInfoEl.innerText = ''; 
+        }
+
+        /* ==================== GOOGLE АВТОРИЗАЦИЯ ==================== */
+        document.getElementById('google-btn').addEventListener('click', async function() {
+            const btn = this;
+            const loader = document.getElementById('google-loader');
+            const btnText = document.getElementById('google-btn-text');
+            const googleIcon = document.getElementById('google-icon');
+            
+            // Показываем индикатор загрузки
+            btn.disabled = true;
+            if (loader) loader.style.display = 'block';
+            if (btnText) btnText.textContent = 'Подключение...';
+            if (googleIcon) googleIcon.style.opacity = '0.5';
+            
+            clearAuthMessages();
+            
+            try {
+                console.log('Starting Google sign-in...');
+                const result = await signInWithPopup(auth, provider);
+                console.log('Google sign-in successful:', result.user);
+                
+            } catch (err) {
+                console.error('Google sign-in error:', err.code, err.message);
+                
+                let errorMessage = 'Ошибка входа через Google';
+                
+                if (err.code === 'auth/popup-blocked') {
+                    errorMessage = 'Всплывающее окно заблокировано. Разрешите всплывающие окна для этого сайта.';
+                } else if (err.code === 'auth/popup-closed-by-user') {
+                    errorMessage = 'Вход отменен. Окно авторизации было закрыто.';
+                } else if (err.code === 'auth/cancelled-popup-request') {
+                    errorMessage = 'Вход отменен. Попробуйте еще раз.';
+                } else if (err.code === 'auth/account-exists-with-different-credential') {
+                    errorMessage = 'Аккаунт с таким email уже существует. Используйте email/пароль.';
+                } else if (err.code === 'auth/network-request-failed') {
+                    errorMessage = 'Проблема с сетью. Проверьте интернет-соединение.';
+                } else {
+                    errorMessage = 'Ошибка: ' + (err.message || err.code || 'Неизвестная ошибка');
+                }
+                
+                showAuthError(errorMessage);
+                
+                // Fallback на redirect если popup не работает
+                if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+                    setTimeout(() => {
+                        const useRedirect = confirm('Всплывающее окно не сработало. Использовать перенаправление на страницу Google?');
+                        if (useRedirect) {
+                            signInWithRedirect(auth, provider).catch(redirectErr => {
+                                console.error('Redirect failed:', redirectErr);
+                            });
+                        }
+                    }, 500);
+                }
+            } finally {
+                // Всегда скрываем индикатор загрузки
+                setTimeout(() => {
+                    btn.disabled = false;
+                    if (loader) loader.style.display = 'none';
+                    if (btnText) btnText.textContent = 'Войти через Google';
+                    if (googleIcon) googleIcon.style.opacity = '1';
+                }, 1000);
+            }
+        });
+
+        /* ==================== ОБРАБОТКА АВТОРИЗАЦИИ ==================== */
+        onAuthStateChanged(auth, async (firebaseUser) => {
+            console.log('Auth state changed, user:', firebaseUser ? firebaseUser.uid : 'none');
+            clearAuthMessages();
+            
+            if (!firebaseUser) {
+                teardownAfterSignOut();
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('app').classList.remove('visible');
+                document.getElementById('app').style.display = 'none';
+                return;
+            }
+            
+            window.state.user = firebaseUser;
+            
+            try {
+                // Проверяем профиль в базе
+                const userRef = ref(db, `users/${firebaseUser.uid}`);
+                const userSnap = await get(userRef);
+                
+                if (userSnap.exists()) {
+                    window.state.profile = userSnap.val();
+                    console.log('Profile loaded from DB');
+                } else {
+                    // Создаем новый профиль
+                    const displayName = firebaseUser.displayName || 
+                                      (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'User');
+                    const username = (displayName.split(' ')[0] || displayName)
+                                   .toLowerCase()
+                                   .replace(/[^a-z0-9]/g, '');
+                    
+                    // Проверяем уникальность username
+                    let uniqueUsername = username;
+                    let counter = 1;
+                    
+                    const allUsersRef = ref(db, 'users');
+                    const allUsersSnap = await get(allUsersRef);
+                    const existingUsernames = new Set();
+                    
+                    if (allUsersSnap.exists()) {
+                        Object.values(allUsersSnap.val()).forEach(user => {
+                            if (user.username) existingUsernames.add(user.username);
+                        });
+                    }
+                    
+                    while (existingUsernames.has(uniqueUsername)) {
+                        uniqueUsername = `${username}${counter}`;
+                        counter++;
+                    }
+                    
+                    const profile = {
+                        uid: firebaseUser.uid,
+                        displayName: displayName,
+                        username: uniqueUsername,
+                        usernameDisplay: uniqueUsername,
+                        photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150',
+                        about: '',
+                        joinedAt: Date.now(),
+                        email: firebaseUser.email || '',
+                        provider: firebaseUser.providerData?.[0]?.providerId || 'email'
+                    };
+                    
+                    await set(userRef, profile);
+                    window.state.profile = profile;
+                    console.log('New profile created');
+                }
+
+                // Проверяем админские права
+                if ((window.state.profile.usernameDisplay || '').toLowerCase() === 'admin') {
+                    window.state.isAdmin = true;
+                    console.log('Admin user detected');
+                }
+
+                // Показываем приложение
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                
+                setTimeout(() => {
+                    document.getElementById('app').classList.add('visible');
+                }, 50);
+
+                // Обновляем UI профиля в сайдбаре
+                const userProfileImg = document.getElementById('user-profile-img');
+                const userDisplayName = document.getElementById('user-display-name');
+                const userDisplayTag = document.getElementById('user-display-tag');
+                
+                if (userProfileImg) {
+                    userProfileImg.src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
+                    userProfileImg.onclick = () => uiAction.openProfile(window.state.user.uid);
+                }
+                
+                if (userDisplayName) {
+                    userDisplayName.innerText = window.state.profile.displayName || '';
+                }
+                
+                if (userDisplayTag) {
+                    userDisplayTag.innerText = '@' + (window.state.profile.usernameDisplay || '');
+                }
+
+                // Инициализируем все менеджеры
+                themeCore.load();
+                notificationManager.init();
+                unreadTracker.init();
+                onlineManager.init();
+                
+                // Запускаем слушатели
+                initUsersCacheListener();
+                initConversationsListener();
+                initSearch();
+                initGroupSearch();
+                
+                // Открываем глобальный чат по умолчанию
+                uiAction.openGlobal();
+
+                // Настраиваем меню
+                const menuBtn = document.getElementById('chat-top-menu-btn');
+                const topMenu = document.getElementById('chat-top-menu');
+                
+                if (menuBtn && topMenu) {
+                    menuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        topMenu.classList.toggle('active');
+                    });
+                }
+
+            } catch (err) {
+                console.error('Error during post-auth flow:', err);
+                
+                let errorMsg = 'Ошибка при загрузке профиля';
+                if (err.code === 'permission-denied') {
+                    errorMsg = 'Нет доступа к базе данных. Проверьте правила Firebase.';
+                } else {
+                    errorMsg = err.message || errorMsg;
+                }
+                
+                showAuthError(errorMsg);
+            }
+        });
+
+        /* ==================== EMAIL/ПАРОЛЬ АВТОРИЗАЦИЯ ==================== */
+        document.getElementById('to-register').addEventListener('click', () => {
+            clearAuthMessages();
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('register-view').style.display = 'block';
+        });
+        
+        document.getElementById('to-login').addEventListener('click', () => {
+            clearAuthMessages();
+            document.getElementById('register-view').style.display = 'none';
+            document.getElementById('login-view').style.display = 'block';
+        });
+
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            clearAuthMessages();
+            const email = document.getElementById('login-email').value.trim();
+            const pwd = document.getElementById('login-password').value;
+            
+            if (!email || !pwd) { 
+                showAuthError('Введите email и пароль'); 
+                return; 
+            }
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, pwd);
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || 'Ошибка входа');
+            }
+        });
+
+        document.getElementById('register-btn').addEventListener('click', async () => {
+            clearAuthMessages();
+            const displayName = document.getElementById('reg-displayname').value.trim();
+            const username = document.getElementById('reg-username').value.trim().replace('@','');
+            const email = document.getElementById('reg-email').value.trim();
+            const pwd = document.getElementById('reg-password').value;
+            const avatar = document.getElementById('reg-avatar-url').value.trim();
+            
+            if (!displayName || !username || !email || !pwd) { 
+                showAuthError('Заполните все обязательные поля'); 
+                return; 
+            }
+            
+            if (pwd.length < 6) { 
+                showAuthError('Пароль минимум 6 символов'); 
+                return; 
+            }
+            
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+                const profile = {
+                    uid: cred.user.uid,
+                    displayName,
+                    username: username.toLowerCase(),
+                    usernameDisplay: username,
+                    photoURL: avatar || cred.user.photoURL || 'https://via.placeholder.com/150',
+                    about: '',
+                    joinedAt: Date.now(),
+                    email: email,
+                    provider: 'email'
+                };
+                
+                await set(ref(db, `users/${cred.user.uid}`), profile);
+                showAuthInfo('Аккаунт создан! Выполняется вход...');
+                
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || 'Ошибка регистрации');
+            }
+        });
+
+        document.getElementById('forgot-password').addEventListener('click', async () => {
+            clearAuthMessages();
+            const email = prompt('Введите ваш email для восстановления пароля:');
+            if (!email) return;
+            
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showAuthInfo('Письмо для сброса пароля отправлено (проверьте почту).');
+            } catch (err) {
+                console.error(err);
+                showAuthError(err.message || 'Ошибка отправки письма');
+            }
+        });
+
+        document.getElementById('signout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+            } catch (err) {
+                console.error('Sign out failed', err);
+                alert('Ошибка выхода: ' + (err.message || err));
+            }
+        });
+
+        /* ==================== CLEANUP AFTER SIGNOUT ==================== */
+        function teardownAfterSignOut() {
+            document.getElementById('user-profile-img').onclick = null;
+            if (usersListener) usersListener();
+            if (dmsListener) dmsListener();
+            if (groupsListener) groupsListener();
+            
+            const convList = document.getElementById('conversations-list');
+            convList.querySelectorAll('.chat-row').forEach(el => {
+                if (el.id !== 'row-global') el.remove();
+            });
+            
+            Object.keys(conversationsIndex).forEach(k => delete conversationsIndex[k]);
+        }
+
         /* ==================== NOTIFICATION MANAGER ==================== */
         window.notificationManager = {
             isSupported: 'Notification' in window && 'serviceWorker' in navigator,
@@ -522,7 +878,6 @@
                 
                 this.permission = Notification.permission;
                 
-                // Показываем popup если разрешение не дано
                 if (this.permission === 'default' && this.enabled) {
                     setTimeout(() => {
                         this.showPopup();
@@ -557,10 +912,7 @@
                 if (permission === 'granted') {
                     this.enabled = true;
                     localStorage.setItem('narrators_notifEnabled', 'true');
-                    
-                    // Показываем тестовое уведомление
                     this.showTestNotification();
-                    
                     alert('Уведомления включены!');
                 } else {
                     this.enabled = false;
@@ -572,7 +924,7 @@
                 if (this.permission !== 'granted' || !this.enabled) return;
                 
                 const notification = new Notification('Narrators Messenger', {
-                    body: 'Уведомления успешно включены! Вы будете получать оповещения о новых сообщениях.',
+                    body: 'Уведомления успешно включены!',
                     icon: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png',
                     tag: 'test-notification'
                 });
@@ -582,7 +934,7 @@
             
             showMessageNotification: function(message, senderName, chatTitle) {
                 if (this.permission !== 'granted' || !this.enabled) return;
-                if (document.hasFocus()) return; // Не показываем если окно активно
+                if (document.hasFocus()) return;
                 
                 const text = message.text || '';
                 const truncatedText = text.length > 100 ? text.substring(0, 100) + '...' : text;
@@ -591,7 +943,6 @@
                     body: `${chatTitle}: ${truncatedText}`,
                     icon: message.photoURL || 'https://via.placeholder.com/150',
                     tag: `msg-${message.uid}-${Date.now()}`,
-                    requireInteraction: false,
                     silent: !this.soundEnabled
                 });
                 
@@ -604,7 +955,6 @@
             },
             
             setupListeners: function() {
-                // Связываем настройки в модалке
                 const notifEnabled = document.getElementById('notif-enabled');
                 const notifSound = document.getElementById('notif-sound');
                 
@@ -627,7 +977,6 @@
                     });
                 }
                 
-                // Кнопка в меню
                 const menuBtn = document.getElementById('menu-notifications');
                 if (menuBtn) {
                     menuBtn.onclick = () => {
@@ -671,7 +1020,6 @@
                     const chatKey = chatType + ':' + chatId;
                     const lastSeen = this.lastSeen[chatKey] || 0;
                     
-                    // Если сообщение новое и не от нас, и чат не активен
                     if (lastMsgTime > lastSeen && 
                         lastMsg.uid !== window.state.user.uid && 
                         window.state.currentChat.id !== chatId) {
@@ -679,7 +1027,6 @@
                         this.counts[chatKey] = (this.counts[chatKey] || 0) + 1;
                         this.updateBadge(chatKey);
                         
-                        // Уведомление
                         if (notificationManager.enabled && notificationManager.permission === 'granted') {
                             notificationManager.showMessageNotification(
                                 lastMsg, 
@@ -733,7 +1080,6 @@
             init: function() {
                 if (!window.state.user) return;
                 
-                // Устанавливаем онлайн статус
                 const userStatusRef = ref(db, `status/${window.state.user.uid}`);
                 const isOfflineForDatabase = {
                     state: 'offline',
@@ -747,7 +1093,6 @@
                 onDisconnect(userStatusRef).set(isOfflineForDatabase);
                 set(userStatusRef, isOnlineForDatabase);
                 
-                // Слушаем статусы других пользователей
                 const statusRef = ref(db, 'status');
                 onValue(statusRef, (snapshot) => {
                     const statuses = snapshot.val() || {};
@@ -762,13 +1107,11 @@
             },
             
             updateUI: function() {
-                // Обновляем статус текущего пользователя
                 const userStatusEl = document.getElementById('user-online-status');
                 if (userStatusEl) {
                     userStatusEl.classList.toggle('active', true);
                 }
                 
-                // Обновляем статус в текущем чате
                 const chat = window.state.currentChat;
                 const chatStatusEl = document.getElementById('chat-top-online');
                 const onlineStatusEl = document.getElementById('chat-online-status');
@@ -782,7 +1125,6 @@
                     }
                 }
                 
-                // Обновляем точки в списке чатов
                 document.querySelectorAll('.chat-row').forEach(row => {
                     const convKey = row.dataset.convKey;
                     if (!convKey) return;
@@ -799,7 +1141,6 @@
                         
                         let isOnline = false;
                         if (type === 'dm') {
-                            // Находим otherUid для этого DM
                             const otherUid = Object.keys(conversationsIndex[convKey]?.members || {}).find(u => u !== window.state.user?.uid);
                             isOnline = otherUid ? window.state.onlineUsers[otherUid] : false;
                         }
@@ -820,7 +1161,6 @@
                         timestamp: Date.now()
                     });
                     
-                    // Автоматически удаляем через 5 секунд
                     setTimeout(() => {
                         remove(typingRef);
                     }, 5000);
@@ -863,187 +1203,6 @@
             }
         };
 
-        /* ==================== АВТОРИЗАЦИЯ ==================== */
-        const authErrorEl = document.getElementById('auth-error');
-        const authInfoEl = document.getElementById('auth-info');
-        
-        function showAuthError(msg) { authErrorEl.style.display = 'block'; authErrorEl.innerText = msg; }
-        function clearAuthMessages() { authErrorEl.style.display = 'none'; authErrorEl.innerText = ''; authInfoEl.style.display = 'none'; authInfoEl.innerText = ''; }
-
-        document.getElementById('to-register').addEventListener('click', () => {
-            clearAuthMessages();
-            document.getElementById('login-view').style.display = 'none';
-            document.getElementById('register-view').style.display = 'block';
-        });
-        document.getElementById('to-login').addEventListener('click', () => {
-            clearAuthMessages();
-            document.getElementById('register-view').style.display = 'none';
-            document.getElementById('login-view').style.display = 'block';
-        });
-
-        document.getElementById('login-btn').addEventListener('click', async () => {
-            clearAuthMessages();
-            const email = document.getElementById('login-email').value.trim();
-            const pwd = document.getElementById('login-password').value;
-            if (!email || !pwd) { showAuthError('Введите email и пароль'); return; }
-            try {
-                await signInWithEmailAndPassword(auth, email, pwd);
-            } catch (err) {
-                console.error(err);
-                showAuthError(err.message || 'Ошибка входа');
-            }
-        });
-
-        document.getElementById('register-btn').addEventListener('click', async () => {
-            clearAuthMessages();
-            const displayName = document.getElementById('reg-displayname').value.trim();
-            const username = document.getElementById('reg-username').value.trim().replace('@','');
-            const email = document.getElementById('reg-email').value.trim();
-            const pwd = document.getElementById('reg-password').value;
-            const avatar = document.getElementById('reg-avatar-url').value.trim();
-            if (!displayName || !username || !email || !pwd) { showAuthError('Заполните все обязательные поля'); return; }
-            if (pwd.length < 6) { showAuthError('Пароль минимум 6 символов'); return; }
-            try {
-                const cred = await createUserWithEmailAndPassword(auth, email, pwd);
-                const profile = {
-                    uid: cred.user.uid,
-                    displayName,
-                    username: username.toLowerCase(),
-                    usernameDisplay: username,
-                    photoURL: avatar || cred.user.photoURL || 'https://via.placeholder.com/150',
-                    about: '',
-                    joinedAt: Date.now()
-                };
-                await set(ref(db, `users/${cred.user.uid}`), profile);
-            } catch (err) {
-                console.error(err);
-                showAuthError(err.message || 'Ошибка регистрации');
-            }
-        });
-
-        document.getElementById('forgot-password').addEventListener('click', async () => {
-            clearAuthMessages();
-            const email = prompt('Введите ваш email для восстановления пароля:');
-            if (!email) return;
-            try {
-                await sendPasswordResetEmail(auth, email);
-                authInfoEl.style.display = 'block';
-                authInfoEl.innerText = 'Письмо для сброса пароля отправлено (проверьте почту).';
-            } catch (err) {
-                console.error(err);
-                showAuthError(err.message || 'Ошибка отправки письма');
-            }
-        });
-
-        document.getElementById('google-btn').addEventListener('click', async () => {
-            clearAuthMessages();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (err) {
-                console.warn('Popup failed — falling back to redirect', err);
-                try { await signInWithRedirect(auth, provider); }
-                catch (e) { console.error(e); showAuthError(e.message || 'Ошибка Google входа'); }
-            }
-        });
-
-        document.getElementById('signout-btn').addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-            } catch (err) {
-                console.error('Sign out failed', err);
-                alert('Ошибка выхода: ' + (err.message || err));
-            }
-        });
-
-        /* ==================== ОБРАБОТКА АВТОРИЗАЦИИ ==================== */
-        onAuthStateChanged(auth, async (firebaseUser) => {
-            console.log('onAuthStateChanged', firebaseUser);
-            clearAuthMessages();
-            
-            if (!firebaseUser) {
-                teardownAfterSignOut();
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('app').classList.remove('visible');
-                document.getElementById('app').style.display = 'none';
-                return;
-            }
-            
-            window.state.user = firebaseUser;
-            
-            try {
-                const snap = await get(child(ref(db), `users/${firebaseUser.uid}`));
-                if (snap.exists()) {
-                    window.state.profile = snap.val();
-                } else {
-                    const displayName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'User');
-                    const username = (displayName.split(' ')[0] || displayName).toLowerCase();
-                    const profile = {
-                        uid: firebaseUser.uid,
-                        displayName,
-                        username: username,
-                        usernameDisplay: username,
-                        photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150',
-                        about: '',
-                        joinedAt: Date.now()
-                    };
-                    await set(ref(db, `users/${firebaseUser.uid}`), profile);
-                    window.state.profile = profile;
-                }
-
-                if ((window.state.profile.usernameDisplay || '').toLowerCase() === 'admin') window.state.isAdmin = true;
-
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                setTimeout(() => document.getElementById('app').classList.add('visible'), 20);
-
-                // Обновляем UI профиля
-                document.getElementById('user-profile-img').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
-                document.getElementById('user-display-name').innerText = window.state.profile.displayName || '';
-                document.getElementById('user-display-tag').innerText = '@' + (window.state.profile.usernameDisplay || '');
-
-                document.getElementById('user-profile-img').onclick = () => uiAction.openProfile(window.state.user.uid);
-
-                // Инициализируем менеджеры
-                themeCore.load();
-                notificationManager.init();
-                unreadTracker.init();
-                onlineManager.init();
-                
-                initUsersCacheListener();
-                initConversationsListener();
-                initSearch();
-                initGroupSearch();
-                
-                uiAction.openGlobal();
-
-                // Меню
-                document.getElementById('chat-top-menu-btn').addEventListener('click', (e) => {
-                    const menu = document.getElementById('chat-top-menu');
-                    menu.classList.toggle('active');
-                });
-                document.getElementById('menu-personalization').onclick = () => { uiAction.openSettings(); document.getElementById('chat-top-menu').classList.remove('active'); };
-                document.getElementById('menu-settings').onclick = () => { uiAction.openSettings(); document.getElementById('chat-top-menu').classList.remove('active'); };
-                document.getElementById('menu-add-group').onclick = () => { uiAction.openCreateGroup(); document.getElementById('chat-top-menu').classList.remove('active'); };
-
-            } catch (err) {
-                console.error('Error during post-auth flow', err);
-                showAuthError('Ошибка при загрузке профиля: ' + (err.message || err));
-            }
-        });
-
-        function teardownAfterSignOut() {
-            document.getElementById('user-profile-img').onclick = null;
-            if (usersListener) usersListener();
-            if (dmsListener) dmsListener();
-            if (groupsListener) groupsListener();
-            
-            const convList = document.getElementById('conversations-list');
-            convList.querySelectorAll('.chat-row').forEach(el => {
-                if (el.id !== 'row-global') el.remove();
-            });
-            Object.keys(conversationsIndex).forEach(k => delete conversationsIndex[k]);
-        }
-
         /* ==================== КЭШ ПОЛЬЗОВАТЕЛЕЙ ==================== */
         function initUsersCacheListener() {
             const usersRef = ref(db, 'users');
@@ -1061,7 +1220,6 @@
 
         /* ==================== СПИСОК ЧАТОВ ==================== */
         function initConversationsListener() {
-            // Личные сообщения
             const dmsRef = ref(db, 'dms');
             dmsListener = onValue(dmsRef, (snapshot) => {
                 const all = snapshot.val() || {};
@@ -1087,7 +1245,6 @@
                 });
             });
 
-            // Группы
             const groupsRef = ref(db, 'groups');
             groupsListener = onValue(groupsRef, (snapshot) => {
                 const all = snapshot.val() || {};
@@ -1109,7 +1266,6 @@
                 });
             });
             
-            // Глобальный чат
             unreadTracker.setupChatListener('global', 'global', 'messages');
         }
 
@@ -1144,7 +1300,6 @@
             `;
             
             row.onclick = () => {
-                // Убираем активный класс у всех
                 document.querySelectorAll('.chat-row').forEach(r => r.classList.remove('active'));
                 row.classList.add('active');
                 
@@ -1270,14 +1425,22 @@
                             <div style="font-weight:700;">${u.displayName}</div>
                             <div style="font-size:12px; color:var(--text-sec);">@${u.usernameDisplay||u.username}</div>
                         </div>
-                        <button class="btn btn-primary" style="width:auto; padding:8px 10px;" onclick="uiAction.selectGroupMember('${u.uid}', '${escapeHtml(u.displayName)}', '${escapeHtml(u.photoURL||'')}')">Добавить</button>
+                        <button class="btn btn-primary" style="width:auto; padding:8px 10px;" onclick="uiAction.selectGroupMember('${escapeHtml(u.uid)}', '${escapeHtml(u.displayName)}', '${escapeHtml(u.photoURL||'')}')">Добавить</button>
                     `;
                     results.appendChild(row);
                 });
             });
         }
 
-        function escapeHtml(s) { return (s||'').replace(/'/g, "\\'").replace(/"/g,'\\"'); }
+        function escapeHtml(s) { 
+            if (!s) return '';
+            return s.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         /* ==================== CHAT ENGINE ==================== */
         window.chatEngine = {
@@ -1286,7 +1449,6 @@
                 const text = input.value.trim();
                 if (!text) return;
                 
-                // Сбрасываем typing статус
                 const chat = window.state.currentChat;
                 onlineManager.setTyping(chat.type, chat.id, false);
                 
@@ -1320,10 +1482,7 @@
                 const messagesContainer = document.getElementById('messages-view');
                 messagesContainer.innerHTML = '<div class="muted-xs" style="padding:12px; opacity:0.6;">Загрузка сообщений...</div>';
                 
-                // Помечаем как прочитанное
                 unreadTracker.markAsRead(chatType, chatId);
-                
-                // Настраиваем typing listener
                 onlineManager.setupTypingListener(chatType, chatId);
                 
                 const messagesRef = ref(db, path);
@@ -1467,7 +1626,6 @@
             },
 
             scrollToMessage: function(msgUid) {
-                // Простая реализация - можно улучшить
                 const msgEl = document.querySelector(`[id^="msg-"]`);
                 if (msgEl) msgEl.scrollIntoView({ behavior: 'smooth' });
             }
@@ -1627,7 +1785,6 @@
                     document.getElementById('btn-edit-profile').style.display = 'inline-flex';
                     document.getElementById('btn-save-profile').style.display = 'none';
                     
-                    // Показываем уведомление
                     const notice = document.createElement('div');
                     notice.className = 'notice success';
                     notice.textContent = 'Профиль сохранён';
@@ -1951,6 +2108,11 @@
         window.themeCore = window.themeCore;
 
         themeCore.load();
+
+        /* ==================== ДЕБАГ ==================== */
+        console.log('Narrators Messenger v0.1.7 loaded');
+        console.log('Firebase project:', firebaseConfig.projectId);
+        console.log('Google Auth configured:', !!provider);
 
     </script>
 </body>
