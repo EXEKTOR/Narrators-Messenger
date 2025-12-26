@@ -7,9 +7,6 @@
     
     <!-- Иконка для уведомлений -->
     <link rel="icon" href="https://via.placeholder.com/64" type="image/x-icon">
-    
-    <!-- Манифест для PWA и уведомлений -->
-    <link rel="manifest" id="manifest" href="data:application/json,{}">
 
     <style>
         :root{
@@ -65,6 +62,7 @@
             gap:12px;
             align-items:center;
             border-bottom:1px solid var(--border);
+            position:relative;
         }
 
         .user-avatar{
@@ -82,48 +80,60 @@
             background:transparent;border:none;padding:8px;border-radius:10px;cursor:pointer;
             display:inline-flex;align-items:center;justify-content:center;
             transition:transform .18s var(--ease), background .18s var(--ease);
+            font-size:20px;
         }
         #sidebar-menu-btn:hover{ background:var(--primary-soft) }
 
-        /* anchored sidebar menu */
-        .sidebar-menu{
-            position:absolute;
-            left:16px;
-            top:80px;
-            width:220px;
-            background:#fff;
-            border-radius:12px;
-            box-shadow:var(--shadow-sm);
-            border:1px solid var(--border);
-            overflow:hidden;
-            transform-origin:top left;
-            transform: translateY(-6px) scale(.98);
-            opacity:0;
-            pointer-events:none;
-            transition: transform .22s var(--ease), opacity .22s var(--ease);
-            z-index:80;
+        /* НОВОЕ МЕНЮ - простое и надежное */
+        #sidebar-menu {
+            position: absolute;
+            left: 16px;
+            top: 80px;
+            width: 220px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            z-index: 100;
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
-        .sidebar-menu.active{
-            transform: translateY(0) scale(1);
-            opacity:1;
-            pointer-events:auto;
+        
+        #sidebar-menu.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
         }
-        .sidebar-menu .item{
-            padding:12px 14px;
-            cursor:pointer;
-            font-weight:600;
-            color:#123;
-            display:flex;
-            align-items:center;
-            gap:10px;
-            background:transparent;
-            transition: background .12s var(--ease), transform .12s var(--ease);
+        
+        #sidebar-menu .item {
+            padding: 12px 14px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #123;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: transparent;
+            transition: background .12s var(--ease);
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            font-size: 14px;
         }
-        .sidebar-menu .item:hover{
-            background:linear-gradient(90deg,var(--primary-soft), transparent);
-            transform: translateX(4px);
+        
+        #sidebar-menu .item:hover {
+            background: linear-gradient(90deg, var(--primary-soft), transparent);
         }
-        .sidebar-menu .divider{ height:1px; background:var(--border); margin:6px 0 }
+        
+        #sidebar-menu .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 4px 0;
+        }
 
         .search-wrap { padding:12px; }
         .input-field{
@@ -326,16 +336,17 @@
                     <div class="name" id="user-display-name">Загрузка...</div>
                     <div class="tag muted-xs" id="user-display-tag">@username</div>
                 </div>
-                <button id="sidebar-menu-btn" aria-expanded="false" title="Открыть меню">≡</button>
-            </div>
-
-            <div id="sidebar-menu" class="sidebar-menu" aria-hidden="true">
-                <div class="item" id="menu-personalization">🎨 Персонализация</div>
-                <div class="item" id="menu-add-group">➕ Добавить группу</div>
-                <div class="item" id="menu-notifications">🔔 Уведомления</div>
-                <div class="divider"></div>
-                <div style="padding:10px;">
-                    <input id="sidebar-search" class="input-field" placeholder="Поиск по @тегу или имени...">
+                <button id="sidebar-menu-btn" aria-expanded="false" title="Открыть меню">☰</button>
+                
+                <!-- НОВОЕ МЕНЮ - простой список -->
+                <div id="sidebar-menu" aria-hidden="true">
+                    <button class="item" onclick="uiAction.openSettings(); toggleSidebarMenu()">🎨 Персонализация</button>
+                    <button class="item" onclick="uiAction.openCreateGroup(); toggleSidebarMenu()">➕ Добавить группу</button>
+                    <button class="item" onclick="uiAction.openSettings(); toggleSidebarMenu()">🔔 Уведомления</button>
+                    <div class="divider"></div>
+                    <div style="padding:10px;">
+                        <input id="sidebar-search" class="input-field" placeholder="Поиск по @тегу или имени..." onfocus="toggleSidebarMenu()">
+                    </div>
                 </div>
             </div>
 
@@ -580,6 +591,63 @@
             
             return '#3390ec';
         }
+
+        /* НОВАЯ ФУНКЦИЯ ДЛЯ УПРАВЛЕНИЯ МЕНЮ */
+        function toggleSidebarMenu() {
+            const menu = document.getElementById('sidebar-menu');
+            const button = document.getElementById('sidebar-menu-btn');
+            
+            if (menu && button) {
+                if (menu.classList.contains('active')) {
+                    menu.classList.remove('active');
+                    button.setAttribute('aria-expanded', 'false');
+                    menu.setAttribute('aria-hidden', 'true');
+                } else {
+                    menu.classList.add('active');
+                    button.setAttribute('aria-expanded', 'true');
+                    menu.setAttribute('aria-hidden', 'false');
+                }
+            }
+        }
+        
+        // Закрытие меню при клике вне его
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('sidebar-menu');
+            const button = document.getElementById('sidebar-menu-btn');
+            
+            if (menu && button && menu.classList.contains('active')) {
+                // Проверяем, был ли клик по меню или кнопке меню
+                const isClickInsideMenu = menu.contains(event.target);
+                const isClickOnButton = button.contains(event.target);
+                
+                // Если клик был вне меню и не по кнопке, закрываем меню
+                if (!isClickInsideMenu && !isClickOnButton) {
+                    menu.classList.remove('active');
+                    button.setAttribute('aria-expanded', 'false');
+                    menu.setAttribute('aria-hidden', 'true');
+                }
+            }
+            
+            // Закрытие контекстного меню сообщений
+            if (!event.target.closest('#context-popup')) {
+                const p = document.getElementById('context-popup');
+                if (p) p.style.display = 'none';
+            }
+        });
+        
+        // Закрытие меню по Escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const menu = document.getElementById('sidebar-menu');
+                const button = document.getElementById('sidebar-menu-btn');
+                
+                if (menu && menu.classList.contains('active')) {
+                    menu.classList.remove('active');
+                    button.setAttribute('aria-expanded', 'false');
+                    menu.setAttribute('aria-hidden', 'true');
+                }
+            }
+        });
 
         /* Менеджер уведомлений */
         window.notificationManager = {
@@ -941,6 +1009,15 @@
                 // click avatar opens own profile
                 document.getElementById('user-profile-img').onclick = () => uiAction.openProfile(window.state.user.uid);
 
+                // Инициализация кнопки меню
+                const sidebarBtn = document.getElementById('sidebar-menu-btn');
+                if (sidebarBtn) {
+                    sidebarBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        toggleSidebarMenu();
+                    };
+                }
+
                 // init app features
                 themeCore.load();
                 initUsersCacheListener();
@@ -952,28 +1029,6 @@
                 notificationManager.init();
                 
                 uiAction.openGlobal();
-
-                // sidebar menu wiring - ИСПРАВЛЕНО: убрана анимация закрытия через время
-                const sidebarBtn = document.getElementById('sidebar-menu-btn');
-                const sidebarMenu = document.getElementById('sidebar-menu');
-                sidebarBtn.onclick = (e) => {
-                    const expanded = sidebarBtn.getAttribute('aria-expanded') === 'true';
-                    if (expanded) closeSidebarMenu();
-                    else openSidebarMenu();
-                };
-                
-                document.getElementById('menu-personalization').onclick = () => { 
-                    uiAction.openSettings(); 
-                    closeSidebarMenu(); 
-                };
-                document.getElementById('menu-add-group').onclick = () => { 
-                    uiAction.openCreateGroup(); 
-                    closeSidebarMenu(); 
-                };
-                document.getElementById('menu-notifications').onclick = () => {
-                    uiAction.openSettings();
-                    closeSidebarMenu();
-                };
 
             } catch (err) {
                 console.error('post-auth error', err);
@@ -1890,75 +1945,6 @@
 
         initGroupSearch();
 
-        /* Polish: sidebar menu open/close with animations - ИСПРАВЛЕНО */
-        const sidebarBtn = document.getElementById('sidebar-menu-btn');
-        const sidebarMenu = document.getElementById('sidebar-menu');
-
-        function openSidebarMenu(){
-            if (!sidebarMenu || !sidebarBtn) return;
-            sidebarMenu.classList.add('active');
-            sidebarMenu.setAttribute('aria-hidden','false');
-            sidebarBtn.setAttribute('aria-expanded','true');
-            const items = sidebarMenu.querySelectorAll('.item');
-            items.forEach((it, i) => {
-                it.style.opacity = '0';
-                it.style.transform = 'translateY(6px)';
-                setTimeout(() => { 
-                    it.style.transition = `transform .28s ${0.04 + i*0.03}s var(--ease), opacity .22s ${0.04 + i*0.03}s var(--ease)`; 
-                    it.style.opacity = '1'; 
-                    it.style.transform = 'none'; 
-                }, 20);
-            });
-            
-            // УБРАН setTimeout для закрытия - меню теперь закрывается только по клику вне меню
-        }
-
-        function closeSidebarMenu(){
-            if (!sidebarMenu || !sidebarBtn) return;
-            const items = Array.from(sidebarMenu.querySelectorAll('.item'));
-            items.reverse().forEach((it, idx) => {
-                it.style.transition = `transform .16s ${idx*0.02}s var(--ease), opacity .12s ${idx*0.02}s var(--ease)`;
-                it.style.transform = 'translateY(6px)';
-                it.style.opacity = '0';
-            });
-            setTimeout(() => {
-                sidebarMenu.classList.remove('active');
-                sidebarMenu.setAttribute('aria-hidden','true');
-                sidebarBtn.setAttribute('aria-expanded','false');
-                items.reverse().forEach(it => { 
-                    it.style.transition=''; 
-                    it.style.transform=''; 
-                    it.style.opacity=''; 
-                });
-            }, 220);
-        }
-
-        document.addEventListener('click', (e) => {
-            if (sidebarMenu && sidebarBtn && !sidebarMenu.contains(e.target) && !sidebarBtn.contains(e.target)) {
-                if (sidebarMenu.classList.contains('active')) closeSidebarMenu();
-            }
-            if (!e.target.closest('#context-popup')) {
-                const p = document.getElementById('context-popup');
-                if (p) p.style.display = 'none';
-            }
-        });
-
-        document.addEventListener('keydown', (e) => { 
-            if (e.key === 'Escape' && sidebarMenu && sidebarMenu.classList.contains('active')) {
-                closeSidebarMenu();
-            }
-        });
-
-        if (sidebarBtn) {
-            sidebarBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (!sidebarMenu) return;
-                const isOpen = sidebarMenu.classList.contains('active');
-                if (isOpen) closeSidebarMenu();
-                else openSidebarMenu();
-            });
-        }
-
         // animate new conversation rows
         const convList = document.getElementById('conversations-list');
         if (convList) {
@@ -1990,6 +1976,7 @@
         window.notificationManager = notificationManager;
         window.escapeHtml = escapeHtml;
         window.rgbToHex = rgbToHex;
+        window.toggleSidebarMenu = toggleSidebarMenu;
 
         // load theme
         themeCore.load();
