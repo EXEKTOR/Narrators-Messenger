@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Narrators Messenger v0.1.6</title>
+    <title>Narrators Messenger v1.7</title>
     
     <!-- Иконка для уведомлений -->
     <link rel="icon" href="https://via.placeholder.com/64" type="image/x-icon">
@@ -23,6 +23,7 @@
             --msg-other: #f4f4f5;
             --msg-other-text: #000000;
             --font-size:16px;
+            --message-border-radius: 14px; /* НОВОЕ: Радиус сообщений */
         }
 
         *{box-sizing:border-box;margin:0;padding:0}
@@ -168,7 +169,7 @@
         .msg-wrapper.other-msg{ justify-content:flex-start }
 
         .msg-bubble{
-            background:var(--msg-other); padding:12px 14px; border-radius:14px; max-width:72%; box-shadow:0 6px 20px rgba(11,22,39,0.04);
+            background:var(--msg-other); padding:12px 14px; border-radius:var(--message-border-radius, 14px); max-width:72%; box-shadow:0 6px 20px rgba(11,22,39,0.04);
             transition: transform .12s var(--ease), box-shadow .12s var(--ease);
         }
         .msg-bubble:hover{ transform:translateY(-3px); box-shadow:0 10px 30px rgba(11,22,39,0.06) }
@@ -181,7 +182,7 @@
 
         .profile-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:10001; display:none; backdrop-filter:blur(3px); }
         .profile-overlay.active { display:block; }
-        .profile-modal, .settings-modal, .group-modal{ transition:opacity .22s var(--ease), transform .22s var(--ease), visibility .22s var(--ease); will-change:transform,opacity; }
+        .profile-modal, .settings-modal, .group-modal, .notifications-modal{ transition:opacity .22s var(--ease), transform .22s var(--ease), visibility .22s var(--ease); will-change:transform,opacity; }
 
         .profile-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); width:92%; max-width:520px; background:#fff; border-radius:14px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,0.3); z-index:10002; display:none; opacity:0; }
         .profile-modal.active{ display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
@@ -191,6 +192,9 @@
 
         .group-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); background:#fff; z-index:10004; width:92%; max-width:620px; border-radius:12px; padding:16px; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
         .group-modal.active{ display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
+
+        .notifications-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.95); background:#fff; z-index:10005; width:92%; max-width:500px; border-radius:12px; padding:16px; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+        .notifications-modal.active{ display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
 
         .btn{ border-radius:10px; padding:8px 10px; transition:transform .12s var(--ease), box-shadow .12s var(--ease) }
         .btn:active{ transform:scale(.98) }
@@ -215,6 +219,7 @@
             display: flex;
             gap: 8px;
             align-items: center;
+            position: relative;
         }
 
         #main-input {
@@ -286,6 +291,107 @@
             margin-left: auto;
         }
 
+        /* НОВОЕ: Окно предпросмотра в настройках */
+        .settings-preview {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+        }
+
+        .preview-message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: var(--message-border-radius, 14px);
+            background: var(--msg-other);
+            max-width: 80%;
+        }
+
+        .preview-message.my {
+            background: var(--msg-me);
+            margin-left: auto;
+            text-align: right;
+        }
+
+        /* НОВОЕ: Меню прикрепления файлов */
+        .attach-menu {
+            position: absolute;
+            bottom: 60px;
+            left: 12px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px;
+            z-index: 1000;
+            display: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .attach-option {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            text-align: left;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background .12s var(--ease);
+        }
+
+        .attach-option:hover {
+            background: var(--primary-soft);
+        }
+
+        /* НОВОЕ: История уведомлений */
+        .notification-history {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 10px;
+        }
+
+        .notification-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        /* НОВОЕ: Информация о группе */
+        .group-info-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .members-list {
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .member-item:last-child {
+            border-bottom: none;
+        }
+
         @media (max-width:900px){
             #sidebar{ 
                 width:320px; 
@@ -322,11 +428,6 @@
         <button onclick="notificationManager.hideBanner()" style="background: transparent; color: white; padding: 0; margin-left: 4px;">✕</button>
     </div>
 
-    <!-- AUTH screens (same as before) -->
-    <div id="screen-auth" class="panel" style="display:none;">
-        <!-- kept minimal because main flows run in app; auth UI lives in previous versions -->
-    </div>
-
     <!-- MAIN APP -->
     <div id="app" class="fade-in" style="display:flex;">
         <div id="sidebar" class="sidebar">
@@ -338,11 +439,11 @@
                 </div>
                 <button id="sidebar-menu-btn" aria-expanded="false" title="Открыть меню">☰</button>
                 
-                <!-- НОВОЕ МЕНЮ - простой список -->
+                <!-- НОВОЕ МЕНЮ - с отдельной кнопкой уведомлений -->
                 <div id="sidebar-menu" aria-hidden="true">
                     <button class="item" onclick="uiAction.openSettings(); toggleSidebarMenu()">🎨 Персонализация</button>
                     <button class="item" onclick="uiAction.openCreateGroup(); toggleSidebarMenu()">➕ Добавить группу</button>
-                    <button class="item" onclick="uiAction.openSettings(); toggleSidebarMenu()">🔔 Уведомления</button>
+                    <button class="item" onclick="uiAction.openNotifications(); toggleSidebarMenu()">🔔 Уведомления</button>
                     <div class="divider"></div>
                     <div style="padding:10px;">
                         <input id="sidebar-search" class="input-field" placeholder="Поиск по @тегу или имени..." onfocus="toggleSidebarMenu()">
@@ -385,6 +486,14 @@
             <div class="bottom-controls">
                 <div id="reply-preview"></div>
                 <div class="input-group" style="padding:12px">
+                    <!-- НОВОЕ: Кнопка прикрепления файлов -->
+                    <div style="position: relative;">
+                        <button id="attach-btn" class="btn btn-ghost" style="margin-right:8px;">📎</button>
+                        <div id="attach-menu" class="attach-menu">
+                            <button class="attach-option" onclick="chatEngine.attachFromURL()">Вставить URL картинки</button>
+                            <button class="attach-option" onclick="chatEngine.attachFromFile()">Выбрать файл</button>
+                        </div>
+                    </div>
                     <textarea id="main-input" rows="1" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border)"></textarea>
                     <button id="send-msg-btn" class="btn btn-primary" onclick="chatEngine.sendMessage()">➤</button>
                 </div>
@@ -396,7 +505,7 @@
     <div id="profile-overlay" class="profile-overlay" onclick="uiAction.closeProfile()"></div>
     <div id="profile-modal" class="profile-modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <div style="font-weight:800;">Профиль пользователя</div>
+            <div style="font-weight:800;" id="profile-modal-title">Профиль пользователя</div>
             <button onclick="uiAction.closeProfile()" style="background:transparent; font-size:18px; padding:6px;">✕</button>
         </div>
 
@@ -412,11 +521,27 @@
             </div>
         </div>
 
+        <!-- НОВОЕ: Информация о группе (скрыто по умолчанию) -->
+        <div id="group-info-section" class="group-info-section" style="display:none;">
+            <div style="font-weight:700; margin-bottom:6px;">Участники:</div>
+            <div id="group-members-list" class="members-list">
+                <!-- Список участников будет здесь -->
+            </div>
+        </div>
+
         <div id="profile-edit-area" style="display:none; margin-top:12px;">
             <label style="font-size:13px; color:var(--muted); display:block;">Ссылка на аватар</label>
             <input id="p-avatar-input" class="input-field" placeholder="https://...">
             <label style="font-size:13px; color:var(--muted); display:block; margin-top:8px;">О себе</label>
             <textarea id="p-about-input" class="input-field" rows="4"></textarea>
+            
+            <!-- НОВОЕ: Поля редактирования группы (скрыто по умолчанию) -->
+            <div id="group-edit-fields" style="display:none;">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-top:8px;">Название группы</label>
+                <input id="group-name-input" class="input-field" placeholder="Название группы">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-top:8px;">Описание группы</label>
+                <textarea id="group-description-input" class="input-field" rows="3" placeholder="Описание группы"></textarea>
+            </div>
         </div>
 
         <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
@@ -427,7 +552,7 @@
         </div>
     </div>
 
-    <!-- SETTINGS MODAL -->
+    <!-- SETTINGS MODAL с предпросмотром -->
     <div id="settings-modal" class="settings-modal" aria-hidden="true">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div style="font-weight:800;">Настройки и персонализация</div>
@@ -445,7 +570,7 @@
                 <input id="ui-bg-color" type="color" style="width:100%; height:40px; border:none; margin:8px 0;">
                 <label class="muted-xs">Размер шрифта (px)</label>
                 <input id="ui-font-range" type="range" min="12" max="22" value="16" style="width:100%; margin:8px 0;">
-                <label class="muted-xs">Скругление (px)</label>
+                <label class="muted-xs">Скругление сообщений (px)</label>
                 <input id="ui-radius-range" type="range" min="0" max="30" value="12" style="width:100%; margin:8px 0;">
                 <div style="display:flex; gap:8px; margin-top:12px;">
                     <button class="btn btn-primary" onclick="themeCore.save()">Сохранить</button>
@@ -453,16 +578,48 @@
                 </div>
             </div>
 
+            <!-- НОВОЕ: Окно предпросмотра -->
             <div style="width:260px;">
-                <div style="font-weight:700; margin-bottom:6px;">Настройки уведомлений</div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <button class="btn btn-ghost" onclick="notificationManager.requestPermission()" id="enable-notifications-btn">Включить уведомления</button>
-                    <button class="btn btn-ghost" onclick="notificationManager.testNotification()">Тестовое уведомление</button>
-                    <button class="btn btn-ghost" onclick="uiAction.openCreateGroup()">Создать группу</button>
-                    <div id="notification-status" class="muted-xs" style="margin-top:8px; padding:8px; background:var(--primary-soft); border-radius:8px;">
-                        Статус уведомлений: <span id="notification-status-text">Проверка...</span>
+                <div style="font-weight:700; margin-bottom:6px;">Предпросмотр</div>
+                <div class="settings-preview" id="settings-preview">
+                    <div class="preview-message">
+                        <div style="font-weight:600; margin-bottom:4px;">Другой пользователь</div>
+                        <div>Привет! Как дела?</div>
+                        <div style="font-size:11px; opacity:0.6; text-align:right; margin-top:4px;">10:00</div>
+                    </div>
+                    <div class="preview-message my">
+                        <div style="font-weight:600; margin-bottom:4px;">Вы</div>
+                        <div>Всё отлично, спасибо!</div>
+                        <div style="font-size:11px; opacity:0.6; text-align:right; margin-top:4px;">10:01</div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- НОВОЕ: МОДАЛКА УВЕДОМЛЕНИЙ -->
+    <div id="notifications-overlay" class="profile-overlay" onclick="uiAction.closeNotifications()"></div>
+    <div id="notifications-modal" class="notifications-modal" aria-hidden="true">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-weight:800;">Уведомления</div>
+            <button onclick="uiAction.closeNotifications()" style="background:transparent; font-size:18px; padding:6px;">✕</button>
+        </div>
+
+        <div style="margin-bottom:15px;">
+            <div style="font-weight:700; margin-bottom:6px;">Настройки уведомлений</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="btn btn-primary" onclick="notificationManager.requestPermission()" id="enable-notifications-btn">Включить уведомления</button>
+                <button class="btn btn-ghost" onclick="notificationManager.testNotification()">Тестовое уведомление</button>
+                <div id="notification-status" class="muted-xs" style="padding:8px; background:var(--primary-soft); border-radius:8px;">
+                    Статус уведомлений: <span id="notification-status-text">Проверка...</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div style="font-weight:700; margin-bottom:6px;">Последние уведомления</div>
+            <div id="notifications-history" class="notification-history">
+                <div class="notification-item">Нет уведомлений</div>
             </div>
         </div>
     </div>
@@ -524,7 +681,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyBcrCVxPPU_PVOeFFBJ8sKXehMZyKaB4ks",
             authDomain: "narrators-messenger.firebaseapp.com",
-            databaseURL: "https://narrators-messenger-default-rtdb.firebaseio.com",
+            databaseURL: "https://narrators-messenger-default-rtdb.fireio.com",
             projectId: "narrators-messenger",
             storageBucket: "narrators-messenger.firebasestorage.app",
             messagingSenderId: "421115209686",
@@ -545,7 +702,9 @@
             contextTarget: null,
             currentChat: { type: 'global', id: 'global', title: 'Global Chat Room' },
             notificationPermission: null,
-            serviceWorkerRegistration: null
+            serviceWorkerRegistration: null,
+            currentGroupInfo: null,
+            profileViewMode: 'user' // 'user' или 'group'
         };
 
         const usersCache = {};
@@ -554,11 +713,12 @@
         let groupsListener = null;
         let usersListener = null;
         let currentMessagesUnsub = null;
+        const notificationHistory = JSON.parse(localStorage.getItem('notificationHistory') || '[]');
 
         // Для хранения последнего уведомления (чтобы избежать дублирования)
         let lastNotificationMessageId = null;
         let lastNotificationTime = 0;
-        const NOTIFICATION_COOLDOWN = 3000; // 3 секунды между уведомлениями
+        const NOTIFICATION_COOLDOWN = 3000;
 
         /* Вспомогательные функции */
         function escapeHtml(text) {
@@ -616,11 +776,9 @@
             const button = document.getElementById('sidebar-menu-btn');
             
             if (menu && button && menu.classList.contains('active')) {
-                // Проверяем, был ли клик по меню или кнопке меню
                 const isClickInsideMenu = menu.contains(event.target);
                 const isClickOnButton = button.contains(event.target);
                 
-                // Если клик был вне меню и не по кнопке, закрываем меню
                 if (!isClickInsideMenu && !isClickOnButton) {
                     menu.classList.remove('active');
                     button.setAttribute('aria-expanded', 'false');
@@ -632,6 +790,12 @@
             if (!event.target.closest('#context-popup')) {
                 const p = document.getElementById('context-popup');
                 if (p) p.style.display = 'none';
+            }
+            
+            // Закрытие меню прикрепления файлов
+            if (!event.target.closest('#attach-btn') && !event.target.closest('#attach-menu')) {
+                const attachMenu = document.getElementById('attach-menu');
+                if (attachMenu) attachMenu.style.display = 'none';
             }
         });
         
@@ -646,16 +810,18 @@
                     button.setAttribute('aria-expanded', 'false');
                     menu.setAttribute('aria-hidden', 'true');
                 }
+                
+                const attachMenu = document.getElementById('attach-menu');
+                if (attachMenu) attachMenu.style.display = 'none';
             }
         });
 
-        /* Менеджер уведомлений */
+        /* Менеджер уведомлений с историей */
         window.notificationManager = {
             // Инициализация Service Worker
             initServiceWorker: async function() {
                 if ('serviceWorker' in navigator && 'PushManager' in window) {
                     try {
-                        // Регистрируем Service Worker
                         const registration = await navigator.serviceWorker.register('/sw.js', {
                             scope: './'
                         });
@@ -663,14 +829,11 @@
                         window.state.serviceWorkerRegistration = registration;
                         console.log('Service Worker зарегистрирован:', registration);
                         
-                        // Обновляем статус уведомлений
                         this.updateNotificationStatus();
                         
-                        // Проверяем подписку на пуши
                         const subscription = await registration.pushManager.getSubscription();
                         if (subscription) {
                             console.log('Пользователь подписан на push:', subscription);
-                            // Здесь можно отправить subscription на ваш сервер
                         }
                         
                         return registration;
@@ -696,20 +859,17 @@
                     this.updateNotificationStatus();
                     
                     if (permission === 'granted') {
-                        // Показываем подтверждение
                         this.showNotification('Уведомления включены', 'Вы будете получать уведомления о новых сообщениях');
-                        
-                        // Скрываем баннер
                         this.hideBanner();
-                        
-                        // Инициализируем Service Worker для push-уведомлений
                         await this.initServiceWorker();
-                        
-                        // Сохраняем настройку в локальное хранилище
                         localStorage.setItem('notifications_enabled', 'true');
+                        this.addToHistory('Уведомления включены', 'Вы будете получать уведомления о новых сообщениях');
+                        this.updateHistoryView();
                     } else if (permission === 'denied') {
                         alert('Уведомления заблокированы. Вы можете включить их в настройках браузера.');
                         localStorage.setItem('notifications_enabled', 'false');
+                        this.addToHistory('Уведомления отключены', 'Вы не будете получать уведомления');
+                        this.updateHistoryView();
                     }
                 } catch (error) {
                     console.error('Ошибка запроса разрешения:', error);
@@ -741,7 +901,7 @@
                 switch(permission) {
                     case 'granted':
                         statusText = '✅ Включены';
-                        if (enableBtn) enableBtn.style.display = 'none';
+                        if (enableBtn) enableBtn.innerText = 'Отключить уведомления';
                         bannerVisible = false;
                         break;
                     case 'denied':
@@ -763,7 +923,6 @@
                 
                 statusElement.textContent = statusText;
                 
-                // Показываем/скрываем баннер
                 if (banner) {
                     if (bannerVisible && localStorage.getItem('notification_banner_hidden') !== 'true') {
                         banner.style.display = 'flex';
@@ -773,31 +932,71 @@
                 }
             },
 
+            // Добавление уведомления в историю
+            addToHistory: function(title, body) {
+                const notification = {
+                    id: Date.now(),
+                    title: title,
+                    body: body,
+                    timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    date: new Date().toLocaleDateString()
+                };
+                
+                notificationHistory.unshift(notification);
+                if (notificationHistory.length > 20) {
+                    notificationHistory.pop();
+                }
+                
+                localStorage.setItem('notificationHistory', JSON.stringify(notificationHistory));
+                this.updateHistoryView();
+            },
+
+            // Обновление отображения истории
+            updateHistoryView: function() {
+                const historyContainer = document.getElementById('notifications-history');
+                if (!historyContainer) return;
+                
+                if (notificationHistory.length === 0) {
+                    historyContainer.innerHTML = '<div class="notification-item">Нет уведомлений</div>';
+                    return;
+                }
+                
+                historyContainer.innerHTML = '';
+                notificationHistory.slice(0, 10).forEach(notif => {
+                    const item = document.createElement('div');
+                    item.className = 'notification-item';
+                    item.innerHTML = `
+                        <div style="font-weight:600;">${escapeHtml(notif.title)}</div>
+                        <div>${escapeHtml(notif.body)}</div>
+                        <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+                            ${notif.date} ${notif.timestamp}
+                        </div>
+                    `;
+                    historyContainer.appendChild(item);
+                });
+            },
+
             // Показать уведомление
             showNotification: function(title, body, tag = 'new-message') {
-                // Проверяем разрешение
                 if (window.state.notificationPermission !== 'granted') {
                     return;
                 }
                 
-                // Проверяем кулдаун и фокус окна
                 const now = Date.now();
                 if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
-                    return; // Слишком рано после предыдущего уведомления
+                    return;
                 }
                 
-                // Не показываем уведомления если вкладка активна
                 if (document.hasFocus()) {
                     return;
                 }
                 
                 try {
-                    // Создаем опции уведомления
                     const options = {
                         body: body,
                         icon: 'https://via.placeholder.com/192',
                         badge: 'https://via.placeholder.com/96',
-                        tag: tag, // Тег для группировки уведомлений
+                        tag: tag,
                         renotify: true,
                         requireInteraction: false,
                         silent: false,
@@ -818,17 +1017,14 @@
                         ]
                     };
                     
-                    // Показываем уведомление
                     const notification = new Notification(title, options);
                     
-                    // Обработчик клика по уведомлению
                     notification.onclick = function(event) {
                         event.preventDefault();
                         window.focus();
                         notification.close();
                     };
                     
-                    // Обработчик действий
                     notification.onaction = function(event) {
                         if (event.action === 'open') {
                             window.focus();
@@ -836,10 +1032,10 @@
                         notification.close();
                     };
                     
-                    // Обновляем время последнего уведомления
                     lastNotificationTime = now;
                     
-                    // Автоматическое закрытие через 7 секунд
+                    this.addToHistory(title, body);
+                    
                     setTimeout(() => {
                         notification.close();
                     }, 7000);
@@ -847,8 +1043,6 @@
                     return notification;
                 } catch (error) {
                     console.error('Ошибка показа уведомления:', error);
-                    // Fallback для старых браузеров
-                    if (document.hasFocus()) return;
                     const fallbackOptions = {
                         body: body,
                         icon: 'https://via.placeholder.com/192'
@@ -867,6 +1061,7 @@
                         'Это тестовое уведомление от Narrators Messenger',
                         'test-notification'
                     );
+                    this.addToHistory('Тестовое уведомление', 'Это тестовое уведомление от Narrators Messenger');
                 } else {
                     alert('Сначала включите уведомления');
                     this.requestPermission();
@@ -875,38 +1070,33 @@
 
             // Уведомление о новом сообщении
             notifyNewMessage: function(message, chatInfo = null) {
-                // Проверяем разрешение
                 if (window.state.notificationPermission !== 'granted') {
                     return;
                 }
                 
-                // Не уведомляем о своих сообщениях
                 if (message.uid === window.state.user?.uid) {
                     return;
                 }
                 
-                // Проверяем кулдаун
                 const now = Date.now();
                 if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
                     return;
                 }
                 
-                // Получаем информацию об отправителе
                 const sender = usersCache[message.uid] || {};
                 const senderName = sender.displayName || message.displayName || 'Пользователь';
                 const chatName = chatInfo?.title || 'Чат';
                 
-                // Формируем текст сообщения
                 const messageText = message.text || '';
                 const truncatedText = messageText.length > 100 
                     ? messageText.substring(0, 100) + '...' 
                     : messageText;
                 
-                // Создаем уведомление
                 const title = `💬 ${senderName}`;
                 const body = `${truncatedText}\n\nв ${chatName}`;
                 
                 this.showNotification(title, body, `message-${message.uid}`);
+                this.addToHistory(title, body);
             },
 
             // Скрыть баннер
@@ -920,31 +1110,25 @@
 
             // Инициализация уведомлений при загрузке
             init: function() {
-                // Проверяем статус уведомлений
                 this.updateNotificationStatus();
+                this.updateHistoryView();
                 
-                // Инициализируем Service Worker
                 if ('serviceWorker' in navigator) {
                     window.addEventListener('load', () => {
                         this.initServiceWorker();
                     });
                 }
                 
-                // Слушаем видимость страницы
                 document.addEventListener('visibilitychange', () => {
                     if (document.hidden) {
-                        // Страница скрыта - можно показывать уведомления
                         console.log('Страница скрыта, уведомления активны');
                     } else {
-                        // Страница видна - очищаем уведомления
                         console.log('Страница видна');
                     }
                 });
                 
-                // Сохраняем настройки уведомлений
                 const notificationsEnabled = localStorage.getItem('notifications_enabled');
                 if (notificationsEnabled === 'true') {
-                    // Автоматически запрашиваем разрешение если ранее было включено
                     setTimeout(() => {
                         if (this.checkPermission() === 'default') {
                             this.requestPermission();
@@ -1018,6 +1202,18 @@
                     };
                 }
 
+                // Инициализация кнопки прикрепления файлов
+                const attachBtn = document.getElementById('attach-btn');
+                if (attachBtn) {
+                    attachBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        const menu = document.getElementById('attach-menu');
+                        if (menu) {
+                            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                        }
+                    };
+                }
+
                 // init app features
                 themeCore.load();
                 initUsersCacheListener();
@@ -1059,12 +1255,10 @@
                 const val = snapshot.val() || {};
                 const currentUser = window.state.user;
                 
-                // Обновляем кеш
                 Object.keys(val).forEach(k => usersCache[k] = val[k]);
                 
                 if (currentUser && val[currentUser.uid]) {
                     window.state.profile = val[currentUser.uid];
-                    // Обновляем UI только если есть изменения
                     const avatarEl = document.getElementById('user-profile-img');
                     const nameEl = document.getElementById('user-display-name');
                     const tagEl = document.getElementById('user-display-tag');
@@ -1091,7 +1285,6 @@
                         const avatar = otherUid ? (usersCache[otherUid] ? usersCache[otherUid].photoURL : '') : '';
                         addConversationToList({ type: 'dm', id: dmId, title, avatar, otherUid });
                         
-                        // Слушаем новые сообщения в чате для уведомлений
                         listenForNewMessages(`dms/${dmId}/messages`, { type: 'dm', id: dmId, title });
                     } else {
                         const key = 'dm:' + dmId;
@@ -1108,7 +1301,6 @@
                     if (window.state.user && members[window.state.user.uid]) {
                         addConversationToList({ type: 'group', id: groupId, title: group.name || 'Группа', avatar: group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png' });
                         
-                        // Слушаем новые сообщения в группе для уведомлений
                         listenForNewMessages(`groups/${groupId}/messages`, { type: 'group', id: groupId, title: group.name || 'Группа' });
                     } else {
                         const key = 'group:' + groupId;
@@ -1117,7 +1309,6 @@
                 });
             });
             
-            // Слушаем глобальные сообщения для уведомлений
             listenForNewMessages('messages', { type: 'global', id: 'global', title: 'Global Chat' });
         }
         
@@ -1130,18 +1321,15 @@
                 const data = snapshot.val();
                 if (!data) return;
                 
-                // Находим последнее сообщение
                 const messages = Object.values(data);
                 const lastMessage = messages.reduce((latest, msg) => {
                     return (msg.createdAt > latest.createdAt) ? msg : latest;
                 }, { createdAt: 0 });
                 
-                // Проверяем, новое ли это сообщение
                 if (lastMessage.createdAt > lastMessageTime && 
                     lastMessage.uid !== window.state.user?.uid) {
                     lastMessageTime = lastMessage.createdAt;
                     
-                    // Показываем уведомление если это не текущий открытый чат
                     if (window.state.currentChat.id !== chatInfo.id || 
                         window.state.currentChat.type !== chatInfo.type) {
                         notificationManager.notifyNewMessage(lastMessage, chatInfo);
@@ -1261,7 +1449,7 @@
             });
         }
 
-        /* Chat engine */
+        /* Chat engine с прикреплением файлов */
         window.chatEngine = {
             sendMessage: async function(){
                 const input = document.getElementById('main-input');
@@ -1287,6 +1475,7 @@
                 }
                 await push(ref(db, path), messageData);
                 this.cancelAction();
+                document.getElementById('attach-menu').style.display = 'none';
             },
 
             openChatListener: function(path){
@@ -1432,17 +1621,35 @@
                 if (mainInput) mainInput.value = '';
             },
 
-            attachImage: function(){
-                const url = prompt("Прямая ссылка на картинку:");
+            // НОВОЕ: Прикрепление файлов
+            attachFromURL: function() {
+                const url = prompt("Введите URL изображения:");
                 if (url && url.startsWith('http')) { 
                     const mainInput = document.getElementById('main-input');
                     if (mainInput) mainInput.value = url; 
-                    this.sendMessage(); 
                 }
+            },
+
+            attachFromFile: function() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const mainInput = document.getElementById('main-input');
+                            if (mainInput) mainInput.value = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                input.click();
             }
         };
 
-        /* uiAction */
+        /* uiAction с новыми функциями */
         window.uiAction = {
             openGlobal: () => {
                 window.state.currentChat = { type: 'global', id: 'global', title: 'Global Chat Room' };
@@ -1466,7 +1673,6 @@
                 const u2 = otherUid;
                 const chatId = ['dm', ...[u1, u2].sort()].join('_');
                 
-                // Проверяем существование чата
                 const chatRef = ref(db, `dms/${chatId}`);
                 const chatSnap = await get(chatRef);
                 
@@ -1508,8 +1714,13 @@
                 chatEngine.openChatListener(`dms/${chatId}/messages`);
             },
 
+            // НОВОЕ: Открытие профиля пользователя или информации о группе
             openProfile: (uid) => {
                 if (!uid) return;
+                
+                // Сброс режима группы
+                window.state.profileViewMode = 'user';
+                
                 const user = usersCache[uid] || (window.state.user && uid === window.state.user.uid ? window.state.profile : null);
                 if (!user) { alert('Профиль не найден'); return; }
                 uiAction._profileShownUid = uid;
@@ -1520,6 +1731,10 @@
                     modal.classList.add('active'); 
                     modal.setAttribute('aria-hidden','false');
                 }
+
+                // Установка заголовка
+                const modalTitle = document.getElementById('profile-modal-title');
+                if (modalTitle) modalTitle.innerText = 'Профиль пользователя';
 
                 const pAvatar = document.getElementById('p-avatar');
                 const pDisplayName = document.getElementById('p-displayname');
@@ -1538,6 +1753,12 @@
                 const btnSaveProfile = document.getElementById('btn-save-profile');
                 const btnUpgrade = document.getElementById('btn-upgrade');
                 const btnWrite = document.getElementById('btn-write');
+                const groupInfoSection = document.getElementById('group-info-section');
+                const groupEditFields = document.getElementById('group-edit-fields');
+
+                // Скрываем секцию информации о группе
+                if (groupInfoSection) groupInfoSection.style.display = 'none';
+                if (groupEditFields) groupEditFields.style.display = 'none';
 
                 if (window.state.user && uid === window.state.user.uid) {
                     if (profileEditArea) profileEditArea.style.display = 'block';
@@ -1553,6 +1774,100 @@
                     if (btnSaveProfile) btnSaveProfile.style.display = 'none';
                     if (btnUpgrade) btnUpgrade.style.display = 'none';
                     if (btnWrite) btnWrite.style.display = 'inline-flex';
+                    
+                    // В личных чатах скрываем кнопку "Написать" если уже в чате с этим пользователем
+                    if (window.state.currentChat.type === 'dm' && window.state.currentChat.otherUid === uid) {
+                        btnWrite.style.display = 'none';
+                    }
+                }
+            },
+
+            // НОВОЕ: Открытие информации о группе
+            openGroupInfo: async (groupId) => {
+                const snap = await get(ref(db, `groups/${groupId}`));
+                if (!snap.exists()) {
+                    alert('Группа не найдена');
+                    return;
+                }
+                
+                const group = snap.val();
+                window.state.currentGroupInfo = group;
+                window.state.profileViewMode = 'group';
+                
+                const overlay = document.getElementById('profile-overlay');
+                const modal = document.getElementById('profile-modal');
+                if (overlay) overlay.classList.add('active'); 
+                if (modal) {
+                    modal.classList.add('active'); 
+                    modal.setAttribute('aria-hidden','false');
+                }
+
+                // Установка заголовка
+                const modalTitle = document.getElementById('profile-modal-title');
+                if (modalTitle) modalTitle.innerText = 'Информация о группе';
+
+                const pAvatar = document.getElementById('p-avatar');
+                const pDisplayName = document.getElementById('p-displayname');
+                const pUsername = document.getElementById('p-username');
+                const pAbout = document.getElementById('p-about');
+                const groupInfoSection = document.getElementById('group-info-section');
+                const groupMembersList = document.getElementById('group-members-list');
+                const groupEditFields = document.getElementById('group-edit-fields');
+                const groupNameInput = document.getElementById('group-name-input');
+                const groupDescriptionInput = document.getElementById('group-description-input');
+                
+                if (pAvatar) pAvatar.src = group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
+                if (pDisplayName) pDisplayName.innerText = group.name || 'Группа';
+                if (pUsername) pUsername.innerText = `${Object.keys(group.members || {}).length} участников`;
+                if (pAbout) pAbout.innerText = group.description || 'Нет описания.';
+
+                // Показываем секцию участников
+                if (groupInfoSection) groupInfoSection.style.display = 'block';
+
+                // Заполняем список участников
+                if (groupMembersList) {
+                    groupMembersList.innerHTML = '';
+                    Object.keys(group.members || {}).forEach(uid => {
+                        const user = usersCache[uid] || {};
+                        const memberItem = document.createElement('div');
+                        memberItem.className = 'member-item';
+                        memberItem.innerHTML = `
+                            <img src="${user.photoURL || 'https://via.placeholder.com/150'}" style="width:36px;height:36px;border-radius:6px;">
+                            <div>
+                                <div style="font-weight:600;">${escapeHtml(user.displayName || 'User')}</div>
+                                <div style="font-size:12px; color:var(--muted);">@${escapeHtml(user.usernameDisplay || user.username || '')}</div>
+                            </div>
+                        `;
+                        groupMembersList.appendChild(memberItem);
+                    });
+                }
+
+                const profileEditArea = document.getElementById('profile-edit-area');
+                const btnEditProfile = document.getElementById('btn-edit-profile');
+                const btnSaveProfile = document.getElementById('btn-save-profile');
+                const btnUpgrade = document.getElementById('btn-upgrade');
+                const btnWrite = document.getElementById('btn-write');
+
+                // Настройка кнопок для группы
+                if (profileEditArea) profileEditArea.style.display = 'none';
+                if (btnEditProfile) btnEditProfile.style.display = 'none';
+                if (btnSaveProfile) btnSaveProfile.style.display = 'none';
+                if (btnUpgrade) btnUpgrade.style.display = 'none';
+                if (btnWrite) btnWrite.style.display = 'none';
+
+                // Показываем кнопку редактирования для админа или владельца группы
+                const isOwner = group.owner === window.state.user?.uid;
+                const isAdmin = window.state.isAdmin;
+                
+                if (isOwner || isAdmin) {
+                    if (btnEditProfile) {
+                        btnEditProfile.style.display = 'inline-flex';
+                        btnEditProfile.innerText = '✏ Редактировать группу';
+                    }
+                    
+                    // Заполняем поля редактирования
+                    if (groupNameInput) groupNameInput.value = group.name || '';
+                    if (groupDescriptionInput) groupDescriptionInput.value = group.description || '';
                 }
             },
 
@@ -1564,59 +1879,134 @@
                     modal.classList.remove('active'); 
                     modal.setAttribute('aria-hidden','true');
                 }
+                window.state.profileViewMode = 'user';
             },
 
             startEditProfile: () => {
                 const profileEditArea = document.getElementById('profile-edit-area');
                 const btnEditProfile = document.getElementById('btn-edit-profile');
                 const btnSaveProfile = document.getElementById('btn-save-profile');
-                if (profileEditArea) profileEditArea.style.display = 'block';
-                if (btnEditProfile) btnEditProfile.style.display = 'none';
-                if (btnSaveProfile) btnSaveProfile.style.display = 'inline-flex';
+                const groupEditFields = document.getElementById('group-edit-fields');
+                
+                if (window.state.profileViewMode === 'group') {
+                    // Режим редактирования группы
+                    if (profileEditArea) profileEditArea.style.display = 'block';
+                    if (groupEditFields) groupEditFields.style.display = 'block';
+                    if (btnEditProfile) btnEditProfile.style.display = 'none';
+                    if (btnSaveProfile) btnSaveProfile.style.display = 'inline-flex';
+                } else {
+                    // Режим редактирования профиля пользователя
+                    if (profileEditArea) profileEditArea.style.display = 'block';
+                    if (groupEditFields) groupEditFields.style.display = 'none';
+                    if (btnEditProfile) btnEditProfile.style.display = 'none';
+                    if (btnSaveProfile) btnSaveProfile.style.display = 'inline-flex';
+                }
             },
 
             saveProfile: async () => {
                 if (!window.state.user) return;
-                const pAvatarInput = document.getElementById('p-avatar-input');
-                const pAboutInput = document.getElementById('p-about-input');
-                if (!pAvatarInput || !pAboutInput) return;
                 
-                const newAva = pAvatarInput.value.trim();
-                const newAbout = pAboutInput.value.trim();
-                if (newAva && !/^https?:\/\//i.test(newAva)) {
-                    alert('Ссылка на аватар должна начинаться с http/https');
-                    return;
-                }
-                
-                const updates = {};
-                if (newAva) updates.photoURL = newAva;
-                updates.about = newAbout || '';
-                
-                try {
-                    await update(ref(db, `users/${window.state.user.uid}`), updates);
-                    if (updates.photoURL) {
-                        const pAvatar = document.getElementById('p-avatar');
-                        const userProfileImg = document.getElementById('user-profile-img');
-                        if (pAvatar) pAvatar.src = updates.photoURL;
-                        if (userProfileImg) userProfileImg.src = updates.photoURL;
+                if (window.state.profileViewMode === 'group') {
+                    // Сохранение информации о группе
+                    const group = window.state.currentGroupInfo;
+                    if (!group) return;
+                    
+                    const groupNameInput = document.getElementById('group-name-input');
+                    const groupDescriptionInput = document.getElementById('group-description-input');
+                    const pAvatarInput = document.getElementById('p-avatar-input');
+                    
+                    if (!groupNameInput || !groupDescriptionInput || !pAvatarInput) return;
+                    
+                    const newName = groupNameInput.value.trim();
+                    const newDescription = groupDescriptionInput.value.trim();
+                    const newImage = pAvatarInput.value.trim();
+                    
+                    if (!newName) {
+                        alert('Введите название группы');
+                        return;
                     }
                     
-                    const pAbout = document.getElementById('p-about');
-                    if (pAbout) pAbout.innerText = updates.about;
+                    if (newImage && !/^https?:\/\//i.test(newImage)) {
+                        alert('Ссылка на аватар должна начинаться с http/https');
+                        return;
+                    }
                     
-                    window.state.profile = Object.assign(window.state.profile || {}, updates);
+                    const updates = {
+                        name: newName,
+                        description: newDescription,
+                        image: newImage || ''
+                    };
                     
-                    const profileEditArea = document.getElementById('profile-edit-area');
-                    const btnEditProfile = document.getElementById('btn-edit-profile');
-                    const btnSaveProfile = document.getElementById('btn-save-profile');
-                    if (profileEditArea) profileEditArea.style.display = 'none';
-                    if (btnEditProfile) btnEditProfile.style.display = 'inline-flex';
-                    if (btnSaveProfile) btnSaveProfile.style.display = 'none';
+                    try {
+                        await update(ref(db, `groups/${group.id}`), updates);
+                        
+                        // Обновляем UI
+                        const pDisplayName = document.getElementById('p-displayname');
+                        const pAbout = document.getElementById('p-about');
+                        const pAvatar = document.getElementById('p-avatar');
+                        
+                        if (pDisplayName) pDisplayName.innerText = newName;
+                        if (pAbout) pAbout.innerText = newDescription || 'Нет описания.';
+                        if (pAvatar) pAvatar.src = newImage || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
+                        
+                        // Обновляем заголовок чата если мы в этой группе
+                        if (window.state.currentChat.id === group.id) {
+                            const chatTopTitle = document.getElementById('chat-top-title');
+                            const chatTopAvatar = document.getElementById('chat-top-avatar');
+                            if (chatTopTitle) chatTopTitle.innerText = newName;
+                            if (chatTopAvatar) chatTopAvatar.src = newImage || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
+                        }
+                        
+                        // Выходим из режима редактирования
+                        this.startEditProfile();
+                        alert('Изменения группы сохранены');
+                    } catch (err) { 
+                        console.error(err); 
+                        alert('Ошибка при сохранении группы'); 
+                    }
+                } else {
+                    // Сохранение профиля пользователя
+                    const pAvatarInput = document.getElementById('p-avatar-input');
+                    const pAboutInput = document.getElementById('p-about-input');
+                    if (!pAvatarInput || !pAboutInput) return;
                     
-                    alert('Профиль сохранён');
-                } catch (err) { 
-                    console.error(err); 
-                    alert('Ошибка при сохранении профиля'); 
+                    const newAva = pAvatarInput.value.trim();
+                    const newAbout = pAboutInput.value.trim();
+                    if (newAva && !/^https?:\/\//i.test(newAva)) {
+                        alert('Ссылка на аватар должна начинаться с http/https');
+                        return;
+                    }
+                    
+                    const updates = {};
+                    if (newAva) updates.photoURL = newAva;
+                    updates.about = newAbout || '';
+                    
+                    try {
+                        await update(ref(db, `users/${window.state.user.uid}`), updates);
+                        if (updates.photoURL) {
+                            const pAvatar = document.getElementById('p-avatar');
+                            const userProfileImg = document.getElementById('user-profile-img');
+                            if (pAvatar) pAvatar.src = updates.photoURL;
+                            if (userProfileImg) userProfileImg.src = updates.photoURL;
+                        }
+                        
+                        const pAbout = document.getElementById('p-about');
+                        if (pAbout) pAbout.innerText = updates.about;
+                        
+                        window.state.profile = Object.assign(window.state.profile || {}, updates);
+                        
+                        const profileEditArea = document.getElementById('profile-edit-area');
+                        const btnEditProfile = document.getElementById('btn-edit-profile');
+                        const btnSaveProfile = document.getElementById('btn-save-profile');
+                        if (profileEditArea) profileEditArea.style.display = 'none';
+                        if (btnEditProfile) btnEditProfile.style.display = 'inline-flex';
+                        if (btnSaveProfile) btnSaveProfile.style.display = 'none';
+                        
+                        alert('Профиль сохранён');
+                    } catch (err) { 
+                        console.error(err); 
+                        alert('Ошибка при сохранении профиля'); 
+                    }
                 }
             },
 
@@ -1638,15 +2028,14 @@
                 }
             },
 
+            // НОВОЕ: Открытие настроек с предпросмотром
             openSettings: () => {
                 const settingsModal = document.getElementById('settings-modal');
                 if (settingsModal) {
                     settingsModal.classList.add('active');
                     settingsModal.setAttribute('aria-hidden','false');
                     
-                    // Обновляем статус уведомлений
-                    notificationManager.updateNotificationStatus();
-                    
+                    // Обновляем значения в настройках
                     const root = document.documentElement.style;
                     const uiColorPrimary = document.getElementById('ui-color-primary');
                     const uiColorMe = document.getElementById('ui-color-me');
@@ -1658,7 +2047,10 @@
                     if (uiColorMe) uiColorMe.value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--msg-me').trim()) || '#eeffde';
                     if (uiBgColor) uiBgColor.value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()) || '#ffffff';
                     if (uiFontRange) uiFontRange.value = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size')) || 16;
-                    if (uiRadiusRange) uiRadiusRange.value = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--radius')) || 12;
+                    if (uiRadiusRange) uiRadiusRange.value = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--message-border-radius')) || 12;
+                    
+                    // Обновляем предпросмотр
+                    themeCore.updatePreview();
                 }
             },
 
@@ -1667,6 +2059,34 @@
                 if (settingsModal) {
                     settingsModal.classList.remove('active');
                     settingsModal.setAttribute('aria-hidden','true');
+                }
+            },
+
+            // НОВОЕ: Открытие уведомлений
+            openNotifications: () => {
+                const notificationsModal = document.getElementById('notifications-modal');
+                const notificationsOverlay = document.getElementById('notifications-overlay');
+                if (notificationsModal) {
+                    notificationsModal.classList.add('active');
+                    notificationsModal.setAttribute('aria-hidden','false');
+                }
+                if (notificationsOverlay) {
+                    notificationsOverlay.classList.add('active');
+                }
+                
+                notificationManager.updateNotificationStatus();
+                notificationManager.updateHistoryView();
+            },
+
+            closeNotifications: () => {
+                const notificationsModal = document.getElementById('notifications-modal');
+                const notificationsOverlay = document.getElementById('notifications-overlay');
+                if (notificationsModal) {
+                    notificationsModal.classList.remove('active');
+                    notificationsModal.setAttribute('aria-hidden','true');
+                }
+                if (notificationsOverlay) {
+                    notificationsOverlay.classList.remove('active');
                 }
             },
 
@@ -1746,7 +2166,8 @@
                         owner: window.state.user.uid, 
                         members: membersObj, 
                         createdAt: Date.now(), 
-                        image: image || '' 
+                        image: image || '',
+                        description: ''
                     };
                     await set(ref(db, `groups/${groupId}`), meta);
                     uiAction.closeCreateGroup();
@@ -1791,50 +2212,6 @@
                 if (chatTopAvatar) chatTopAvatar.src = groupMeta.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
                 
                 chatEngine.openChatListener(`groups/${groupId}/messages`);
-            },
-
-            openGroupInfo: async (groupId) => {
-                const snap = await get(ref(db, `groups/${groupId}`));
-                if (!snap.exists()) {
-                    alert('Группа не найдена');
-                    return;
-                }
-                
-                const group = snap.val();
-                const overlay = document.getElementById('profile-overlay');
-                const modal = document.getElementById('profile-modal');
-                
-                if (overlay) overlay.classList.add('active'); 
-                if (modal) {
-                    modal.classList.add('active'); 
-                    modal.setAttribute('aria-hidden','false');
-                }
-                
-                const pAvatar = document.getElementById('p-avatar');
-                const pDisplayName = document.getElementById('p-displayname');
-                const pUsername = document.getElementById('p-username');
-                const pAbout = document.getElementById('p-about');
-                const profileEditArea = document.getElementById('profile-edit-area');
-                const btnEditProfile = document.getElementById('btn-edit-profile');
-                const btnSaveProfile = document.getElementById('btn-save-profile');
-                const btnUpgrade = document.getElementById('btn-upgrade');
-                const btnWrite = document.getElementById('btn-write');
-                
-                if (pAvatar) pAvatar.src = group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
-                if (pDisplayName) pDisplayName.innerText = group.name;
-                if (pUsername) pUsername.innerText = `${Object.keys(group.members||{}).length} участников`;
-                
-                const memberList = Object.keys(group.members||{}).map(uid => {
-                    const u = usersCache[uid] || {};
-                    return `• ${u.displayName || 'User'} @${u.usernameDisplay||u.username||''}`;
-                }).join('\n');
-                
-                if (pAbout) pAbout.innerText = memberList || 'Пусто';
-                if (profileEditArea) profileEditArea.style.display = 'none';
-                if (btnEditProfile) btnEditProfile.style.display = 'none';
-                if (btnSaveProfile) btnSaveProfile.style.display = 'none';
-                if (btnUpgrade) btnUpgrade.style.display = 'none';
-                if (btnWrite) btnWrite.style.display = 'none';
             }
         };
 
@@ -1853,7 +2230,7 @@
             });
         }
 
-        /* themeCore */
+        /* themeCore с предпросмотром */
         window.themeCore = {
             preview: function(){
                 const root = document.documentElement.style;
@@ -1866,8 +2243,32 @@
                 if (me) root.setProperty('--msg-me', me);
                 if (bg) root.setProperty('--bg', bg);
                 if (fz) root.setProperty('--font-size', fz + 'px');
-                if (rd) root.setProperty('--radius', rd + 'px');
+                if (rd) {
+                    root.setProperty('--radius', rd + 'px');
+                    root.setProperty('--message-border-radius', rd + 'px');
+                }
+                this.updatePreview();
             },
+            
+            updatePreview: function() {
+                const preview = document.getElementById('settings-preview');
+                if (preview) {
+                    const root = document.documentElement.style;
+                    preview.style.background = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+                    preview.style.borderRadius = getComputedStyle(document.documentElement).getPropertyValue('--radius').trim();
+                    
+                    const messages = preview.querySelectorAll('.preview-message');
+                    messages.forEach((msg, index) => {
+                        if (index === 0) {
+                            msg.style.background = getComputedStyle(document.documentElement).getPropertyValue('--msg-other').trim();
+                        } else {
+                            msg.style.background = getComputedStyle(document.documentElement).getPropertyValue('--msg-me').trim();
+                        }
+                        msg.style.borderRadius = getComputedStyle(document.documentElement).getPropertyValue('--message-border-radius').trim();
+                    });
+                }
+            },
+            
             save: function(){
                 const settings = {
                     pr: document.getElementById('ui-color-primary')?.value,
@@ -1880,10 +2281,12 @@
                 this.apply(settings);
                 uiAction.closeSettings();
             },
+            
             load: function(){
                 const saved = localStorage.getItem('narrators_custom_ui');
                 if (saved) this.apply(JSON.parse(saved));
             },
+            
             apply: function(t){
                 if (!t) return;
                 const root = document.documentElement.style;
@@ -1891,8 +2294,12 @@
                 if (t.me) root.setProperty('--msg-me', t.me);
                 if (t.bg) root.setProperty('--bg', t.bg);
                 if (t.fz) root.setProperty('--font-size', t.fz + 'px');
-                if (t.rd) root.setProperty('--radius', t.rd + 'px');
+                if (t.rd) {
+                    root.setProperty('--radius', t.rd + 'px');
+                    root.setProperty('--message-border-radius', t.rd + 'px');
+                }
             },
+            
             reset: function(){
                 localStorage.removeItem('narrators_custom_ui');
                 const root = document.documentElement.style;
@@ -1901,6 +2308,7 @@
                 root.removeProperty('--bg');
                 root.removeProperty('--font-size');
                 root.removeProperty('--radius');
+                root.removeProperty('--message-border-radius');
                 uiAction.closeSettings();
             }
         };
@@ -1919,7 +2327,7 @@
                 });
             }
             
-            // Проверка для theme inputs
+            // Обработчики для предпросмотра в настройках
             ['ui-color-primary','ui-color-me','ui-bg-color','ui-font-range','ui-radius-range'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -1931,21 +2339,25 @@
                 }
             });
             
-            // chat-top avatar click behavior
+            // Обработчик клика на аватар в чате
             const chatTopAvatar = document.getElementById('chat-top-avatar');
             if (chatTopAvatar) {
                 chatTopAvatar.addEventListener('click', () => {
                     const c = window.state.currentChat || {};
-                    if (c.type === 'dm') uiAction.openProfile(c.otherUid);
-                    else if (c.type === 'group') uiAction.openGroupInfo(c.id);
-                    else if (window.state.user) uiAction.openProfile(window.state.user.uid);
+                    if (c.type === 'dm') {
+                        uiAction.openProfile(c.otherUid);
+                    } else if (c.type === 'group') {
+                        uiAction.openGroupInfo(c.id);
+                    } else if (window.state.user) {
+                        uiAction.openProfile(window.state.user.uid);
+                    }
                 });
             }
         });
 
         initGroupSearch();
 
-        // animate new conversation rows
+        // Анимация новых чатов
         const convList = document.getElementById('conversations-list');
         if (convList) {
             const convObserver = new MutationObserver((mutations) => {
@@ -1985,14 +2397,12 @@
     
     <!-- Service Worker для push-уведомлений -->
     <script>
-        // Регистрируем Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(error => {
                 console.log('Service Worker регистрация не удалась:', error);
             });
         }
         
-        // Создаем простой Service Worker inline
         const swContent = `
         self.addEventListener('install', event => {
             console.log('Service Worker установлен');
@@ -2044,7 +2454,6 @@
         });
         `;
         
-        // Создаем blob и регистрируем Service Worker
         const blob = new Blob([swContent], { type: 'application/javascript' });
         const swURL = URL.createObjectURL(blob);
         
