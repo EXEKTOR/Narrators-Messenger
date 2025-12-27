@@ -23,6 +23,7 @@
             --msg-other-text: #000000;
             --font-size:16px;
             --message-border-radius: 14px;
+            --safe-area-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         *{box-sizing:border-box;margin:0;padding:0}
@@ -48,8 +49,10 @@
             flex-direction:column;
             width:100%;
             height:100%;
+            position:relative;
         }
         
+        /* САЙДБАР СПИСКА ЧАТОВ - ПО УМОЛЧАНИЮ ВИДЕН НА МОБИЛКЕ */
         #sidebar{
             width:100%;
             height:100%;
@@ -75,8 +78,8 @@
             gap:12px;
             align-items:center;
             border-bottom:1px solid var(--border);
-            background:linear-gradient(180deg,var(--bg),#fafbfd);
-            min-height:70px;
+            background:var(--bg);
+            min-height:60px;
         }
 
         .user-avatar{
@@ -109,6 +112,7 @@
             text-overflow:ellipsis;
         }
 
+        /* КНОПКА МЕНЮ В СПИСКЕ ЧАТОВ */
         #sidebar-menu-btn{
             background:transparent;
             border:none;
@@ -128,7 +132,7 @@
         #sidebar-menu {
             position: absolute;
             left: 16px;
-            top: 70px;
+            top: 60px;
             width: calc(100% - 32px);
             background: #fff;
             border-radius: 12px;
@@ -210,9 +214,11 @@
             border-radius:10px;
             transition: background .12s var(--ease), transform .12s var(--ease);
             min-height:60px;
+            cursor:pointer;
         }
         .chat-row:hover{ background:var(--primary-soft); transform:translateX(4px) }
 
+        /* ОКНО ЧАТА */
         #chat-window{ 
             flex:1; 
             display:flex; 
@@ -232,14 +238,16 @@
             transform:translateX(0);
         }
         
+        /* ВЕРХНЯЯ ПАНЕЛЬ ЧАТА С КНОПКОЙ НАЗАД */
         .chat-top-bar{
             display:flex;
             align-items:center;
             gap:12px;
             padding:12px 16px;
             border-bottom:1px solid var(--border);
-            background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8));
-            min-height:64px;
+            background:var(--bg);
+            min-height:60px;
+            position:relative;
         }
         
         #chat-top-avatar{ 
@@ -247,11 +255,60 @@
             height:40px;
             border-radius:10px;
             object-fit:cover;
-            cursor:pointer; 
-            transition:transform .15s var(--ease);
             flex-shrink:0;
         }
-        #chat-top-avatar:hover{ transform:translateY(-2px) }
+        
+        .chat-top-info {
+            flex:1; 
+            min-width:0;
+            padding-right: 60px; /* Место для будущих кнопок справа */
+        }
+        
+        #chat-top-title{
+            font-weight:800; 
+            white-space:nowrap; 
+            overflow:hidden; 
+            text-overflow:ellipsis;
+            font-size:16px;
+        }
+        
+        #chat-top-sub{ 
+            white-space:nowrap; 
+            overflow:hidden; 
+            text-overflow:ellipsis;
+            font-size:13px;
+            color:var(--muted);
+        }
+        
+        /* КНОПКА НАЗАД - ОТДЕЛЬНО ОТ АВАТАРКИ */
+        .chat-back-btn {
+            display: flex;
+            align-items:center;
+            justify-content:center;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            width:44px;
+            height:44px;
+            border-radius:10px;
+            flex-shrink:0;
+            margin-right: 8px;
+        }
+        
+        .chat-back-btn:hover {
+            background: var(--primary-soft);
+        }
+        
+        /* КНОПКИ СПРАВА В ЧАТЕ (пока пусто, но место есть) */
+        .chat-top-actions {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 8px;
+        }
 
         #messages-view{ 
             flex:1; 
@@ -312,6 +369,43 @@
             margin:0 12px 10px 12px;
         }
 
+        /* ПАНЕЛЬ ВВОДА - ФИКСИРОВАННАЯ ВНИЗУ, НАД КЛАВИАТУРОЙ */
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            padding: 12px;
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            margin-top: auto;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        #main-input {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 16px;
+            resize: none;
+            min-height: 48px;
+            max-height: 120px;
+            line-height:1.4;
+            background: var(--bg);
+            -webkit-appearance: none;
+        }
+
+        /* МОДАЛЬНЫЕ ОКНА */
         .profile-overlay { 
             position:fixed; 
             inset:0; 
@@ -399,6 +493,7 @@
         }
         .notifications-modal.active{ display:block; transform:translate(-50%,-50%) scale(1); opacity:1; }
 
+        /* КНОПКИ */
         .btn{ 
             border-radius:10px; 
             padding:12px 16px; 
@@ -430,31 +525,6 @@
             font-size: 14px;
             border: 1px solid var(--border);
             min-height:36px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            position: relative;
-            padding:12px;
-            background:var(--bg);
-            border-top:1px solid var(--border);
-            margin-top:auto;
-        }
-
-        #main-input {
-            flex: 1;
-            padding: 14px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            font-family: inherit;
-            font-size: 16px;
-            resize: none;
-            min-height: 48px;
-            max-height: 120px;
-            line-height:1.4;
-            -webkit-appearance: none;
         }
 
         .time-stamp {
@@ -525,29 +595,6 @@
             min-height:36px;
         }
 
-        /* Окно предпросмотра в настройках */
-        .settings-preview {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--bg);
-        }
-
-        .preview-message {
-            margin-bottom: 10px;
-            padding: 12px;
-            border-radius: var(--message-border-radius, 14px);
-            background: var(--msg-other);
-            max-width: 80%;
-        }
-
-        .preview-message.my {
-            background: var(--msg-me);
-            margin-left: auto;
-            text-align: right;
-        }
-
         /* Меню прикрепления файлов */
         .attach-menu {
             position: absolute;
@@ -581,80 +628,7 @@
             background: var(--primary-soft);
         }
 
-        /* История уведомлений */
-        .notification-history {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px;
-            margin-top: 10px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .notification-item {
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-        }
-
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Информация о группе */
-        .group-info-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--border);
-        }
-
-        .members-list {
-            max-height: 150px;
-            overflow-y: auto;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-top: 8px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .member-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-            min-height:44px;
-        }
-
-        .member-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Кнопка назад в чате */
-        .mobile-back-btn {
-            display: flex;
-            position: absolute;
-            left: 12px;
-            top: 12px;
-            background: transparent;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 100;
-            width:44px;
-            height:44px;
-            align-items:center;
-            justify-content:center;
-            border-radius:10px;
-        }
-
-        .mobile-back-btn:hover {
-            background: var(--primary-soft);
-        }
-
-        /* НОРМАЛЬНАЯ ТЕМНАЯ ТЕМА */
+        /* ТЕМНАЯ ТЕМА - НОРМАЛЬНАЯ */
         body.dark-theme {
             --bg:#0a0a0a;
             --muted:#8a8a8a;
@@ -710,23 +684,6 @@
             border: 1px solid #333;
         }
 
-        body.dark-theme .sidebar-top {
-            background:#1a1a1a;
-        }
-
-        body.dark-theme .chat-top-bar {
-            background:#1a1a1a;
-        }
-
-        body.dark-theme .input-group {
-            background:#0a0a0a;
-        }
-
-        body.dark-theme .settings-preview {
-            background:#1a1a1a;
-            border-color:#333;
-        }
-
         /* Кнопка темы в меню */
         #theme-toggle-btn {
             display: flex;
@@ -760,54 +717,45 @@
             }
             
             #sidebar{
-                width:320px;
+                width:360px;
                 height:100%;
                 border-right:1px solid var(--border);
-                border-bottom:none;
-                padding-bottom:12px;
-                overflow:visible;
                 position:relative;
                 transform:none !important;
             }
             
-            .sidebar-top{
-                padding:14px 16px;
-                border-bottom:1px solid var(--border);
-            }
-            
-            .user-avatar{
-                width:56px;
-                height:56px;
-            }
-            
-            .search-wrap{
-                display:block;
-                padding:12px;
-            }
-            
-            .chat-list-container{
-                display:block;
-                padding:8px 12px;
-            }
-            
             #chat-window{
-                height:100%;
                 position:relative;
                 transform:none !important;
                 display:flex !important;
             }
             
+            .chat-back-btn{
+                display:none !important;
+            }
+            
+            .sidebar-top{
+                padding:16px 20px;
+                min-height:70px;
+            }
+            
+            .user-avatar{
+                width:52px;
+                height:52px;
+            }
+            
             .chat-top-bar{
-                padding:12px 18px;
+                padding:16px 20px;
+                min-height:70px;
             }
             
             #chat-top-avatar{
-                width:44px;
-                height:44px;
+                width:48px;
+                height:48px;
             }
             
             .msg-bubble{
-                max-width:72%;
+                max-width:70%;
             }
             
             .msg-avatar{
@@ -815,44 +763,25 @@
                 height:40px;
             }
             
-            .mobile-back-btn{
-                display:none !important;
-            }
-            
-            #sidebar-menu-btn {
-                display: none;
-            }
-            
-            .sidebar-top .user-avatar {
-                cursor: pointer;
+            .input-container {
+                position: relative;
+                padding-bottom: 20px;
             }
         }
 
-        /* Планшеты */
-        @media (min-width: 481px) and (max-width: 768px) {
-            #sidebar{
-                width:100%;
+        /* Мобильная версия */
+        @media (max-width: 768px) {
+            .input-container {
+                padding-bottom: calc(12px + var(--safe-area-bottom));
             }
             
-            .msg-bubble{
-                max-width:75%;
-            }
-        }
-
-        /* Телефоны */
-        @media (max-width: 480px) {
-            #sidebar{
-                width:100%;
+            #main-input {
+                min-height: 44px;
             }
             
             .msg-bubble{
                 max-width:85%;
                 padding:12px 14px;
-            }
-            
-            .msg-avatar{
-                width:32px;
-                height:32px;
             }
         }
 
@@ -898,10 +827,10 @@
 
     <!-- MAIN APP -->
     <div id="app" class="fade-in">
-        <!-- Сайдбар - список чатов -->
+        <!-- САЙДБАР СПИСКА ЧАТОВ - ПО УМОЛЧАНИЮ ВИДЕН -->
         <div id="sidebar">
             <div class="sidebar-top">
-                <img id="user-profile-img" class="user-avatar" src="https://via.placeholder.com/150" title="Открыть профиль">
+                <img id="user-profile-img" class="user-avatar" src="https://via.placeholder.com/150" onclick="uiAction.openProfile(window.state?.user?.uid)">
                 <div class="sidebar-meta">
                     <div class="name" id="user-display-name">Загрузка...</div>
                     <div class="tag muted-xs" id="user-display-tag">@username</div>
@@ -929,7 +858,8 @@
             </div>
 
             <div class="chat-list-container" id="conversations-list">
-                <div class="chat-row" id="row-global" onclick="openChat({type: 'global', id: 'global', title: 'Global Chat Room', avatar: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png'})">
+                <!-- Global чат -->
+                <div class="chat-row" onclick="openGlobalChat()">
                     <img class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width:46px;height:46px;border-radius:8px;">
                     <div style="flex:1">
                         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -939,23 +869,28 @@
                         <div class="muted-xs" style="color:var(--muted)">Общий чат</div>
                     </div>
                 </div>
+                <!-- Сюда будут добавляться остальные чаты -->
             </div>
         </div>
 
-        <!-- Окно чата -->
+        <!-- ОКНО ЧАТА -->
         <div id="chat-window">
             <div class="chat-top-bar">
-                <button class="mobile-back-btn" onclick="showChatList()">←</button>
+                <button class="chat-back-btn" onclick="showChatList()">←</button>
                 <img id="chat-top-avatar" src="https://via.placeholder.com/100" style="width:44px;height:44px;border-radius:10px;object-fit:cover">
-                <div style="flex:1; min-width:0;">
+                <div class="chat-top-info">
                     <div id="chat-top-title" style="font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Global Chat Room</div>
                     <div id="chat-top-sub" class="muted-xs" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Общий чат</div>
+                </div>
+                <div class="chat-top-actions">
+                    <!-- Место для будущих кнопок справа -->
                 </div>
             </div>
 
             <div id="messages-view"></div>
 
-            <div class="bottom-controls">
+            <!-- ПАНЕЛЬ ВВОДА - ВСЕГДА ВИДНА -->
+            <div class="input-container">
                 <div id="reply-preview"></div>
                 <div class="input-group">
                     <div style="position: relative;">
@@ -1184,6 +1119,7 @@
             return window.innerWidth <= 768;
         }
 
+        // ПОКАЗАТЬ СПИСОК ЧАТОВ (на мобилках)
         function showChatList() {
             if (isMobile()) {
                 document.getElementById('sidebar').classList.remove('hidden');
@@ -1191,6 +1127,27 @@
             }
         }
 
+        // ОТКРЫТЬ Global чат
+        function openGlobalChat() {
+            window.state.currentChat = { type: 'global', id: 'global', title: 'Global Chat Room' };
+            
+            const chatTopTitle = document.getElementById('chat-top-title');
+            const chatTopSub = document.getElementById('chat-top-sub');
+            const chatTopAvatar = document.getElementById('chat-top-avatar');
+            
+            if (chatTopTitle) chatTopTitle.innerText = 'Global Chat Room';
+            if (chatTopSub) chatTopSub.innerText = 'Общий чат';
+            if (chatTopAvatar) chatTopAvatar.src = 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
+            
+            openChatListener('messages');
+            
+            if (isMobile()) {
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('chat-window').classList.add('visible');
+            }
+        }
+
+        // ОТКРЫТЬ ЧАТ
         function openChat(chatInfo) {
             if (!chatInfo) return;
             
@@ -1324,7 +1281,6 @@
                 document.getElementById('theme-text').textContent = 'Светлая тема';
             }
             
-            // Обновляем цвета в настройках если открыто окно настроек
             if (typeof themeCore.preview === 'function') {
                 themeCore.preview();
             }
@@ -1674,8 +1630,9 @@
                 // На мобильных показываем список чатов по умолчанию
                 if (isMobile()) {
                     showChatList();
+                    openGlobalChat();
                 } else {
-                    openChat({type: 'global', id: 'global', title: 'Global Chat Room', avatar: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png'});
+                    openGlobalChat();
                 }
 
             } catch (err) {
@@ -1839,7 +1796,7 @@
             delete conversationsIndex[key];
         }
 
-        /* Функции чата */
+        /* ФУНКЦИИ ЧАТА */
         async function sendMessage(){
             const input = document.getElementById('main-input');
             const text = input.value.trim();
@@ -1963,7 +1920,7 @@
         function attachFromURL() {
             const url = prompt("Введите URL изображения:");
             if (url) {
-                // УБИРАЕМ ВСЕ ПРОВЕРКИ НА ФОРМАТ! Просто проверяем что это URL
+                // УБИРАЕМ ВСЕ ПРОВЕРКИ НА ФОРМАТ!
                 let finalUrl = url.trim();
                 
                 // Автоматически добавляем http:// если не указан протокол
@@ -2088,10 +2045,10 @@
             if (mainInput) mainInput.value = '';
         }
 
-        /* uiAction с ФИКСОМ редактирования группы */
+        /* uiAction */
         window.uiAction = {
             openGlobal: () => {
-                openChat({type: 'global', id: 'global', title: 'Global Chat Room', avatar: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png'});
+                openGlobalChat();
                 toggleSidebarMenu();
             },
 
@@ -2133,18 +2090,6 @@
                     title: otherUser.displayName || 'Личный чат', 
                     avatar: otherUser.photoURL || 'https://via.placeholder.com/150',
                     subtitle: '@' + (otherUser.usernameDisplay || ''),
-                    otherUid: otherUid
-                });
-            },
-
-            openDMById: async (chatId, otherUid) => {
-                const other = usersCache[otherUid] || {};
-                openChat({ 
-                    type: 'dm', 
-                    id: chatId, 
-                    title: other.displayName || 'Личный чат', 
-                    avatar: other.photoURL || 'https://via.placeholder.com/150',
-                    subtitle: '@' + (other.usernameDisplay || ''),
                     otherUid: otherUid
                 });
             },
@@ -2212,92 +2157,6 @@
                 }
             },
 
-            openGroupInfo: async (groupId) => {
-                const snap = await get(ref(db, `groups/${groupId}`));
-                if (!snap.exists()) {
-                    alert('Группа не найдена');
-                    return;
-                }
-                
-                const group = snap.val();
-                window.state.currentGroupInfo = group;
-                window.state.profileViewMode = 'group';
-                
-                const overlay = document.getElementById('profile-overlay');
-                const modal = document.getElementById('profile-modal');
-                if (overlay) overlay.classList.add('active'); 
-                if (modal) {
-                    modal.classList.add('active'); 
-                    modal.setAttribute('aria-hidden','false');
-                }
-
-                const modalTitle = document.getElementById('profile-modal-title');
-                if (modalTitle) modalTitle.innerText = 'Информация о группе';
-
-                const pAvatar = document.getElementById('p-avatar');
-                const pDisplayName = document.getElementById('p-displayname');
-                const pUsername = document.getElementById('p-username');
-                const pAbout = document.getElementById('p-about');
-                const groupInfoSection = document.getElementById('group-info-section');
-                const groupMembersList = document.getElementById('group-members-list');
-                const groupEditFields = document.getElementById('group-edit-fields');
-                const groupNameInput = document.getElementById('group-name-input');
-                const groupDescriptionInput = document.getElementById('group-description-input');
-                
-                const groupImage = group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
-                if (pAvatar) pAvatar.src = groupImage;
-                if (pDisplayName) pDisplayName.innerText = group.name || 'Группа';
-                if (pUsername) pUsername.innerText = `${Object.keys(group.members || {}).length} участников`;
-                if (pAbout) pAbout.innerText = group.description || 'Нет описания.';
-
-                if (groupInfoSection) groupInfoSection.style.display = 'block';
-
-                if (groupMembersList) {
-                    groupMembersList.innerHTML = '';
-                    Object.keys(group.members || {}).forEach(uid => {
-                        const user = usersCache[uid] || {};
-                        const memberItem = document.createElement('div');
-                        memberItem.className = 'member-item';
-                        memberItem.innerHTML = `
-                            <img src="${user.photoURL || 'https://via.placeholder.com/150'}" style="width:36px;height:36px;border-radius:6px;">
-                            <div>
-                                <div style="font-weight:600;">${escapeHtml(user.displayName || 'User')}</div>
-                                <div style="font-size:12px; color:var(--muted);">@${escapeHtml(user.usernameDisplay || user.username || '')}</div>
-                            </div>
-                        `;
-                        groupMembersList.appendChild(memberItem);
-                    });
-                }
-
-                const profileEditArea = document.getElementById('profile-edit-area');
-                const btnEditProfile = document.getElementById('btn-edit-profile');
-                const btnSaveProfile = document.getElementById('btn-save-profile');
-                const btnUpgrade = document.getElementById('btn-upgrade');
-                const btnWrite = document.getElementById('btn-write');
-
-                if (profileEditArea) profileEditArea.style.display = 'none';
-                if (btnEditProfile) btnEditProfile.style.display = 'none';
-                if (btnSaveProfile) btnSaveProfile.style.display = 'none';
-                if (btnUpgrade) btnUpgrade.style.display = 'none';
-                if (btnWrite) btnWrite.style.display = 'none';
-
-                const isOwner = group.owner === window.state.user?.uid;
-                const isAdmin = window.state.isAdmin;
-                
-                if (isOwner || isAdmin) {
-                    if (btnEditProfile) {
-                        btnEditProfile.style.display = 'inline-flex';
-                        btnEditProfile.innerText = '✏ Редактировать группу';
-                    }
-                    
-                    const pAvatarInput = document.getElementById('p-avatar-input');
-                    if (pAvatarInput) pAvatarInput.value = '';
-                    
-                    if (groupNameInput) groupNameInput.value = group.name || '';
-                    if (groupDescriptionInput) groupDescriptionInput.value = group.description || '';
-                }
-            },
-
             closeProfile: () => {
                 const overlay = document.getElementById('profile-overlay');
                 const modal = document.getElementById('profile-modal');
@@ -2328,7 +2187,6 @@
                 }
             },
 
-            // ФИКС: Сохранение группы без ошибок
             saveProfile: async () => {
                 if (!window.state.user) return;
                 
@@ -2632,26 +2490,6 @@
                     console.error(err); 
                     alert('Ошибка при создании группы'); 
                 }
-            },
-
-            openGroupChat: async (groupId, meta) => {
-                let groupMeta = meta;
-                if (!groupMeta) {
-                    const snap = await get(ref(db, `groups/${groupId}`));
-                    if (!snap.exists()) {
-                        alert('Группа не найдена');
-                        return;
-                    }
-                    groupMeta = snap.val();
-                }
-                
-                openChat({ 
-                    type: 'group', 
-                    id: groupId, 
-                    title: groupMeta.name, 
-                    avatar: groupMeta.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
-                    subtitle: 'Группа'
-                });
             }
         };
 
@@ -2670,7 +2508,7 @@
             });
         }
 
-        /* themeCore с ФИКСОМ предпросмотра */
+        /* themeCore */
         window.themeCore = {
             preview: function(){
                 const preview = document.getElementById('settings-preview');
@@ -2787,11 +2625,6 @@
             
             // Загружаем тему
             loadTheme();
-            
-            // На десктопе показываем оба окна
-            if (!isMobile()) {
-                openChat({type: 'global', id: 'global', title: 'Global Chat Room', avatar: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png'});
-            }
         });
 
         function initGroupSearch(){
@@ -2896,14 +2729,14 @@
         initSearch();
         initGroupSearch();
 
+        // Экспорт функций в глобальную область видимости
         window.uiAction = window.uiAction;
         window.themeCore = window.themeCore;
         window.notificationManager = notificationManager;
-        window.escapeHtml = escapeHtml;
-        window.rgbToHex = rgbToHex;
         window.toggleTheme = toggleTheme;
         window.toggleSidebarMenu = toggleSidebarMenu;
         window.showChatList = showChatList;
+        window.openGlobalChat = openGlobalChat;
         window.openChat = openChat;
         window.sendMessage = sendMessage;
         window.attachFromURL = attachFromURL;
