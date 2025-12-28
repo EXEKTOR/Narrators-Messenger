@@ -2436,59 +2436,136 @@
                 const groupNameInput = document.getElementById('group-name');
                 const groupImageUrlInput = document.getElementById('group-image-url');
                 if (!groupNameInput || !groupImageUrlInput) return;
-                
+
                 const name = (groupNameInput.value || '').trim();
                 if (!name || name.length < 2) {
                     alert('Введите название группы (мин. 2 символа)');
                     return;
                 }
-                
+
                 let image = (groupImageUrlInput.value || '').trim();
-                
+
                 // Убрали проверки на формат!
                 if (image && !image.startsWith('http://') && !image.startsWith('https://') && image.includes('.')) {
                     image = 'https://' + image;
                 }
-                
+
                 const selected = uiAction._groupSelected || {};
                 const members = Object.keys(selected);
                 if (members.length < 2) {
                     alert('Добавьте как минимум одного участника кроме вас');
                     return;
                 }
-                
+
                 try {
                     const gRef = push(ref(db, 'groups'));
                     const groupId = gRef.key;
                     const membersObj = {};
                     members.forEach(uid => membersObj[uid] = true);
-                    const meta = { 
-                        id: groupId, 
-                        name, 
-                        owner: window.state.user.uid, 
-                        members: membersObj, 
-                        createdAt: Date.now(), 
+                    const meta = {
+                        id: groupId,
+                        name,
+                        owner: window.state.user.uid,
+                        members: membersObj,
+                        createdAt: Date.now(),
                         image: image || '',
                         description: ''
                     };
                     await set(ref(db, `groups/${groupId}`), meta);
                     uiAction.closeCreateGroup();
-                    addConversationToList({ 
-                        type: 'group', 
-                        id: groupId, 
-                        title: name, 
-                        avatar: image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png' 
+                    addConversationToList({
+                        type: 'group',
+                        id: groupId,
+                        title: name,
+                        avatar: image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png'
                     });
-                    openChat({ 
-                        type: 'group', 
-                        id: groupId, 
-                        title: name, 
+                    openChat({
+                        type: 'group',
+                        id: groupId,
+                        title: name,
                         avatar: image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
                         subtitle: 'Группа'
                     });
-                } catch (err) { 
-                    console.error(err); 
-                    alert('Ошибка при создании группы'); 
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка при создании группы');
+                }
+            },
+
+            openGroupInfo: async (groupId) => {
+                if (!groupId) return;
+                try {
+                    const groupSnap = await get(child(ref(db), `groups/${groupId}`));
+                    if (groupSnap.exists()) {
+                        const group = groupSnap.val();
+                        window.state.currentGroupInfo = { id: groupId, ...group };
+                        window.state.profileViewMode = 'group';
+                        uiAction._profileShownUid = null;
+                        const overlay = document.getElementById('profile-overlay');
+                        const modal = document.getElementById('profile-modal');
+                        if (overlay) overlay.classList.add('active');
+                        if (modal) {
+                            modal.classList.add('active');
+                            modal.setAttribute('aria-hidden','false');
+                        }
+                        const modalTitle = document.getElementById('profile-modal-title');
+                        if (modalTitle) modalTitle.innerText = 'Информация о группе';
+                        const pAvatar = document.getElementById('p-avatar');
+                        const pDisplayName = document.getElementById('p-displayname');
+                        const pUsername = document.getElementById('p-username');
+                        const pAbout = document.getElementById('p-about');
+                        if (pAvatar) pAvatar.src = group.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
+                        if (pDisplayName) pDisplayName.innerText = group.name || 'Группа';
+                        if (pUsername) pUsername.innerText = '';
+                        if (pAbout) pAbout.innerText = group.description || 'Нет описания.';
+                        const groupInfoSection = document.getElementById('group-info-section');
+                        if (groupInfoSection) {
+                            groupInfoSection.style.display = 'block';
+                            const membersList = document.getElementById('group-members-list');
+                            if (membersList) {
+                                membersList.innerHTML = '';
+                                const members = group.members || {};
+                                Object.keys(members).forEach(uid => {
+                                    const user = usersCache[uid] || { displayName: 'Пользователь', photoURL: 'https://via.placeholder.com/150' };
+                                    const memberDiv = document.createElement('div');
+                                    memberDiv.style.display = 'flex';
+                                    memberDiv.style.alignItems = 'center';
+                                    memberDiv.style.gap = '12px';
+                                    memberDiv.style.padding = '8px 0';
+                                    memberDiv.innerHTML = `<img src="${user.photoURL}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;"> <span>${user.displayName}</span>`;
+                                    membersList.appendChild(memberDiv);
+                                });
+                            }
+                        }
+                        const profileEditArea = document.getElementById('profile-edit-area');
+                        const btnEditProfile = document.getElementById('btn-edit-profile');
+                        const btnSaveProfile = document.getElementById('btn-save-profile');
+                        const btnUpgrade = document.getElementById('btn-upgrade');
+                        const btnWrite = document.getElementById('btn-write');
+                        const groupEditFields = document.getElementById('group-edit-fields');
+                        if (profileEditArea) profileEditArea.style.display = 'none';
+                        if (btnEditProfile) btnEditProfile.style.display = 'none';
+                        if (btnSaveProfile) btnSaveProfile.style.display = 'none';
+                        if (btnUpgrade) btnUpgrade.style.display = 'none';
+                        if (btnWrite) btnWrite.style.display = 'none';
+                        if (window.state.user && group.owner === window.state.user.uid) {
+                            if (profileEditArea) profileEditArea.style.display = 'block';
+                            if (groupEditFields) groupEditFields.style.display = 'block';
+                            if (btnEditProfile) btnEditProfile.style.display = 'inline-flex';
+                            if (btnSaveProfile) btnSaveProfile.style.display = 'none';
+                            const pAvatarInput = document.getElementById('p-avatar-input');
+                            const groupNameInput = document.getElementById('group-name-input');
+                            const groupDescriptionInput = document.getElementById('group-description-input');
+                            if (pAvatarInput) pAvatarInput.value = group.image || '';
+                            if (groupNameInput) groupNameInput.value = group.name || '';
+                            if (groupDescriptionInput) groupDescriptionInput.value = group.description || '';
+                        }
+                    } else {
+                        alert('Группа не найдена');
+                    }
+                } catch (err) {
+                    console.error('Ошибка загрузки группы:', err);
+                    alert('Ошибка загрузки группы');
                 }
             }
         };
