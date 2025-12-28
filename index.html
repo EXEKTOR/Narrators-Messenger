@@ -45,7 +45,7 @@
 
         /* Mobile-first layout */
         #app{
-            display:flex;
+            display:none;
             flex-direction:column;
             width:100%;
             height:100%;
@@ -1677,97 +1677,102 @@
         };
 
         /* AUTH state handling */
-        onAuthStateChanged(auth, async (firebaseUser) => {
-            if (!firebaseUser) {
-                teardownAfterSignOut();
-                document.getElementById('app').style.display = 'none';
-                uiAction.openLogin();
-                return;
-            }
-            document.getElementById('app').style.display = 'flex';
-            uiAction.closeLogin();
-            window.state.user = firebaseUser;
-            try {
-                const snap = await get(child(ref(db), `users/${firebaseUser.uid}`));
-                if (snap.exists()) window.state.profile = snap.val();
-                else {
-                    const displayName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'User');
-                    const username = (displayName.split(' ')[0] || displayName).toLowerCase();
-                    const profile = { 
-                        uid: firebaseUser.uid, 
-                        displayName, 
-                        username, 
-                        usernameDisplay: username, 
-                        photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150', 
-                        about: '' 
-                    };
-                    await set(ref(db, `users/${firebaseUser.uid}`), profile);
-                    window.state.profile = profile;
+        function initAuth() {
+            onAuthStateChanged(auth, async (firebaseUser) => {
+                if (!firebaseUser) {
+                    teardownAfterSignOut();
+                    document.getElementById('app').style.display = 'none';
+                    uiAction.openLogin();
+                    return;
                 }
+                document.getElementById('app').style.display = 'flex';
+                uiAction.closeLogin();
+                window.state.user = firebaseUser;
+                try {
+                    const snap = await get(child(ref(db), `users/${firebaseUser.uid}`));
+                    if (snap.exists()) window.state.profile = snap.val();
+                    else {
+                        const displayName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'User');
+                        const username = (displayName.split(' ')[0] || displayName).toLowerCase();
+                        const profile = {
+                            uid: firebaseUser.uid,
+                            displayName,
+                            username,
+                            usernameDisplay: username,
+                            photoURL: firebaseUser.photoURL || 'https://via.placeholder.com/150',
+                            about: ''
+                        };
+                        await set(ref(db, `users/${firebaseUser.uid}`), profile);
+                        window.state.profile = profile;
+                    }
 
-                if ((window.state.profile.usernameDisplay || '').toLowerCase() === 'admin') window.state.isAdmin = true;
+                    if ((window.state.profile.usernameDisplay || '').toLowerCase() === 'admin') window.state.isAdmin = true;
 
-                document.getElementById('user-profile-img').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
-                document.getElementById('user-display-name').innerText = window.state.profile.displayName || '';
-                document.getElementById('user-display-tag').innerText = '@' + (window.state.profile.usernameDisplay || '');
+                    document.getElementById('user-profile-img').src = window.state.profile.photoURL || 'https://via.placeholder.com/150';
+                    document.getElementById('user-display-name').innerText = window.state.profile.displayName || '';
+                    document.getElementById('user-display-tag').innerText = '@' + (window.state.profile.usernameDisplay || '');
 
-                document.getElementById('user-profile-img').onclick = () => uiAction.openProfile(window.state.user.uid);
+                    document.getElementById('user-profile-img').onclick = () => uiAction.openProfile(window.state.user.uid);
 
-                const sidebarBtn = document.getElementById('sidebar-menu-btn');
-                if (sidebarBtn) {
-                    sidebarBtn.onclick = function(e) {
-                        e.stopPropagation();
-                        toggleSidebarMenu();
-                    };
-                }
+                    const sidebarBtn = document.getElementById('sidebar-menu-btn');
+                    if (sidebarBtn) {
+                        sidebarBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            toggleSidebarMenu();
+                        };
+                    }
 
-                const attachBtn = document.getElementById('attach-btn');
-                if (attachBtn) {
-                    attachBtn.onclick = function(e) {
-                        e.stopPropagation();
-                        const menu = document.getElementById('attach-menu');
-                        if (menu) {
-                            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                    const attachBtn = document.getElementById('attach-btn');
+                    if (attachBtn) {
+                        attachBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            const menu = document.getElementById('attach-menu');
+                            if (menu) {
+                                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                            };
                         }
-                    };
-                }
+                    }
 
-                themeCore.load();
-                loadTheme();
-                initUsersCacheListener();
-                initConversationsListener();
-                initSearch();
-                initGroupSearch();
-                
-                notificationManager.init();
-                
-                // На мобильных показываем список чатов по умолчанию
-                if (isMobile()) {
-                    showChatList();
-                    openGlobalChat();
-                } else {
-                    openGlobalChat();
-                }
+                    themeCore.load();
+                    loadTheme();
+                    initUsersCacheListener();
+                    initConversationsListener();
+                    initSearch();
+                    initGroupSearch();
 
-            } catch (err) {
-                console.error('post-auth error', err);
-                alert('Ошибка при загрузке профиля: ' + (err.message || err));
-            }
-        });
+                    notificationManager.init();
+
+                    // На мобильных показываем список чатов по умолчанию
+                    if (isMobile()) {
+                        showChatList();
+                        openGlobalChat();
+                    } else {
+                        openGlobalChat();
+                    }
+
+                } catch (err) {
+                    console.error('post-auth error', err);
+                    alert('Ошибка при загрузке профиля: ' + (err.message || err));
+                }
+            });
+        }
 
         function teardownAfterSignOut(){
             document.getElementById('user-profile-img').onclick = null;
+            document.getElementById('user-profile-img').src = 'https://via.placeholder.com/150';
+            document.getElementById('user-display-name').innerText = '';
+            document.getElementById('user-display-tag').innerText = '';
             if (usersListener && typeof usersListener === 'function') usersListener();
             if (dmsListener && typeof dmsListener === 'function') dmsListener();
             if (groupsListener && typeof groupsListener === 'function') groupsListener();
             if (currentMessagesUnsub && typeof currentMessagesUnsub === 'function') currentMessagesUnsub();
-            
+
             const convList = document.getElementById('conversations-list');
             if (convList) {
                 const rows = convList.querySelectorAll('.chat-row:not(#row-global)');
                 rows.forEach(el => el.remove());
             }
-            
+
             Object.keys(conversationsIndex).forEach(k => delete conversationsIndex[k]);
         }
 
@@ -2965,6 +2970,8 @@
         window.signOutUser = signOutUser;
 
         themeCore.load();
+
+        initAuth();
 
     </script>
 </body>
