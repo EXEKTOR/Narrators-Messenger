@@ -1051,6 +1051,43 @@
         </div>
     </div>
 
+    <!-- LOGIN MODAL -->
+    <div id="login-overlay" class="profile-overlay" onclick="uiAction.closeLogin()"></div>
+    <div id="login-modal" class="profile-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-weight:800;" id="login-modal-title">Вход в аккаунт</div>
+            <button onclick="uiAction.closeLogin()" style="background:transparent; font-size:18px; padding:6px; width:44px; height:44px; display:flex; align-items:center; justify-content:center;">✕</button>
+        </div>
+
+        <div id="login-form">
+            <button class="btn btn-primary" style="width:100%; margin-bottom:12px;" onclick="signInWithGoogle()">
+                <img src="https://developers.google.com/identity/images/g-logo.png" style="width:20px; height:20px; margin-right:8px;"> Войти через Google
+            </button>
+
+            <div style="text-align:center; margin:20px 0; color:var(--muted);">или</div>
+
+            <div id="email-login-section">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-bottom:4px;">Email</label>
+                <input id="login-email" class="input-field" type="email" placeholder="your@email.com">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-top:12px; margin-bottom:4px;">Пароль</label>
+                <input id="login-password" class="input-field" type="password" placeholder="Пароль">
+                <button class="btn btn-primary" style="width:100%; margin-top:16px;" onclick="signInWithEmail()">Войти</button>
+                <button class="btn btn-ghost" style="width:100%; margin-top:8px;" onclick="showSignUp()">Регистрация</button>
+            </div>
+
+            <div id="email-signup-section" style="display:none;">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-bottom:4px;">Email</label>
+                <input id="signup-email" class="input-field" type="email" placeholder="your@email.com">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-top:12px; margin-bottom:4px;">Пароль</label>
+                <input id="signup-password" class="input-field" type="password" placeholder="Пароль (мин. 6 символов)">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-top:12px; margin-bottom:4px;">Имя</label>
+                <input id="signup-name" class="input-field" placeholder="Ваше имя">
+                <button class="btn btn-primary" style="width:100%; margin-top:16px;" onclick="signUpWithEmail()">Зарегистрироваться</button>
+                <button class="btn btn-ghost" style="width:100%; margin-top:8px;" onclick="showSignIn()">Войти</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import {
@@ -1059,7 +1096,9 @@
             signInWithPopup,
             onAuthStateChanged,
             signOut,
-            linkWithPopup
+            linkWithPopup,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         import {
@@ -1308,6 +1347,78 @@
                 console.error(err); 
                 alert('Ошибка выхода: ' + (err.message || err)); 
             }
+        }
+
+        /* AUTH FUNCTIONS */
+        async function signInWithGoogle() {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                // User signed in
+            } catch (error) {
+                console.error('Google sign in error:', error);
+                alert('Ошибка входа через Google: ' + (error.message || error));
+            }
+        }
+
+        async function signInWithEmail() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            if (!email || !password) {
+                alert('Введите email и пароль');
+                return;
+            }
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                uiAction.closeLogin();
+            } catch (error) {
+                console.error('Email sign in error:', error);
+                alert('Ошибка входа: ' + (error.message || error));
+            }
+        }
+
+        async function signUpWithEmail() {
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+            const name = document.getElementById('signup-name').value.trim();
+            if (!email || !password || !name) {
+                alert('Заполните все поля');
+                return;
+            }
+            if (password.length < 6) {
+                alert('Пароль должен быть не менее 6 символов');
+                return;
+            }
+            try {
+                const result = await createUserWithEmailAndPassword(auth, email, password);
+                // Create user profile
+                const displayName = name;
+                const username = (name.split(' ')[0] || name).toLowerCase();
+                const profile = {
+                    uid: result.user.uid,
+                    displayName,
+                    username,
+                    usernameDisplay: username,
+                    photoURL: result.user.photoURL || 'https://via.placeholder.com/150',
+                    about: ''
+                };
+                await set(ref(db, `users/${result.user.uid}`), profile);
+                uiAction.closeLogin();
+            } catch (error) {
+                console.error('Email sign up error:', error);
+                alert('Ошибка регистрации: ' + (error.message || error));
+            }
+        }
+
+        function showSignUp() {
+            document.getElementById('email-login-section').style.display = 'none';
+            document.getElementById('email-signup-section').style.display = 'block';
+            document.getElementById('login-modal-title').innerText = 'Регистрация';
+        }
+
+        function showSignIn() {
+            document.getElementById('email-login-section').style.display = 'block';
+            document.getElementById('email-signup-section').style.display = 'none';
+            document.getElementById('login-modal-title').innerText = 'Вход в аккаунт';
         }
 
         /* Менеджер уведомлений */
@@ -1569,9 +1680,12 @@
         onAuthStateChanged(auth, async (firebaseUser) => {
             if (!firebaseUser) {
                 teardownAfterSignOut();
-                document.getElementById('app').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                uiAction.openLogin();
                 return;
             }
+            document.getElementById('app').style.display = 'flex';
+            uiAction.closeLogin();
             window.state.user = firebaseUser;
             try {
                 const snap = await get(child(ref(db), `users/${firebaseUser.uid}`));
@@ -2567,6 +2681,27 @@
                     console.error('Ошибка загрузки группы:', err);
                     alert('Ошибка загрузки группы');
                 }
+            },
+
+            openLogin: () => {
+                const overlay = document.getElementById('login-overlay');
+                const modal = document.getElementById('login-modal');
+                if (overlay) overlay.classList.add('active');
+                if (modal) {
+                    modal.classList.add('active');
+                    modal.setAttribute('aria-hidden','false');
+                }
+                showSignIn();
+            },
+
+            closeLogin: () => {
+                const overlay = document.getElementById('login-overlay');
+                const modal = document.getElementById('login-modal');
+                if (overlay) overlay.classList.remove('active');
+                if (modal) {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden','true');
+                }
             }
         };
 
@@ -2822,9 +2957,16 @@
         window.cancelAction = cancelAction;
         window.openContextMenu = openContextMenu;
         window.signOutUser = signOutUser;
+        window.signInWithGoogle = signInWithGoogle;
+        window.signInWithEmail = signInWithEmail;
+        window.signUpWithEmail = signUpWithEmail;
+        window.showSignUp = showSignUp;
+        window.showSignIn = showSignIn;
+        window.signOutUser = signOutUser;
 
         themeCore.load();
 
     </script>
 </body>
 </html>
+
