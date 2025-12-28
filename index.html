@@ -639,6 +639,7 @@
             --msg-other:#1a1a1a;
             --msg-other-text:#ffffff;
             --shadow-sm: 0 6px 18px rgba(0,0,0,0.5);
+            color: #ffffff;
         }
 
         body.dark-theme .profile-modal,
@@ -682,6 +683,30 @@
         body.dark-theme .notification-permission-banner {
             background: #2a2a2a;
             border: 1px solid #333;
+        }
+
+        /* Settings preview styles */
+        #settings-preview {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        #settings-preview .preview-message {
+            background: var(--msg-other);
+            color: var(--msg-other-text);
+            padding: 14px 16px;
+            border-radius: var(--message-border-radius);
+            max-width: 85%;
+            box-shadow: 0 6px 20px rgba(11,22,39,0.04);
+            margin-bottom: 12px;
+            font-size: var(--font-size);
+        }
+
+        #settings-preview .preview-message.my {
+            background: var(--msg-me);
+            color: var(--msg-me-text);
         }
 
         /* Кнопка темы в меню */
@@ -840,6 +865,7 @@
                 <div id="sidebar-menu" aria-hidden="true">
                     <button class="item" onclick="uiAction.openSettings(); toggleSidebarMenu()">🎨 Персонализация</button>
                     <button class="item" onclick="uiAction.openCreateGroup(); toggleSidebarMenu()">➕ Создать группу</button>
+                    <button class="item" onclick="uiAction.openCreateChannel(); toggleSidebarMenu()">📢 Создать канал</button>
                     <button class="item" onclick="uiAction.openNotifications(); toggleSidebarMenu()">🔔 Уведомления</button>
                     <div class="divider"></div>
                     <button class="item" onclick="uiAction.openGlobal(); toggleSidebarMenu()">🌍 Global чат</button>
@@ -867,6 +893,17 @@
                             <div class="muted-xs" style="color:#aaa">online</div>
                         </div>
                         <div class="muted-xs" style="color:var(--muted)">Общий чат</div>
+                    </div>
+                </div>
+                <!-- News канал -->
+                <div class="chat-row" onclick="openNewsChannel()">
+                    <img class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" style="width:46px;height:46px;border-radius:8px;">
+                    <div style="flex:1">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div style="font-weight:700">Narrators Messenger News📰</div>
+                            <div class="muted-xs" style="color:#aaa">news</div>
+                        </div>
+                        <div class="muted-xs" style="color:var(--muted)">Новости мессенджера</div>
                     </div>
                 </div>
                 <!-- Сюда будут добавляться остальные чаты -->
@@ -933,6 +970,12 @@
             </div>
         </div>
 
+        <div id="channel-info-section" class="channel-info-section" style="display:none;">
+            <div style="font-weight:700; margin-bottom:6px;">Подписчики:</div>
+            <div id="channel-subscribers-list" class="subscribers-list">
+            </div>
+        </div>
+
         <div id="profile-edit-area" style="display:none; margin-top:12px;">
             <label style="font-size:13px; color:var(--muted); display:block; margin-bottom:4px;">Ссылка на аватар</label>
             <input id="p-avatar-input" class="input-field" placeholder="https://...">
@@ -944,6 +987,23 @@
                 <input id="group-name-input" class="input-field" placeholder="Название группы">
                 <label style="font-size:13px; color:var(--muted); display:block; margin-top:12px; margin-bottom:4px;">Описание группы</label>
                 <textarea id="group-description-input" class="input-field" rows="2" placeholder="Описание группы"></textarea>
+                <div id="group-add-members-section" style="margin-top:12px;">
+                    <label style="font-size:13px; color:var(--muted); display:block; margin-bottom:4px;">Добавить участников</label>
+                    <input id="group-add-member-search" class="input-field" placeholder="Искать пользователя...">
+                    <div id="group-add-member-results" style="max-height:160px; overflow-y:auto; margin-top:8px;"></div>
+                </div>
+            </div>
+
+            <div id="channel-edit-fields" style="display:none;">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-top:12px; margin-bottom:4px;">Название канала</label>
+                <input id="channel-name-input" class="input-field" placeholder="Название канала">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-top:12px; margin-bottom:4px;">Описание канала</label>
+                <textarea id="channel-description-input" class="input-field" rows="2" placeholder="Описание канала"></textarea>
+                <div id="channel-add-subscribers-section" style="margin-top:12px;">
+                    <label style="font-size:13px; color:var(--muted); display:block; margin-bottom:4px;">Добавить подписчиков</label>
+                    <input id="channel-add-subscriber-search" class="input-field" placeholder="Искать пользователя...">
+                    <div id="channel-add-subscriber-results" style="max-height:160px; overflow-y:auto; margin-top:8px;"></div>
+                </div>
             </div>
         </div>
 
@@ -1051,6 +1111,33 @@
         </div>
     </div>
 
+    <!-- CHANNEL MODAL -->
+    <div id="channel-overlay" class="profile-overlay" onclick="uiAction.closeCreateChannel()"></div>
+    <div id="channel-modal" class="group-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:800;">Создать канал</div>
+            <button onclick="uiAction.closeCreateChannel()" style="background:transparent; font-size:18px; padding:6px; width:44px; height:44px; display:flex; align-items:center; justify-content:center;">✕</button>
+        </div>
+
+        <div style="margin-bottom:8px;">
+            <label class="muted-xs" style="display:block; margin-bottom:4px;">Название канала</label>
+            <input id="channel-name" class="input-field" placeholder="Название канала">
+            <label class="muted-xs" style="display:block; margin-top:12px; margin-bottom:4px;">Описание канала</label>
+            <textarea id="channel-description" class="input-field" rows="2" placeholder="Описание канала"></textarea>
+            <label class="muted-xs" style="display:block; margin-top:12px; margin-bottom:4px;">Ссылка на изображение канала (опционально)</label>
+            <input id="channel-image-url" class="input-field" placeholder="https://...">
+            <small class="muted-xs" style="display:block; margin-top:12px; margin-bottom:4px;">Добавить подписчиков (ищите по тегу или имени)</small>
+            <input id="channel-add-search" class="input-field" placeholder="Искать пользователя...">
+            <div id="channel-search-results" style="max-height:160px; overflow-y:auto; margin-top:8px;"></div>
+            <div id="channel-selected" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;"></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+            <button class="btn btn-ghost" onclick="uiAction.closeCreateChannel()">Отмена</button>
+            <button class="btn btn-primary" onclick="uiAction.createChannel()">Создать</button>
+        </div>
+    </div>
+
     <!-- LOGIN MODAL -->
     <div id="login-overlay" class="profile-overlay" onclick="uiAction.closeLogin()"></div>
     <div id="login-modal" class="profile-modal" role="dialog" aria-modal="true" aria-hidden="true">
@@ -1085,6 +1172,27 @@
                 <button class="btn btn-primary" style="width:100%; margin-top:16px;" onclick="signUpWithEmail()">Зарегистрироваться</button>
                 <button class="btn btn-ghost" style="width:100%; margin-top:8px;" onclick="showSignIn()">Войти</button>
             </div>
+        </div>
+    </div>
+
+    <!-- IMAGE PREVIEW MODAL -->
+    <div id="image-preview-overlay" class="profile-overlay" onclick="closeImagePreview()"></div>
+    <div id="image-preview-modal" class="profile-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-weight:800;">Отправить изображение</div>
+            <button onclick="closeImagePreview()" style="background:transparent; font-size:18px; padding:6px; width:44px; height:44px; display:flex; align-items:center; justify-content:center;">✕</button>
+        </div>
+
+        <div style="text-align:center; margin-bottom:20px;">
+            <img id="preview-image" style="max-width:100%; max-height:300px; border-radius:8px;" alt="Preview">
+        </div>
+
+        <label style="font-size:13px; color:var(--muted); display:block; margin-bottom:4px;">Подпись (опционально)</label>
+        <textarea id="image-caption" class="input-field" rows="2" placeholder="Добавьте подпись к изображению..."></textarea>
+
+        <div style="display:flex; gap:8px; margin-top:20px;">
+            <button class="btn btn-ghost" onclick="closeImagePreview()">Отмена</button>
+            <button class="btn btn-primary" onclick="sendImageWithCaption()">Отправить</button>
         </div>
     </div>
 
@@ -1145,6 +1253,7 @@
         const conversationsIndex = {};
         let dmsListener = null;
         let groupsListener = null;
+        let channelsListener = null;
         let usersListener = null;
         let currentMessagesUnsub = null;
         const notificationHistory = JSON.parse(localStorage.getItem('notificationHistory') || '[]');
@@ -1169,17 +1278,37 @@
         // ОТКРЫТЬ Global чат
         function openGlobalChat() {
             window.state.currentChat = { type: 'global', id: 'global', title: 'Global Chat Room' };
-            
+
             const chatTopTitle = document.getElementById('chat-top-title');
             const chatTopSub = document.getElementById('chat-top-sub');
             const chatTopAvatar = document.getElementById('chat-top-avatar');
-            
+
             if (chatTopTitle) chatTopTitle.innerText = 'Global Chat Room';
             if (chatTopSub) chatTopSub.innerText = 'Общий чат';
             if (chatTopAvatar) chatTopAvatar.src = 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
-            
+
             openChatListener('messages');
-            
+
+            if (isMobile()) {
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('chat-window').classList.add('visible');
+            }
+        }
+
+        // ОТКРЫТЬ News канал
+        function openNewsChannel() {
+            window.state.currentChat = { type: 'channel', id: 'news', title: 'Narrators Messenger News📰' };
+
+            const chatTopTitle = document.getElementById('chat-top-title');
+            const chatTopSub = document.getElementById('chat-top-sub');
+            const chatTopAvatar = document.getElementById('chat-top-avatar');
+
+            if (chatTopTitle) chatTopTitle.innerText = 'Narrators Messenger News📰';
+            if (chatTopSub) chatTopSub.innerText = 'Новости мессенджера';
+            if (chatTopAvatar) chatTopAvatar.src = 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
+
+            openChatListener('channels/news/messages');
+
             if (isMobile()) {
                 document.getElementById('sidebar').classList.add('hidden');
                 document.getElementById('chat-window').classList.add('visible');
@@ -1920,22 +2049,37 @@
             const input = document.getElementById('main-input');
             const text = input.value.trim();
             if (!text) return;
-            
+
             const chat = window.state.currentChat || { type:'global', id:'global' };
             let path;
             if (chat.type === 'global') path = 'messages';
             else if (chat.type === 'dm') path = `dms/${chat.id}/messages`;
             else if (chat.type === 'group') path = `groups/${chat.id}/messages`;
-            
+            else if (chat.type === 'channel') path = `channels/${chat.id}/messages`;
+
+            // Проверка прав для канала
+            if (chat.type === 'channel') {
+                const channelRef = ref(db, `channels/${chat.id}`);
+                const snap = await get(channelRef);
+                if (snap.exists()) {
+                    const channel = snap.val();
+                    const subscribers = channel.subscribers || {};
+                    if (!subscribers[window.state.user.uid] || !subscribers[window.state.user.uid].canWrite) {
+                        alert('У вас нет прав на отправку сообщений в этот канал');
+                        return;
+                    }
+                }
+            }
+
             // Проверка на картинку
             let isImage = false;
             const imageRegex = /(https?:\/\/.*\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?)/i;
             const dataUrlRegex = /^data:image\/\w+;base64,/;
-            
+
             if (imageRegex.test(text) || dataUrlRegex.test(text)) {
                 isImage = true;
             }
-            
+
             const messageData = {
                 uid: window.state.user.uid,
                 displayName: window.state.profile.displayName,
@@ -1944,24 +2088,24 @@
                 createdAt: Date.now(),
                 isImage: isImage
             };
-            
+
             if (window.state.activeAction === 'reply' && window.state.targetMessage) {
-                messageData.replyTo = { 
-                    author: window.state.targetMessage.displayName, 
-                    content: window.state.targetMessage.text 
+                messageData.replyTo = {
+                    author: window.state.targetMessage.displayName,
+                    content: window.state.targetMessage.text
                 };
             }
-            
+
             try {
                 await push(ref(db, path), messageData);
                 cancelAction();
-                
+
                 const attachMenu = document.getElementById('attach-menu');
                 if (attachMenu) attachMenu.style.display = 'none';
-                
+
                 input.value = '';
                 input.style.height = 'auto';
-                
+
             } catch (error) {
                 console.error('Ошибка отправки сообщения:', error);
                 alert('Ошибка отправки сообщения');
@@ -1998,10 +2142,15 @@
                         
                         if (msg.isImage) {
                             const imageUrl = msg.text.trim();
+                            let imageHtml;
                             if (imageUrl.startsWith('data:image/')) {
-                                processedText = `<img src="${imageUrl}" style="max-width:100%; border-radius:8px; margin-top:5px; cursor:pointer;" onclick="window.open(this.src)" alt="Изображение">`;
+                                imageHtml = `<img src="${imageUrl}" style="max-width:100%; border-radius:8px; margin-top:5px; cursor:pointer;" onclick="window.open(this.src)" alt="Изображение">`;
                             } else {
-                                processedText = `<img src="${imageUrl}" style="max-width:100%; border-radius:8px; margin-top:5px; cursor:pointer;" onclick="window.open(this.src)" alt="Изображение" onerror="this.style.display='none'; this.parentElement.innerHTML='<i>Изображение не загружено</i>';">`;
+                                imageHtml = `<img src="${imageUrl}" style="max-width:100%; border-radius:8px; margin-top:5px; cursor:pointer;" onclick="window.open(this.src)" alt="Изображение" onerror="this.style.display='none'; this.parentElement.innerHTML='<i>Изображение не загружено</i>';">`;
+                            }
+                            processedText = imageHtml;
+                            if (msg.caption) {
+                                processedText += `<div style="margin-top:8px; font-size:14px; color:var(--muted);">${escapeHtml(msg.caption)}</div>`;
                             }
                         } else {
                             processedText = processedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
@@ -2039,20 +2188,14 @@
         function attachFromURL() {
             const url = prompt("Введите URL изображения:");
             if (url) {
-                // УБИРАЕМ ВСЕ ПРОВЕРКИ НА ФОРМАТ!
                 let finalUrl = url.trim();
-                
+
                 // Автоматически добавляем http:// если не указан протокол
                 if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
                     finalUrl = 'https://' + finalUrl;
                 }
-                
-                // Просто вставляем URL, не проверяя расширение
-                const mainInput = document.getElementById('main-input');
-                if (mainInput) {
-                    mainInput.value = finalUrl;
-                    mainInput.focus();
-                }
+
+                showImagePreview(finalUrl);
             }
             document.getElementById('attach-menu').style.display = 'none';
         }
@@ -2068,20 +2211,88 @@
                         alert('Файл слишком большой. Максимальный размер: 5MB');
                         return;
                     }
-                    
+
                     const reader = new FileReader();
                     reader.onload = function(event) {
-                        const mainInput = document.getElementById('main-input');
-                        if (mainInput) {
-                            mainInput.value = event.target.result;
-                            sendMessage();
-                        }
+                        showImagePreview(event.target.result, file);
                     };
                     reader.readAsDataURL(file);
                 }
             };
             input.click();
             document.getElementById('attach-menu').style.display = 'none';
+        }
+
+        function showImagePreview(imageUrl, file = null) {
+            window.state.pendingImage = { url: imageUrl, file: file };
+            const previewImg = document.getElementById('preview-image');
+            previewImg.src = imageUrl;
+            previewImg.onerror = function() {
+                closeImagePreview();
+                const mainInput = document.getElementById('main-input');
+                if (mainInput) {
+                    mainInput.value = imageUrl;
+                    mainInput.focus();
+                }
+            };
+            document.getElementById('image-caption').value = '';
+            document.getElementById('image-preview-overlay').classList.add('active');
+            document.getElementById('image-preview-modal').classList.add('active');
+            document.getElementById('image-preview-modal').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeImagePreview() {
+            document.getElementById('image-preview-overlay').classList.remove('active');
+            document.getElementById('image-preview-modal').classList.remove('active');
+            document.getElementById('image-preview-modal').setAttribute('aria-hidden', 'true');
+            window.state.pendingImage = null;
+        }
+
+        async function sendImageWithCaption() {
+            const caption = document.getElementById('image-caption').value.trim();
+            const image = window.state.pendingImage;
+            if (!image) return;
+
+            const chat = window.state.currentChat || { type:'global', id:'global' };
+            let path;
+            if (chat.type === 'global') path = 'messages';
+            else if (chat.type === 'dm') path = `dms/${chat.id}/messages`;
+            else if (chat.type === 'group') path = `groups/${chat.id}/messages`;
+            else if (chat.type === 'channel') path = `channels/${chat.id}/messages`;
+
+            // Проверка прав для канала
+            if (chat.type === 'channel') {
+                const channelRef = ref(db, `channels/${chat.id}`);
+                const snap = await get(channelRef);
+                if (snap.exists()) {
+                    const channel = snap.val();
+                    const subscribers = channel.subscribers || {};
+                    if (!subscribers[window.state.user.uid] || !subscribers[window.state.user.uid].canWrite) {
+                        alert('У вас нет прав на отправку сообщений в этот канал');
+                        return;
+                    }
+                }
+            }
+
+            const messageData = {
+                uid: window.state.user.uid,
+                displayName: window.state.profile.displayName,
+                username: window.state.profile.usernameDisplay,
+                text: image.url,
+                caption: caption,
+                createdAt: Date.now(),
+                isImage: true
+            };
+
+            push(ref(db, path), messageData).then(() => {
+                cancelAction();
+                const mainInput = document.getElementById('main-input');
+                if (mainInput) mainInput.value = '';
+                closeImagePreview();
+            }).catch(error => {
+                console.error('Ошибка отправки изображения:', error);
+                alert('Ошибка отправки изображения');
+            });
         }
 
         function openContextMenu(e, key, data){
@@ -2292,15 +2503,24 @@
                 const btnEditProfile = document.getElementById('btn-edit-profile');
                 const btnSaveProfile = document.getElementById('btn-save-profile');
                 const groupEditFields = document.getElementById('group-edit-fields');
-                
+                const channelEditFields = document.getElementById('channel-edit-fields');
+
                 if (window.state.profileViewMode === 'group') {
                     if (profileEditArea) profileEditArea.style.display = 'block';
                     if (groupEditFields) groupEditFields.style.display = 'block';
+                    if (channelEditFields) channelEditFields.style.display = 'none';
+                    if (btnEditProfile) btnEditProfile.style.display = 'none';
+                    if (btnSaveProfile) btnSaveProfile.style.display = 'inline-flex';
+                } else if (window.state.profileViewMode === 'channel') {
+                    if (profileEditArea) profileEditArea.style.display = 'block';
+                    if (channelEditFields) channelEditFields.style.display = 'block';
+                    if (groupEditFields) groupEditFields.style.display = 'none';
                     if (btnEditProfile) btnEditProfile.style.display = 'none';
                     if (btnSaveProfile) btnSaveProfile.style.display = 'inline-flex';
                 } else {
                     if (profileEditArea) profileEditArea.style.display = 'block';
                     if (groupEditFields) groupEditFields.style.display = 'none';
+                    if (channelEditFields) channelEditFields.style.display = 'none';
                     if (btnEditProfile) btnEditProfile.style.display = 'none';
                     if (btnSaveProfile) btnSaveProfile.style.display = 'inline-flex';
                 }
@@ -2308,62 +2528,62 @@
 
             saveProfile: async () => {
                 if (!window.state.user) return;
-                
+
                 if (window.state.profileViewMode === 'group') {
                     const group = window.state.currentGroupInfo;
                     if (!group) return;
-                    
+
                     const groupNameInput = document.getElementById('group-name-input');
                     const groupDescriptionInput = document.getElementById('group-description-input');
                     const pAvatarInput = document.getElementById('p-avatar-input');
-                    
+
                     if (!groupNameInput || !groupDescriptionInput || !pAvatarInput) return;
-                    
+
                     const newName = groupNameInput.value.trim();
                     const newDescription = groupDescriptionInput.value.trim();
                     let newImage = pAvatarInput.value.trim();
-                    
+
                     if (!newName) {
                         alert('Введите название группы');
                         return;
                     }
-                    
+
                     // Убрали все проверки на формат URL!
                     if (newImage && !newImage.startsWith('http://') && !newImage.startsWith('https://') && newImage.includes('.')) {
                         newImage = 'https://' + newImage;
                     }
-                    
+
                     const updates = {
                         name: newName,
                         description: newDescription
                     };
-                    
+
                     if (newImage) {
                         updates.image = newImage;
                     }
-                    
+
                     try {
                         await update(ref(db, `groups/${group.id}`), updates);
-                        
+
                         // Обновляем локальные данные
                         window.state.currentGroupInfo = { ...window.state.currentGroupInfo, ...updates };
-                        
+
                         // Обновляем UI
                         const pDisplayName = document.getElementById('p-displayname');
                         const pAbout = document.getElementById('p-about');
                         const pAvatar = document.getElementById('p-avatar');
-                        
+
                         if (pDisplayName) pDisplayName.innerText = newName;
                         if (pAbout) pAbout.innerText = newDescription || 'Нет описания.';
                         if (pAvatar) pAvatar.src = updates.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
-                        
+
                         if (window.state.currentChat.id === group.id) {
                             const chatTopTitle = document.getElementById('chat-top-title');
                             const chatTopAvatar = document.getElementById('chat-top-avatar');
                             if (chatTopTitle) chatTopTitle.innerText = newName;
                             if (chatTopAvatar) chatTopAvatar.src = updates.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
                         }
-                        
+
                         // Обновляем список чатов
                         const key = 'group:' + group.id;
                         if (conversationsIndex[key] && conversationsIndex[key].dom) {
@@ -2372,31 +2592,97 @@
                             if (titleEl) titleEl.innerText = newName;
                             if (avatarEl) avatarEl.src = updates.image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
                         }
-                        
+
                         // Выходим из режима редактирования
                         this.startEditProfile();
                         alert('Изменения группы сохранены');
-                    } catch (err) { 
+                    } catch (err) {
                         console.error('Ошибка при сохранении группы:', err);
                         alert('Изменения группы сохранены');
+                    }
+                } else if (window.state.profileViewMode === 'channel') {
+                    const channel = window.state.currentChannelInfo;
+                    if (!channel) return;
+
+                    const channelNameInput = document.getElementById('channel-name-input');
+                    const channelDescriptionInput = document.getElementById('channel-description-input');
+                    const pAvatarInput = document.getElementById('p-avatar-input');
+
+                    if (!channelNameInput || !channelDescriptionInput || !pAvatarInput) return;
+
+                    const newName = channelNameInput.value.trim();
+                    const newDescription = channelDescriptionInput.value.trim();
+                    let newImage = pAvatarInput.value.trim();
+
+                    if (!newName) {
+                        alert('Введите название канала');
+                        return;
+                    }
+
+                    if (newImage && !newImage.startsWith('http://') && !newImage.startsWith('https://') && newImage.includes('.')) {
+                        newImage = 'https://' + newImage;
+                    }
+
+                    const updates = {
+                        name: newName,
+                        description: newDescription
+                    };
+
+                    if (newImage) {
+                        updates.image = newImage;
+                    }
+
+                    try {
+                        await update(ref(db, `channels/${channel.id}`), updates);
+
+                        window.state.currentChannelInfo = { ...window.state.currentChannelInfo, ...updates };
+
+                        const pDisplayName = document.getElementById('p-displayname');
+                        const pAbout = document.getElementById('p-about');
+                        const pAvatar = document.getElementById('p-avatar');
+
+                        if (pDisplayName) pDisplayName.innerText = newName;
+                        if (pAbout) pAbout.innerText = newDescription || 'Нет описания.';
+                        if (pAvatar) pAvatar.src = updates.image || 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
+
+                        if (window.state.currentChat.id === channel.id) {
+                            const chatTopTitle = document.getElementById('chat-top-title');
+                            const chatTopAvatar = document.getElementById('chat-top-avatar');
+                            if (chatTopTitle) chatTopTitle.innerText = newName;
+                            if (chatTopAvatar) chatTopAvatar.src = updates.image || 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
+                        }
+
+                        const key = 'channel:' + channel.id;
+                        if (conversationsIndex[key] && conversationsIndex[key].dom) {
+                            const titleEl = conversationsIndex[key].dom.querySelector('.conv-title');
+                            const avatarEl = conversationsIndex[key].dom.querySelector('img');
+                            if (titleEl) titleEl.innerText = newName;
+                            if (avatarEl) avatarEl.src = updates.image || 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
+                        }
+
+                        this.startEditProfile();
+                        alert('Изменения канала сохранены');
+                    } catch (err) {
+                        console.error('Ошибка при сохранении канала:', err);
+                        alert('Ошибка при сохранении канала');
                     }
                 } else {
                     const pAvatarInput = document.getElementById('p-avatar-input');
                     const pAboutInput = document.getElementById('p-about-input');
                     if (!pAvatarInput || !pAboutInput) return;
-                    
+
                     let newAva = pAvatarInput.value.trim();
                     const newAbout = pAboutInput.value.trim();
-                    
+
                     // Убрали проверки на формат!
                     if (newAva && !newAva.startsWith('http://') && !newAva.startsWith('https://') && newAva.includes('.')) {
                         newAva = 'https://' + newAva;
                     }
-                    
+
                     const updates = {};
                     if (newAva) updates.photoURL = newAva;
                     updates.about = newAbout || '';
-                    
+
                     try {
                         await update(ref(db, `users/${window.state.user.uid}`), updates);
                         if (updates.photoURL) {
@@ -2405,23 +2691,23 @@
                             if (pAvatar) pAvatar.src = updates.photoURL;
                             if (userProfileImg) userProfileImg.src = updates.photoURL;
                         }
-                        
+
                         const pAbout = document.getElementById('p-about');
                         if (pAbout) pAbout.innerText = updates.about;
-                        
+
                         window.state.profile = Object.assign(window.state.profile || {}, updates);
-                        
+
                         const profileEditArea = document.getElementById('profile-edit-area');
                         const btnEditProfile = document.getElementById('btn-edit-profile');
                         const btnSaveProfile = document.getElementById('btn-save-profile');
                         if (profileEditArea) profileEditArea.style.display = 'none';
                         if (btnEditProfile) btnEditProfile.style.display = 'inline-flex';
                         if (btnSaveProfile) btnSaveProfile.style.display = 'none';
-                        
+
                         alert('Профиль сохранён');
-                    } catch (err) { 
-                        console.error(err); 
-                        alert('Ошибка при сохранении профиля'); 
+                    } catch (err) {
+                        console.error(err);
+                        alert('Ошибка при сохранении профиля');
                     }
                 }
             },
@@ -2688,6 +2974,203 @@
                 }
             },
 
+            openChannelInfo: async (channelId) => {
+                if (!channelId) return;
+                try {
+                    const channelSnap = await get(child(ref(db), `channels/${channelId}`));
+                    if (channelSnap.exists()) {
+                        const channel = channelSnap.val();
+                        window.state.currentChannelInfo = { id: channelId, ...channel };
+                        window.state.profileViewMode = 'channel';
+                        uiAction._profileShownUid = null;
+                        const overlay = document.getElementById('profile-overlay');
+                        const modal = document.getElementById('profile-modal');
+                        if (overlay) overlay.classList.add('active');
+                        if (modal) {
+                            modal.classList.add('active');
+                            modal.setAttribute('aria-hidden','false');
+                        }
+                        const modalTitle = document.getElementById('profile-modal-title');
+                        if (modalTitle) modalTitle.innerText = 'Информация о канале';
+                        const pAvatar = document.getElementById('p-avatar');
+                        const pDisplayName = document.getElementById('p-displayname');
+                        const pUsername = document.getElementById('p-username');
+                        const pAbout = document.getElementById('p-about');
+                        if (pAvatar) pAvatar.src = channel.image || 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png';
+                        if (pDisplayName) pDisplayName.innerText = channel.name || 'Канал';
+                        if (pUsername) pUsername.innerText = '';
+                        if (pAbout) pAbout.innerText = channel.description || 'Нет описания.';
+                        const channelInfoSection = document.getElementById('channel-info-section');
+                        if (channelInfoSection) {
+                            channelInfoSection.style.display = 'block';
+                            const subscribersList = document.getElementById('channel-subscribers-list');
+                            if (subscribersList) {
+                                subscribersList.innerHTML = '';
+                                const subscribers = channel.subscribers || {};
+                                Object.keys(subscribers).forEach(uid => {
+                                    const user = usersCache[uid] || { displayName: 'Пользователь', photoURL: 'https://via.placeholder.com/150' };
+                                    const subDiv = document.createElement('div');
+                                    subDiv.style.display = 'flex';
+                                    subDiv.style.alignItems = 'center';
+                                    subDiv.style.gap = '12px';
+                                    subDiv.style.padding = '8px 0';
+                                    subDiv.innerHTML = `<img src="${user.photoURL}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;"> <span>${user.displayName}</span> <input type="checkbox" ${subscribers[uid].canWrite ? 'checked' : ''} onchange="uiAction.toggleChannelWrite('${uid}', this.checked)">`;
+                                    subscribersList.appendChild(subDiv);
+                                });
+                            }
+                        }
+                        const profileEditArea = document.getElementById('profile-edit-area');
+                        const btnEditProfile = document.getElementById('btn-edit-profile');
+                        const btnSaveProfile = document.getElementById('btn-save-profile');
+                        const btnUpgrade = document.getElementById('btn-upgrade');
+                        const btnWrite = document.getElementById('btn-write');
+                        const channelEditFields = document.getElementById('channel-edit-fields');
+                        if (profileEditArea) profileEditArea.style.display = 'none';
+                        if (btnEditProfile) btnEditProfile.style.display = 'none';
+                        if (btnSaveProfile) btnSaveProfile.style.display = 'none';
+                        if (btnUpgrade) btnUpgrade.style.display = 'none';
+                        if (btnWrite) btnWrite.style.display = 'none';
+                        if (window.state.user && channel.owner === window.state.user.uid) {
+                            if (profileEditArea) profileEditArea.style.display = 'block';
+                            if (channelEditFields) channelEditFields.style.display = 'block';
+                            if (btnEditProfile) btnEditProfile.style.display = 'inline-flex';
+                            if (btnSaveProfile) btnSaveProfile.style.display = 'none';
+                            const pAvatarInput = document.getElementById('p-avatar-input');
+                            const channelNameInput = document.getElementById('channel-name-input');
+                            const channelDescriptionInput = document.getElementById('channel-description-input');
+                            if (pAvatarInput) pAvatarInput.value = channel.image || '';
+                            if (channelNameInput) channelNameInput.value = channel.name || '';
+                            if (channelDescriptionInput) channelDescriptionInput.value = channel.description || '';
+                        }
+                    } else {
+                        alert('Канал не найден');
+                    }
+                } catch (err) {
+                    console.error('Ошибка загрузки канала:', err);
+                    alert('Ошибка загрузки канала');
+                }
+            },
+
+            toggleChannelWrite: async (uid, canWrite) => {
+                const channel = window.state.currentChannelInfo;
+                if (!channel) return;
+                const updates = {};
+                updates[`channels/${channel.id}/subscribers/${uid}/canWrite`] = canWrite;
+                try {
+                    await update(ref(db), updates);
+                } catch (err) {
+                    console.error('Ошибка обновления прав:', err);
+                }
+            },
+
+            openCreateChannel: () => {
+                const channelOverlay = document.getElementById('channel-overlay');
+                const channelModal = document.getElementById('channel-modal');
+                const channelName = document.getElementById('channel-name');
+                const channelDescription = document.getElementById('channel-description');
+                const channelImageUrl = document.getElementById('channel-image-url');
+                const channelAddSearch = document.getElementById('channel-add-search');
+                const channelSearchResults = document.getElementById('channel-search-results');
+                const channelSelected = document.getElementById('channel-selected');
+
+                if (channelOverlay) channelOverlay.classList.add('active');
+                if (channelModal) channelModal.classList.add('active');
+                if (channelName) channelName.value = '';
+                if (channelDescription) channelDescription.value = '';
+                if (channelImageUrl) channelImageUrl.value = '';
+                if (channelAddSearch) channelAddSearch.value = '';
+                if (channelSearchResults) channelSearchResults.innerHTML = '';
+                if (channelSelected) channelSelected.innerHTML = '';
+
+                if (!uiAction._channelSelected) uiAction._channelSelected = {};
+                // Каналы могут быть публичными, но для простоты добавляем создателя
+                uiAction._channelSelected[window.state.user.uid] = {
+                    uid: window.state.user.uid,
+                    name: window.state.profile.displayName,
+                    photo: window.state.profile.photoURL
+                };
+                renderChannelSelected();
+                toggleSidebarMenu();
+            },
+
+            closeCreateChannel: () => {
+                const channelOverlay = document.getElementById('channel-overlay');
+                const channelModal = document.getElementById('channel-modal');
+                if (channelOverlay) channelOverlay.classList.remove('active');
+                if (channelModal) channelModal.classList.remove('active');
+                uiAction._channelSelected = {};
+            },
+
+            selectChannelMember: (uid, name, photo) => {
+                uiAction._channelSelected = uiAction._channelSelected || {};
+                uiAction._channelSelected[uid] = { uid, name, photo };
+                renderChannelSelected();
+            },
+
+            removeChannelMember: (uid) => {
+                if (!uiAction._channelSelected) return;
+                delete uiAction._channelSelected[uid];
+                renderChannelSelected();
+            },
+
+            createChannel: async () => {
+                const channelNameInput = document.getElementById('channel-name');
+                const channelDescriptionInput = document.getElementById('channel-description');
+                const channelImageUrlInput = document.getElementById('channel-image-url');
+                if (!channelNameInput || !channelDescriptionInput || !channelImageUrlInput) return;
+
+                const name = (channelNameInput.value || '').trim();
+                const description = (channelDescriptionInput.value || '').trim();
+                if (!name || name.length < 2) {
+                    alert('Введите название канала (мин. 2 символа)');
+                    return;
+                }
+
+                let image = (channelImageUrlInput.value || '').trim();
+
+                if (image && !image.startsWith('http://') && !image.startsWith('https://') && image.includes('.')) {
+                    image = 'https://' + image;
+                }
+
+                const selected = uiAction._channelSelected || {};
+                const subscribers = Object.keys(selected);
+
+                try {
+                    const cRef = push(ref(db, 'channels'));
+                    const channelId = cRef.key;
+                    const subscribersObj = {};
+                    subscribers.forEach(uid => subscribersObj[uid] = { canWrite: uid === window.state.user.uid, canEdit: uid === window.state.user.uid });
+                    const meta = {
+                        id: channelId,
+                        name,
+                        description,
+                        owner: window.state.user.uid,
+                        subscribers: subscribersObj,
+                        createdAt: Date.now(),
+                        image: image || '',
+                        isPublic: true
+                    };
+                    await set(ref(db, `channels/${channelId}`), meta);
+                    uiAction.closeCreateChannel();
+                    addConversationToList({
+                        type: 'channel',
+                        id: channelId,
+                        title: name,
+                        avatar: image || 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png'
+                    });
+                    openChat({
+                        type: 'channel',
+                        id: channelId,
+                        title: name,
+                        avatar: image || 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png',
+                        subtitle: 'Канал'
+                    });
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка при создании канала');
+                }
+            },
+
             openLogin: () => {
                 const overlay = document.getElementById('login-overlay');
                 const modal = document.getElementById('login-modal');
@@ -2721,6 +3204,21 @@
                 el.innerHTML = `<img src="${s.photo||'https://via.placeholder.com/150'}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;">
                                <span>${escapeHtml(s.name)}</span>
                                <button onclick="uiAction.removeGroupMember('${s.uid}')" style="background:transparent;border:none;cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;">✕</button>`;
+                container.appendChild(el);
+            });
+        }
+
+        function renderChannelSelected(){
+            const container = document.getElementById('channel-selected');
+            if (!container) return;
+            container.innerHTML = '';
+            const selected = uiAction._channelSelected || {};
+            Object.values(selected).forEach(s => {
+                const el = document.createElement('div');
+                el.className = 'chip';
+                el.innerHTML = `<img src="${s.photo||'https://via.placeholder.com/150'}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;">
+                               <span>${escapeHtml(s.name)}</span>
+                               <button onclick="uiAction.removeChannelMember('${s.uid}')" style="background:transparent;border:none;cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;">✕</button>`;
                 container.appendChild(el);
             });
         }
@@ -2875,6 +3373,99 @@
             });
         }
 
+        function initGroupAddMemberSearch(){
+            const input = document.getElementById('group-add-member-search');
+            const results = document.getElementById('group-add-member-results');
+            if (!input) return;
+            input.addEventListener('input', async (e) => {
+                const q = e.target.value.trim().toLowerCase().replace('@','');
+                if (results) results.innerHTML = '';
+                if (q.length < 2) return;
+                const users = Object.values(usersCache || {});
+                const found = users.filter(u => (u.username || '').includes(q) || (u.displayName || '').toLowerCase().includes(q));
+                found.forEach(u => {
+                    const row = document.createElement('div');
+                    row.className = 'user-select-row';
+                    row.style.display = 'flex';
+                    row.style.gap = '8px';
+                    row.style.alignItems = 'center';
+                    row.style.padding = '12px';
+                    row.style.borderRadius = '8px';
+                    row.style.border = '1px solid var(--border)';
+                    row.style.marginBottom = '8px';
+                    row.innerHTML = `<img src="${u.photoURL || 'https://via.placeholder.com/150'}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;">${escapeHtml(u.displayName)}</div>
+                            <div style="font-size:12px; color:var(--muted);">@${escapeHtml(u.usernameDisplay||u.username)}</div>
+                        </div>
+                        <button class="btn btn-primary" style="width:auto; padding:10px 14px; min-height:40px;" onclick="uiAction.addGroupMember('${u.uid}', '${escapeHtml(u.displayName)}', '${escapeHtml(u.photoURL||'')}')">Добавить</button>`;
+                    if (results) results.appendChild(row);
+                });
+            });
+        }
+
+        function initChannelAddSubscriberSearch(){
+            const input = document.getElementById('channel-add-subscriber-search');
+            const results = document.getElementById('channel-add-subscriber-results');
+            if (!input) return;
+            input.addEventListener('input', async (e) => {
+                const q = e.target.value.trim().toLowerCase().replace('@','');
+                if (results) results.innerHTML = '';
+                if (q.length < 2) return;
+                const users = Object.values(usersCache || {});
+                const found = users.filter(u => (u.username || '').includes(q) || (u.displayName || '').toLowerCase().includes(q));
+                found.forEach(u => {
+                    const row = document.createElement('div');
+                    row.className = 'user-select-row';
+                    row.style.display = 'flex';
+                    row.style.gap = '8px';
+                    row.style.alignItems = 'center';
+                    row.style.padding = '12px';
+                    row.style.borderRadius = '8px';
+                    row.style.border = '1px solid var(--border)';
+                    row.style.marginBottom = '8px';
+                    row.innerHTML = `<img src="${u.photoURL || 'https://via.placeholder.com/150'}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;">${escapeHtml(u.displayName)}</div>
+                            <div style="font-size:12px; color:var(--muted);">@${escapeHtml(u.usernameDisplay||u.username)}</div>
+                        </div>
+                        <button class="btn btn-primary" style="width:auto; padding:10px 14px; min-height:40px;" onclick="uiAction.addChannelSubscriber('${u.uid}', '${escapeHtml(u.displayName)}', '${escapeHtml(u.photoURL||'')}')">Добавить</button>`;
+                    if (results) results.appendChild(row);
+                });
+            });
+        }
+
+        function initChannelSearch(){
+            const input = document.getElementById('channel-add-search');
+            const results = document.getElementById('channel-search-results');
+            if (!input) return;
+            input.addEventListener('input', async (e) => {
+                const q = e.target.value.trim().toLowerCase().replace('@','');
+                if (results) results.innerHTML = '';
+                if (q.length < 2) return;
+                const users = Object.values(usersCache || {});
+                const found = users.filter(u => (u.username || '').includes(q) || (u.displayName || '').toLowerCase().includes(q));
+                found.forEach(u => {
+                    const row = document.createElement('div');
+                    row.className = 'user-select-row';
+                    row.style.display = 'flex';
+                    row.style.gap = '8px';
+                    row.style.alignItems = 'center';
+                    row.style.padding = '12px';
+                    row.style.borderRadius = '8px';
+                    row.style.border = '1px solid var(--border)';
+                    row.style.marginBottom = '8px';
+                    row.innerHTML = `<img src="${u.photoURL || 'https://via.placeholder.com/150'}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;">${escapeHtml(u.displayName)}</div>
+                            <div style="font-size:12px; color:var(--muted);">@${escapeHtml(u.usernameDisplay||u.username)}</div>
+                        </div>
+                        <button class="btn btn-primary" style="width:auto; padding:10px 14px; min-height:40px;" onclick="uiAction.selectChannelMember('${u.uid}', '${escapeHtml(u.displayName)}', '${escapeHtml(u.photoURL||'')}')">Добавить</button>`;
+                    if (results) results.appendChild(row);
+                });
+            });
+        }
+
         function initSearch(){
             const searchInput = document.getElementById('user-search-input');
             const parent = searchInput.parentNode;
@@ -2967,8 +3558,6 @@
         window.signUpWithEmail = signUpWithEmail;
         window.showSignUp = showSignUp;
         window.showSignIn = showSignIn;
-        window.signOutUser = signOutUser;
-
         themeCore.load();
 
         initAuth();
